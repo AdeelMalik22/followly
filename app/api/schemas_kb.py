@@ -6,13 +6,13 @@ class KnowledgeBaseCreate(BaseModel):
     category: str
     question: Optional[str] = None
     answer: str
-    metadata: Optional[dict] = {}
+    extra_data: Optional[dict] = {}
 
 class KnowledgeBaseUpdate(BaseModel):
     category: Optional[str] = None
     question: Optional[str] = None
     answer: Optional[str] = None
-    metadata: Optional[dict] = None
+    extra_data: Optional[dict] = None
 
 class KnowledgeBaseResponse(BaseModel):
     id: int
@@ -20,7 +20,7 @@ class KnowledgeBaseResponse(BaseModel):
     category: str
     question: Optional[str]
     answer: str
-    metadata: dict
+    extra_data: dict
     created_at: datetime
 
     class Config:

@@ -19,7 +19,7 @@ def create_entry(
         category=entry.category,
         question=entry.question,
         answer=entry.answer,
-        metadata=entry.metadata
+        extra_data=entry.extra_data
     )
     db.add(kb_entry)
     db.commit()
@@ -71,8 +71,8 @@ def update_entry(
         entry.question = entry_data.question
     if entry_data.answer is not None:
         entry.answer = entry_data.answer
-    if entry_data.metadata is not None:
-        entry.metadata = entry_data.metadata
+    if entry_data.extra_data is not None:
+        entry.extra_data = entry_data.extra_data
 
     db.commit()
     db.refresh(entry)

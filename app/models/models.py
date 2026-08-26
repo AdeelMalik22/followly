@@ -55,7 +55,7 @@ class Lead(Base):
     email = Column(String, index=True)
     status = Column(SQLEnum(LeadStatus), default=LeadStatus.NEW, index=True)
     source = Column(String)
-    metadata = Column(JSON, default={})
+    extra_data = Column(JSON, default={})
     created_at = Column(DateTime, default=datetime.utcnow)
     last_contact_at = Column(DateTime)
 
@@ -86,7 +86,7 @@ class Message(Base):
     role = Column(String, nullable=False)  # user, assistant, system
     content = Column(Text, nullable=False)
     timestamp = Column(DateTime, default=datetime.utcnow, index=True)
-    metadata = Column(JSON, default={})
+    extra_data = Column(JSON, default={})
 
     conversation = relationship("Conversation", back_populates="messages")
 
@@ -114,7 +114,7 @@ class KnowledgeBaseEntry(Base):
     category = Column(String, nullable=False)  # services, pricing, policies, faqs
     question = Column(String)
     answer = Column(Text, nullable=False)
-    metadata = Column(JSON, default={})
+    extra_data = Column(JSON, default={})
     created_at = Column(DateTime, default=datetime.utcnow)
 
     business = relationship("Business", back_populates="knowledge_base")
