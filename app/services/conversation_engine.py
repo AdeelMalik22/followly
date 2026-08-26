@@ -1,0 +1,223 @@
+import json
+from datetime import datetime, timedelta
+from sqlalchemy.orm import Session
+from app.models.models import Conversation, Business, ConversationStatus, Appointment
+from app.services import conversation_service, whatsapp_service, agent_service
+from app.llm.client import chat
+import logging
+
+logger = logging.getLogger(__name__)
+
+async def process_message_with_agent(
+    conversation: Conversation,
+    business: Business,
+    user_message: str,
+    db: Session
+) -> str:
+    """Process user message with AI agent and return response"""
+
+    # Build system prompt with business context
+    system_prompt = agent_service.build_system_prompt(business, db)
+
+    # Get conversation history
+    history = agent_service.build_conversation_messages(conversation, db)
+
+    # Build messages for LLM
+    messages = [
+        {"role": "system", "content": system_prompt},
+        *history,
+        {"role": "user", "content": user_message}
+    ]
+
+    # Get available tools
+    tools = agent_service.get_available_tools()
+
+    # Call LLM with tools
+    try:
+        response = chat(messages, tools=tools, tool_choice="auto")
+        response_message = response.choices[0].message
+
+        # Handle tool calls if present
+        if response_message.tool_calls:
+            tool_results = []
+
+            for tool_call in response_message.tool_calls:
+                function_name = tool_call.function.name
+                arguments = json.loads(tool_call.function.arguments)
+
+                logger.info(f"Tool called: {function_name} with args: {arguments}")
+
+                # Execute tool
+                result = execute_tool(function_name, arguments, conversation, business, db)
+                tool_results.append({
+                    "tool_call_id": tool_call.id,
+                    "role": "tool",
+                    "name": function_name,
+                    "content": json.dumps(result)
+                })
+
+            # Add assistant message and tool results to messages
+            messages.append({
+                "role": "assistant",
+                "content": response_message.content,
+                "tool_calls": [
+                    {
+                        "id": tc.id,
+                        "type": "function",
+                        "function": {
+                            "name": tc.function.name,
+                            "arguments": tc.function.arguments
+                        }
+                    } for tc in response_message.tool_calls
+                ]
+            })
+
+            for tool_result in tool_results:
+                messages.append(tool_result)
+
+            # Get final response with tool results
+            final_response = chat(messages)
+            final_message = final_response.choices[0].message.content
+
+            return final_message
+
+        else:
+            # No tool calls, return direct response
+            return response_message.content
+
+    except Exception as e:
+        logger.error(f"Error in agent processing: {e}", exc_info=True)
+        return "I apologize, I'm having trouble processing your message right now. Please try again or contact us directly."
+
+def execute_tool(
+    function_name: str,
+    arguments: dict,
+    conversation: Conversation,
+    business: Business,
+    db: Session
+) -> dict:
+    """Execute a tool function and return result"""
+
+    if function_name == "check_availability":
+        return handle_check_availability(arguments, business, db)
+
+    elif function_name == "book_appointment":
+        return handle_book_appointment(arguments, conversation, business, db)
+
+    elif function_name == "escalate_to_human":
+        return handle_escalate_to_human(arguments, conversation, db)
+
+    else:
+        return {"error": f"Unknown tool: {function_name}"}
+
+def handle_check_availability(arguments: dict, business: Business, db: Session) -> dict:
+    """Check appointment availability (mock implementation for now)"""
+    date_str = arguments.get("date")
+    service = arguments.get("service", "general")
+
+    try:
+        date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+
+        # Mock availability - in production, this would query Google Calendar
+        # Business hours: Mon-Fri 9am-6pm, Sat 9am-2pm
+        weekday = date_obj.weekday()
+
+        if weekday == 6:  # Sunday
+            return {
+                "available": False,
+                "reason": "We are closed on Sundays"
+            }
+
+        # Generate mock time slots
+        if weekday < 5:  # Mon-Fri
+            slots = ["9:00 AM", "10:30 AM", "2:00 PM", "4:00 PM"]
+        else:  # Saturday
+            slots = ["9:00 AM", "11:00 AM"]
+
+        return {
+            "available": True,
+            "date": date_str,
+            "service": service,
+            "available_slots": slots,
+            "message": f"We have availability on {date_str} at the following times: {', '.join(slots)}"
+        }
+
+    except ValueError:
+        return {
+            "error": "Invalid date format. Please use YYYY-MM-DD"
+        }
+
+def handle_book_appointment(
+    arguments: dict,
+    conversation: Conversation,
+    business: Business,
+    db: Session
+) -> dict:
+    """Book an appointment (mock implementation for now)"""
+    date_str = arguments.get("date")
+    time_str = arguments.get("time")
+    service = arguments.get("service")
+    patient_name = arguments.get("patient_name")
+
+    try:
+        # Parse datetime
+        datetime_str = f"{date_str} {time_str}"
+        start_time = datetime.strptime(datetime_str, "%Y-%m-%d %H:%M")
+        end_time = start_time + timedelta(minutes=60)  # Default 60 min duration
+
+        # Create appointment
+        appointment = Appointment(
+            business_id=business.id,
+            lead_id=conversation.lead_id,
+            start_time=start_time,
+            end_time=end_time,
+            service=service,
+            status="scheduled"
+        )
+        db.add(appointment)
+
+        # Update lead name if provided
+        lead = conversation.lead
+        if patient_name and not lead.name:
+            lead.name = patient_name
+
+        db.commit()
+        db.refresh(appointment)
+
+        logger.info(f"Appointment booked: {appointment.id} for {patient_name}")
+
+        return {
+            "success": True,
+            "appointment_id": appointment.id,
+            "date": date_str,
+            "time": time_str,
+            "service": service,
+            "patient_name": patient_name,
+            "message": f"Appointment confirmed for {patient_name} on {date_str} at {time_str} for {service}"
+        }
+
+    except ValueError as e:
+        return {
+            "error": f"Invalid date/time format: {str(e)}"
+        }
+    except Exception as e:
+        logger.error(f"Error booking appointment: {e}")
+        return {
+            "error": "Failed to book appointment. Please try again."
+        }
+
+def handle_escalate_to_human(arguments: dict, conversation: Conversation, db: Session) -> dict:
+    """Escalate conversation to human staff"""
+    reason = arguments.get("reason", "User requested human assistance")
+
+    # Update conversation status
+    conversation.status = ConversationStatus.HUMAN_TAKEOVER
+    db.commit()
+
+    logger.info(f"Conversation {conversation.id} escalated to human: {reason}")
+
+    return {
+        "success": True,
+        "message": "Conversation has been escalated to a staff member. They will respond shortly.",
+        "reason": reason
+    }

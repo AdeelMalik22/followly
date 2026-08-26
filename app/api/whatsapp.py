@@ -2,6 +2,7 @@ from fastapi import APIRouter, Request, Response, HTTPException, Depends
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.services import whatsapp_service, conversation_service
+from app.services.conversation_engine import process_message_with_agent
 from app.schemas.whatsapp import WhatsAppWebhook
 from app.models.models import Business, LeadStatus
 import logging
@@ -71,13 +72,31 @@ async def handle_webhook(
         if lead.status == LeadStatus.NEW:
             conversation_service.update_lead_status(lead.id, LeadStatus.CONTACTED, db)
 
-        # TODO: Process with AI agent and send response
-        # This will be implemented in conversation engine
+        # Process with AI agent and get response
+        agent_response = await process_message_with_agent(conversation, business, message_text, db)
+
+        # Save agent response to database
+        conversation_service.save_message(conversation.id, "assistant", agent_response, db)
+
+        # Send response via WhatsApp
+        whatsapp_phone_id = business.settings.get("whatsapp_phone_id")
+        whatsapp_token = business.settings.get("whatsapp_access_token")
+
+        if whatsapp_phone_id and whatsapp_token:
+            await whatsapp_service.send_whatsapp_message(
+                to=from_number,
+                message=agent_response,
+                phone_number_id=whatsapp_phone_id,
+                access_token=whatsapp_token
+            )
+            logger.info(f"Agent response sent to {from_number}")
+        else:
+            logger.warning(f"WhatsApp credentials not found in business settings for {business.id}")
 
         # Update conversation timestamp
         conversation_service.update_conversation_timestamp(conversation.id, db)
 
-        logger.info(f"Message saved to conversation {conversation.id}")
+        logger.info(f"Message processed for conversation {conversation.id}")
 
         return {"status": "ok"}
 
