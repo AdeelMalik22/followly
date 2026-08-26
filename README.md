@@ -31,8 +31,37 @@ alembic upgrade head
 uvicorn app.main:app --reload --port 8000
 ```
 
+## Testing the Agent
+
+### Quick Test (Non-interactive)
+```bash
+python scripts/test_agent.py
+```
+Tests basic LLM connectivity, conversation flow, and tool calling.
+
+### Interactive Chat
+```bash
+python scripts/chat_agent.py
+```
+Interactive CLI to chat with the agent. Commands:
+- `/exit` - Exit chat
+- `/reset` - Reset conversation
+- `/help` - Show help
+
 ## API Endpoints
 
+### Auth
+- `POST /api/v1/auth/signup` - Create account
+- `POST /api/v1/auth/login` - Login
+
+### Knowledge Base
+- `POST /api/v1/knowledge` - Create entry
+- `GET /api/v1/knowledge` - List entries
+- `GET /api/v1/knowledge/{id}` - Get entry
+- `PUT /api/v1/knowledge/{id}` - Update entry
+- `DELETE /api/v1/knowledge/{id}` - Delete entry
+
+### Health
 - `GET /` - API info
 - `GET /health` - Health check
 
@@ -42,8 +71,10 @@ uvicorn app.main:app --reload --port 8000
 app/
 ├── api/          # API endpoints
 ├── models/       # Database models
+├── schemas/      # Pydantic schemas
 ├── services/     # Business logic
 ├── tasks/        # Celery tasks
 ├── llm/          # LLM client
 └── core/         # Config, auth, database
+scripts/          # CLI tools
 ```
