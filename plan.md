@@ -4,6 +4,10 @@
 
 Generated: 2026-08-26
 
+## Development Guidelines
+
+**Token Efficiency Protocol:** Minimize verbose explanations. Prioritize working code over commentary. Brief status updates only. Let code and commits speak for themselves.
+
 ## Overview
 
 Building an AI agent that connects to WhatsApp, Instagram, email, and website chat to automatically qualify leads, book appointments, and follow up with prospects for small businesses (starting with dental clinics).
