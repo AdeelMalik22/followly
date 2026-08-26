@@ -2,7 +2,7 @@ import json
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from app.models.models import Conversation, Business, ConversationStatus, Appointment
-from app.services import conversation_service, whatsapp_service, agent_service
+from app.services import conversation_service, whatsapp_service, agent_service, calendar_service
 from app.llm.client import chat
 import logging
 
@@ -111,41 +111,54 @@ def execute_tool(
         return {"error": f"Unknown tool: {function_name}"}
 
 def handle_check_availability(arguments: dict, business: Business, db: Session) -> dict:
-    """Check appointment availability (mock implementation for now)"""
+    """Check appointment availability using Google Calendar"""
     date_str = arguments.get("date")
     service = arguments.get("service", "general")
 
-    try:
-        date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+    # Check if calendar is connected
+    credentials = business.settings.get("google_calendar_credentials") if business.settings else None
 
-        # Mock availability - in production, this would query Google Calendar
-        # Business hours: Mon-Fri 9am-6pm, Sat 9am-2pm
-        weekday = date_obj.weekday()
+    if not credentials:
+        # Fallback to mock availability if calendar not connected
+        logger.warning(f"Calendar not connected for business {business.id}, using mock availability")
+        try:
+            date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+            weekday = date_obj.weekday()
 
-        if weekday == 6:  # Sunday
+            if weekday == 6:  # Sunday
+                return {
+                    "available": False,
+                    "reason": "We are closed on Sundays"
+                }
+
+            # Generate mock time slots
+            if weekday < 5:  # Mon-Fri
+                slots = ["9:00 AM", "10:30 AM", "2:00 PM", "4:00 PM"]
+            else:  # Saturday
+                slots = ["9:00 AM", "11:00 AM"]
+
             return {
-                "available": False,
-                "reason": "We are closed on Sundays"
+                "available": True,
+                "date": date_str,
+                "service": service,
+                "available_slots": slots,
+                "message": f"We have availability on {date_str} at the following times: {', '.join(slots)}"
             }
+        except ValueError:
+            return {"error": "Invalid date format. Please use YYYY-MM-DD"}
 
-        # Generate mock time slots
-        if weekday < 5:  # Mon-Fri
-            slots = ["9:00 AM", "10:30 AM", "2:00 PM", "4:00 PM"]
-        else:  # Saturday
-            slots = ["9:00 AM", "11:00 AM"]
-
-        return {
-            "available": True,
-            "date": date_str,
-            "service": service,
-            "available_slots": slots,
-            "message": f"We have availability on {date_str} at the following times: {', '.join(slots)}"
-        }
-
-    except ValueError:
-        return {
-            "error": "Invalid date format. Please use YYYY-MM-DD"
-        }
+    # Use real Google Calendar
+    try:
+        result = calendar_service.check_availability(
+            credentials_json=credentials,
+            date=date_str,
+            service=service,
+            duration_minutes=60
+        )
+        return result
+    except Exception as e:
+        logger.error(f"Error checking calendar availability: {e}", exc_info=True)
+        return {"error": f"Failed to check availability: {str(e)}"}
 
 def handle_book_appointment(
     arguments: dict,
@@ -153,7 +166,7 @@ def handle_book_appointment(
     business: Business,
     db: Session
 ) -> dict:
-    """Book an appointment (mock implementation for now)"""
+    """Book an appointment with Google Calendar integration"""
     date_str = arguments.get("date")
     time_str = arguments.get("time")
     service = arguments.get("service")
@@ -165,7 +178,7 @@ def handle_book_appointment(
         start_time = datetime.strptime(datetime_str, "%Y-%m-%d %H:%M")
         end_time = start_time + timedelta(minutes=60)  # Default 60 min duration
 
-        # Create appointment
+        # Create appointment in database
         appointment = Appointment(
             business_id=business.id,
             lead_id=conversation.lead_id,
@@ -180,6 +193,28 @@ def handle_book_appointment(
         lead = conversation.lead
         if patient_name and not lead.name:
             lead.name = patient_name
+
+        # Check if calendar is connected
+        credentials = business.settings.get("google_calendar_credentials") if business.settings else None
+
+        if credentials:
+            # Create event in Google Calendar
+            calendar_result = calendar_service.create_calendar_event(
+                credentials_json=credentials,
+                summary=f"{service} - {patient_name}",
+                start_time=start_time,
+                end_time=end_time,
+                description=f"Service: {service}\nPatient: {patient_name}\nPhone: {lead.phone}",
+                attendee_email=lead.email if lead.email else None
+            )
+
+            if calendar_result.get("success"):
+                appointment.calendar_event_id = calendar_result["event_id"]
+                logger.info(f"Calendar event created: {calendar_result['event_id']}")
+            else:
+                logger.warning(f"Failed to create calendar event: {calendar_result.get('error')}")
+        else:
+            logger.info(f"Calendar not connected for business {business.id}, appointment saved without calendar event")
 
         db.commit()
         db.refresh(appointment)
@@ -197,14 +232,11 @@ def handle_book_appointment(
         }
 
     except ValueError as e:
-        return {
-            "error": f"Invalid date/time format: {str(e)}"
-        }
+        return {"error": f"Invalid date/time format: {str(e)}"}
     except Exception as e:
-        logger.error(f"Error booking appointment: {e}")
-        return {
-            "error": "Failed to book appointment. Please try again."
-        }
+        logger.error(f"Error booking appointment: {e}", exc_info=True)
+        db.rollback()
+        return {"error": "Failed to book appointment. Please try again."}
 
 def handle_escalate_to_human(arguments: dict, conversation: Conversation, db: Session) -> dict:
     """Escalate conversation to human staff"""
