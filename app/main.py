@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.auth import router as auth_router
 from app.api.knowledge import router as knowledge_router
+from app.api.whatsapp import router as whatsapp_router
 
 app = FastAPI(title="Followly API", version="1.0.0")
 
@@ -15,6 +16,7 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(knowledge_router)
+app.include_router(whatsapp_router)
 
 @app.get("/")
 def read_root():
