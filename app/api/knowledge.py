@@ -4,7 +4,7 @@ from typing import List
 from app.core.database import get_db
 from app.models.models import Business
 from app.api.dependencies import get_current_business
-from app.api.schemas_kb import KnowledgeBaseCreate, KnowledgeBaseUpdate, KnowledgeBaseResponse
+from app.schemas.knowledge import KnowledgeBaseCreate, KnowledgeBaseUpdate, KnowledgeBaseResponse
 from app.services import knowledge_service
 
 router = APIRouter(prefix="/api/v1/knowledge", tags=["knowledge"])
