@@ -100,8 +100,30 @@ def parse_whatsapp_message(webhook_data: dict) -> Optional[dict]:
     if not isinstance(timestamp, str) or not timestamp.isdigit():
         raise ValueError("Invalid WhatsApp message timestamp")
     message_type = message.get("type")
-    text = message.get("text", {}).get("body", "") if message_type == "text" else None
-    if message_type == "text" and (not isinstance(text, str) or not text.strip()):
+    supported_types = {"text", "image", "document", "audio", "interactive", "location", "button"}
+    if message_type not in supported_types:
+        raise ValueError("Unsupported WhatsApp message type")
+
+    text = None
+    if message_type == "text":
+        text = message.get("text", {}).get("body")
+    elif message_type in {"image", "document", "audio"}:
+        # Captions can be handled by the agent; media itself is acknowledged
+        # until media download/vision processing is added.
+        text = message.get(message_type, {}).get("caption")
+    elif message_type == "button":
+        text = message.get("button", {}).get("text") or message.get("button", {}).get("payload")
+    elif message_type == "interactive":
+        interactive = message.get("interactive", {})
+        reply = interactive.get("button_reply") or interactive.get("list_reply") or {}
+        text = reply.get("title") or reply.get("description") or reply.get("id")
+    elif message_type == "location":
+        location = message.get("location", {})
+        latitude, longitude = location.get("latitude"), location.get("longitude")
+        if latitude is not None and longitude is not None:
+            text = f"Location shared: {latitude}, {longitude}"
+
+    if text is not None and (not isinstance(text, str) or not text.strip()):
         raise ValueError("Invalid WhatsApp text message")
     return {
         "from_number": from_number, "message_id": message_id, "timestamp": timestamp,

@@ -144,8 +144,12 @@ async def handle_webhook(
             logger.warning("Invalid WhatsApp webhook payload: %s", exc)
             raise HTTPException(status_code=400, detail="Invalid WhatsApp webhook payload")
 
-        if not parsed or not parsed.get("text"):
-            logger.info("Non-text message or status update received, ignoring")
+        if not parsed:
+            logger.info("WhatsApp status update received, ignoring")
+            return {"status": "ok"}
+
+        if not parsed.get("text"):
+            logger.info("WhatsApp %s message received without processable text; acknowledging", parsed["message_type"])
             return {"status": "ok"}
 
         from_number = parsed["from_number"]
