@@ -35,11 +35,12 @@ async def process_message_with_agent(
 
     # Call LLM with tools
     try:
-        response = await asyncio.to_thread(chat, messages, tools=tools, tool_choice="auto")
-        response_message = response.choices[0].message
+        for _ in range(3):
+            response = await asyncio.to_thread(chat, messages, tools=tools, tool_choice="auto")
+            response_message = response.choices[0].message
+            if not response_message.tool_calls:
+                return response_message.content
 
-        # Handle tool calls if present
-        if response_message.tool_calls:
             tool_results = []
 
             for tool_call in response_message.tool_calls:
@@ -57,7 +58,6 @@ async def process_message_with_agent(
                     "content": json.dumps(result)
                 })
 
-            # Add assistant message and tool results to messages
             messages.append({
                 "role": "assistant",
                 "content": response_message.content,
@@ -75,16 +75,7 @@ async def process_message_with_agent(
 
             for tool_result in tool_results:
                 messages.append(tool_result)
-
-            # Get final response with tool results
-            final_response = await asyncio.to_thread(chat, messages)
-            final_message = final_response.choices[0].message.content
-
-            return final_message
-
-        else:
-            # No tool calls, return direct response
-            return response_message.content
+        return "I’m sorry, I couldn’t complete that request. Please try again."
 
     except Exception as e:
         logger.error(f"Error in agent processing: {e}", exc_info=True)
