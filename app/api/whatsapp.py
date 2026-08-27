@@ -201,6 +201,10 @@ async def handle_webhook(
             logger.info("Ignoring concurrently duplicated WhatsApp message: %s", message_id)
             return {"status": "ok"}
 
+        if conversation.status == "human_takeover":
+            logger.info("AI paused for human takeover: conversation %s", conversation.id)
+            return {"status": "ok"}
+
         # Update lead status to CONTACTED if NEW
         if lead.status == LeadStatus.NEW:
             conversation_service.update_lead_status(lead.id, LeadStatus.CONTACTED, db)

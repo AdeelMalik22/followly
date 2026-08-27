@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     WHATSAPP_APP_SECRET: str = ""
     WHATSAPP_PHONE_NUMBER_ID: str = ""
     WHATSAPP_ACCESS_TOKEN: str = ""
+    WHATSAPP_API_VERSION: str = "v17.0"
+    WHATSAPP_REQUEST_TIMEOUT: float = 10.0
+    WHATSAPP_MAX_RETRIES: int = 3
     API_BASE_URL: str = ""
 
     GOOGLE_CLIENT_ID: str = ""

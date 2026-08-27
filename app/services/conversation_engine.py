@@ -5,6 +5,7 @@ from app.models.models import Conversation, Business, ConversationStatus, Appoin
 from app.services import conversation_service, whatsapp_service, agent_service, calendar_service
 from app.llm.client import chat
 import logging
+import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +35,7 @@ async def process_message_with_agent(
 
     # Call LLM with tools
     try:
-        response = chat(messages, tools=tools, tool_choice="auto")
+        response = await asyncio.to_thread(chat, messages, tools=tools, tool_choice="auto")
         response_message = response.choices[0].message
 
         # Handle tool calls if present
@@ -76,7 +77,7 @@ async def process_message_with_agent(
                 messages.append(tool_result)
 
             # Get final response with tool results
-            final_response = chat(messages)
+            final_response = await asyncio.to_thread(chat, messages)
             final_message = final_response.choices[0].message.content
 
             return final_message

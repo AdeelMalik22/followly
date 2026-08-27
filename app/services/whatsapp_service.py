@@ -3,6 +3,7 @@ import hashlib
 import hmac
 import base64
 import re
+import asyncio
 from typing import Optional
 from app.core.config import settings
 from cryptography.fernet import Fernet, InvalidToken
@@ -29,7 +30,7 @@ def decrypt_access_token(token: str) -> str:
 
 async def send_whatsapp_message(to: str, message: str, phone_number_id: str, access_token: str) -> dict:
     """Send a WhatsApp message via Cloud API"""
-    url = f"https://graph.facebook.com/v17.0/{phone_number_id}/messages"
+    url = f"https://graph.facebook.com/{settings.WHATSAPP_API_VERSION}/{phone_number_id}/messages"
 
     headers = {
         "Authorization": f"Bearer {access_token}",
@@ -43,10 +44,27 @@ async def send_whatsapp_message(to: str, message: str, phone_number_id: str, acc
         "text": {"body": message}
     }
 
-    async with httpx.AsyncClient() as client:
-        response = await client.post(url, json=payload, headers=headers)
-        response.raise_for_status()
-        return response.json()
+    timeout = httpx.Timeout(settings.WHATSAPP_REQUEST_TIMEOUT)
+    retryable_statuses = {408, 429, 500, 502, 503, 504}
+    for attempt in range(settings.WHATSAPP_MAX_RETRIES + 1):
+        try:
+            async with httpx.AsyncClient(timeout=timeout) as client:
+                response = await client.post(url, json=payload, headers=headers)
+            if response.status_code in retryable_statuses and attempt < settings.WHATSAPP_MAX_RETRIES:
+                await asyncio.sleep(2 ** attempt)
+                continue
+            if response.is_error:
+                try:
+                    error = response.json().get("error", {})
+                    detail = error.get("message", "WhatsApp API request failed")
+                except ValueError:
+                    detail = "WhatsApp API request failed"
+                raise RuntimeError(f"WhatsApp API error ({response.status_code}): {detail}")
+            return response.json()
+        except (httpx.TimeoutException, httpx.NetworkError) as exc:
+            if attempt >= settings.WHATSAPP_MAX_RETRIES:
+                raise RuntimeError("WhatsApp API request failed after retries") from exc
+            await asyncio.sleep(2 ** attempt)
 
 def verify_webhook_token(token: str) -> bool:
     """Verify webhook verification token"""
