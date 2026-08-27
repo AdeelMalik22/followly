@@ -209,6 +209,19 @@ async def handle_webhook(
         if lead.status == LeadStatus.NEW:
             conversation_service.update_lead_status(lead.id, LeadStatus.CONTACTED, db)
 
+        normalized_message = message_text.lower().strip()
+        if any(phrase in normalized_message for phrase in (
+            "not interested", "stop", "unsubscribe", "don't contact", "do not contact"
+        )):
+            conversation_service.update_lead_status(lead.id, LeadStatus.NOT_INTERESTED, db)
+            logger.info("Lead %s marked not interested", lead.id)
+            return {"status": "ok"}
+
+        if lead.status == LeadStatus.CONTACTED and any(keyword in normalized_message for keyword in (
+            "book", "appointment", "schedule", "cleaning", "whitening", "exam", "consultation"
+        )):
+            conversation_service.update_lead_status(lead.id, LeadStatus.QUALIFIED, db)
+
         # Process with AI agent and get response
         agent_response = await process_message_with_agent(conversation, business, message_text, db)
 

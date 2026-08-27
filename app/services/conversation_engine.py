@@ -1,7 +1,7 @@
 import json
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
-from app.models.models import Conversation, Business, ConversationStatus, Appointment
+from app.models.models import Conversation, Business, ConversationStatus, Appointment, LeadStatus
 from app.services import conversation_service, whatsapp_service, agent_service, calendar_service
 from app.llm.client import chat
 import logging
@@ -104,6 +104,12 @@ def execute_tool(
 
     elif function_name == "book_appointment":
         return handle_book_appointment(arguments, conversation, business, db)
+
+    elif function_name == "reschedule_appointment":
+        return handle_reschedule_appointment(arguments, conversation, business, db)
+
+    elif function_name == "cancel_appointment":
+        return handle_cancel_appointment(arguments, conversation, business, db)
 
     elif function_name == "escalate_to_human":
         return handle_escalate_to_human(arguments, conversation, db)
@@ -219,6 +225,8 @@ def handle_book_appointment(
 
         db.commit()
         db.refresh(appointment)
+        conversation.lead.status = LeadStatus.BOOKED
+        db.commit()
 
         logger.info(f"Appointment booked: {appointment.id} for {patient_name}")
 
@@ -238,6 +246,49 @@ def handle_book_appointment(
         logger.error(f"Error booking appointment: {e}", exc_info=True)
         db.rollback()
         return {"error": "Failed to book appointment. Please try again."}
+
+
+def handle_reschedule_appointment(arguments, conversation, business, db) -> dict:
+    appointment = db.query(Appointment).filter(
+        Appointment.id == arguments.get("appointment_id"),
+        Appointment.business_id == business.id,
+        Appointment.lead_id == conversation.lead_id,
+        Appointment.status == "scheduled"
+    ).first()
+    if not appointment:
+        return {"error": "Appointment not found"}
+    try:
+        start = datetime.strptime(f"{arguments['new_date']} {arguments['new_time']}", "%Y-%m-%d %H:%M")
+    except (KeyError, ValueError):
+        return {"error": "Invalid date/time format"}
+    end = start + timedelta(minutes=60)
+    credentials = business.settings.get("google_calendar_credentials") if business.settings else None
+    if credentials and appointment.calendar_event_id:
+        result = calendar_service.update_calendar_event(credentials, appointment.calendar_event_id, start, end)
+        if not result.get("success"):
+            return {"error": "Unable to update calendar appointment"}
+    appointment.start_time, appointment.end_time = start, end
+    db.commit()
+    return {"success": True, "appointment_id": appointment.id, "date": arguments['new_date'], "time": arguments['new_time']}
+
+
+def handle_cancel_appointment(arguments, conversation, business, db) -> dict:
+    appointment = db.query(Appointment).filter(
+        Appointment.id == arguments.get("appointment_id"),
+        Appointment.business_id == business.id,
+        Appointment.lead_id == conversation.lead_id,
+        Appointment.status == "scheduled"
+    ).first()
+    if not appointment:
+        return {"error": "Appointment not found"}
+    credentials = business.settings.get("google_calendar_credentials") if business.settings else None
+    if credentials and appointment.calendar_event_id:
+        result = calendar_service.delete_calendar_event(credentials, appointment.calendar_event_id)
+        if not result.get("success"):
+            return {"error": "Unable to cancel calendar appointment"}
+    appointment.status = "cancelled"
+    db.commit()
+    return {"success": True, "appointment_id": appointment.id, "message": "Appointment cancelled"}
 
 def handle_escalate_to_human(arguments: dict, conversation: Conversation, db: Session) -> dict:
     """Escalate conversation to human staff"""

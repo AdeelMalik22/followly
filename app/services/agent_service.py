@@ -96,6 +96,29 @@ def get_available_tools() -> List[Dict]:
         {
             "type": "function",
             "function": {
+                "name": "reschedule_appointment",
+                "description": "Reschedule the patient's existing appointment",
+                "parameters": {"type": "object", "properties": {
+                    "appointment_id": {"type": "integer"},
+                    "new_date": {"type": "string"},
+                    "new_time": {"type": "string"}
+                }, "required": ["appointment_id", "new_date", "new_time"]}
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "cancel_appointment",
+                "description": "Cancel the patient's existing appointment",
+                "parameters": {"type": "object", "properties": {
+                    "appointment_id": {"type": "integer"},
+                    "reason": {"type": "string"}
+                }, "required": ["appointment_id"]}
+            }
+        },
+        {
+            "type": "function",
+            "function": {
                 "name": "book_appointment",
                 "description": "Book an appointment for the patient",
                 "parameters": {
