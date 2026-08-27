@@ -21,7 +21,7 @@ def get_llm_client():
 def chat(messages: list[dict], tools=None, **kwargs):
     client, primary_model = get_llm_client()
     configured_fallbacks = [m.strip() for m in os.environ.get("LLM_FALLBACK_MODELS", "").split(",") if m.strip()]
-    default_fallbacks = ["meta-llama/llama-3.1-8b-instruct:free"] if primary_model != "meta-llama/llama-3.1-8b-instruct:free" else []
+    default_fallbacks = ["meta-llama/llama-3.1-8b-instruct"] if primary_model != "meta-llama/llama-3.1-8b-instruct" else []
     models = [primary_model] + configured_fallbacks + default_fallbacks
     retries = max(0, int(os.environ.get("LLM_MAX_RETRIES", "2")))
     last_error = None
