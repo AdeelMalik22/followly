@@ -1,8 +1,30 @@
 import httpx
 import hashlib
 import hmac
+import base64
 from typing import Optional
 from app.core.config import settings
+from cryptography.fernet import Fernet, InvalidToken
+
+
+def _token_cipher() -> Fernet:
+    key = base64.urlsafe_b64encode(hashlib.sha256(settings.SECRET_KEY.encode()).digest())
+    return Fernet(key)
+
+
+def encrypt_access_token(token: str) -> str:
+    """Encrypt a WhatsApp access token before storing it in the database."""
+    return "fernet:" + _token_cipher().encrypt(token.encode()).decode()
+
+
+def decrypt_access_token(token: str) -> str:
+    """Decrypt a token, supporting legacy plaintext values for migration."""
+    if not token.startswith("fernet:"):
+        return token
+    try:
+        return _token_cipher().decrypt(token[7:].encode()).decode()
+    except (InvalidToken, UnicodeDecodeError) as exc:
+        raise ValueError("Invalid encrypted WhatsApp access token") from exc
 
 async def send_whatsapp_message(to: str, message: str, phone_number_id: str, access_token: str) -> dict:
     """Send a WhatsApp message via Cloud API"""

@@ -62,7 +62,9 @@ async def update_whatsapp_credentials(
         if credentials.phone_number_id is not None:
             business.settings["whatsapp_phone_id"] = credentials.phone_number_id
         if credentials.access_token is not None:
-            business.settings["whatsapp_access_token"] = credentials.access_token
+            business.settings["whatsapp_access_token"] = whatsapp_service.encrypt_access_token(
+                credentials.access_token
+            )
         flag_modified(business, "settings")
         db.commit()
         return {"status": "success", "message": "WhatsApp credentials updated"}
@@ -204,6 +206,13 @@ async def handle_webhook(
         # Send response via WhatsApp
         whatsapp_phone_id = business.settings.get("whatsapp_phone_id")
         whatsapp_token = business.settings.get("whatsapp_access_token")
+        if whatsapp_token:
+            legacy_plaintext = not whatsapp_token.startswith("fernet:")
+            whatsapp_token = whatsapp_service.decrypt_access_token(whatsapp_token)
+            if legacy_plaintext:
+                business.settings["whatsapp_access_token"] = whatsapp_service.encrypt_access_token(whatsapp_token)
+                flag_modified(business, "settings")
+                db.commit()
 
         if whatsapp_phone_id and whatsapp_token:
             await whatsapp_service.send_whatsapp_message(
@@ -245,6 +254,13 @@ async def send_message_endpoint(
     business_settings = business.settings or {}
     phone_number_id = business_settings.get("whatsapp_phone_id")
     access_token = business_settings.get("whatsapp_access_token")
+    if access_token:
+        legacy_plaintext = not access_token.startswith("fernet:")
+        access_token = whatsapp_service.decrypt_access_token(access_token)
+        if legacy_plaintext:
+            business.settings["whatsapp_access_token"] = whatsapp_service.encrypt_access_token(access_token)
+            flag_modified(business, "settings")
+            db.commit()
     if not phone_number_id or not access_token:
         raise HTTPException(status_code=400, detail="WhatsApp credentials not configured")
 
