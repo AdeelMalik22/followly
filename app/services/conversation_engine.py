@@ -50,7 +50,7 @@ async def process_message_with_agent(
                 logger.info(f"Tool called: {function_name} with args: {arguments}")
 
                 # Execute tool
-                result = execute_tool(function_name, arguments, conversation, business, db)
+                result = await execute_tool(function_name, arguments, conversation, business, db)
                 tool_results.append({
                     "tool_call_id": tool_call.id,
                     "role": "tool",
@@ -81,7 +81,7 @@ async def process_message_with_agent(
         logger.error(f"Error in agent processing: {e}", exc_info=True)
         return "I apologize, I'm having trouble processing your message right now. Please try again or contact us directly."
 
-def execute_tool(
+async def execute_tool(
     function_name: str,
     arguments: dict,
     conversation: Conversation,
@@ -91,16 +91,16 @@ def execute_tool(
     """Execute a tool function and return result"""
 
     if function_name == "check_availability":
-        return handle_check_availability(arguments, business, db)
+        return await handle_check_availability(arguments, business, db)
 
     elif function_name == "book_appointment":
-        return handle_book_appointment(arguments, conversation, business, db)
+        return await handle_book_appointment(arguments, conversation, business, db)
 
     elif function_name == "reschedule_appointment":
-        return handle_reschedule_appointment(arguments, conversation, business, db)
+        return await handle_reschedule_appointment(arguments, conversation, business, db)
 
     elif function_name == "cancel_appointment":
-        return handle_cancel_appointment(arguments, conversation, business, db)
+        return await handle_cancel_appointment(arguments, conversation, business, db)
 
     elif function_name == "escalate_to_human":
         return handle_escalate_to_human(arguments, conversation, db)
@@ -108,7 +108,7 @@ def execute_tool(
     else:
         return {"error": f"Unknown tool: {function_name}"}
 
-def handle_check_availability(arguments: dict, business: Business, db: Session) -> dict:
+async def handle_check_availability(arguments: dict, business: Business, db: Session) -> dict:
     """Check appointment availability using Google Calendar"""
     date_str = arguments.get("date")
     service = arguments.get("service", "general")
@@ -147,10 +147,9 @@ def handle_check_availability(arguments: dict, business: Business, db: Session) 
 
     # Use real Google Calendar
     try:
-        result = calendar_service.check_availability(
-            credentials_json=credentials,
-            date=date_str,
-            service=service,
+        result = await asyncio.to_thread(
+            calendar_service.check_availability,
+            credentials_json=credentials, date=date_str, service=service,
             duration_minutes=60
         )
         return result
@@ -158,7 +157,7 @@ def handle_check_availability(arguments: dict, business: Business, db: Session) 
         logger.error(f"Error checking calendar availability: {e}", exc_info=True)
         return {"error": f"Failed to check availability: {str(e)}"}
 
-def handle_book_appointment(
+async def handle_book_appointment(
     arguments: dict,
     conversation: Conversation,
     business: Business,
@@ -197,7 +196,8 @@ def handle_book_appointment(
 
         if credentials:
             # Create event in Google Calendar
-            calendar_result = calendar_service.create_calendar_event(
+            calendar_result = await asyncio.to_thread(
+                calendar_service.create_calendar_event,
                 credentials_json=credentials,
                 summary=f"{service} - {patient_name}",
                 start_time=start_time,
@@ -239,7 +239,7 @@ def handle_book_appointment(
         return {"error": "Failed to book appointment. Please try again."}
 
 
-def handle_reschedule_appointment(arguments, conversation, business, db) -> dict:
+async def handle_reschedule_appointment(arguments, conversation, business, db) -> dict:
     appointment = db.query(Appointment).filter(
         Appointment.id == arguments.get("appointment_id"),
         Appointment.business_id == business.id,
@@ -255,7 +255,7 @@ def handle_reschedule_appointment(arguments, conversation, business, db) -> dict
     end = start + timedelta(minutes=60)
     credentials = business.settings.get("google_calendar_credentials") if business.settings else None
     if credentials and appointment.calendar_event_id:
-        result = calendar_service.update_calendar_event(credentials, appointment.calendar_event_id, start, end)
+        result = await asyncio.to_thread(calendar_service.update_calendar_event, credentials, appointment.calendar_event_id, start, end)
         if not result.get("success"):
             return {"error": "Unable to update calendar appointment"}
     appointment.start_time, appointment.end_time = start, end
@@ -263,7 +263,7 @@ def handle_reschedule_appointment(arguments, conversation, business, db) -> dict
     return {"success": True, "appointment_id": appointment.id, "date": arguments['new_date'], "time": arguments['new_time']}
 
 
-def handle_cancel_appointment(arguments, conversation, business, db) -> dict:
+async def handle_cancel_appointment(arguments, conversation, business, db) -> dict:
     appointment = db.query(Appointment).filter(
         Appointment.id == arguments.get("appointment_id"),
         Appointment.business_id == business.id,
@@ -274,7 +274,7 @@ def handle_cancel_appointment(arguments, conversation, business, db) -> dict:
         return {"error": "Appointment not found"}
     credentials = business.settings.get("google_calendar_credentials") if business.settings else None
     if credentials and appointment.calendar_event_id:
-        result = calendar_service.delete_calendar_event(credentials, appointment.calendar_event_id)
+        result = await asyncio.to_thread(calendar_service.delete_calendar_event, credentials, appointment.calendar_event_id)
         if not result.get("success"):
             return {"error": "Unable to cancel calendar appointment"}
     appointment.status = "cancelled"
