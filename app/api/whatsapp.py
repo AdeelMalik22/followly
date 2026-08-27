@@ -138,7 +138,11 @@ async def handle_webhook(
             raise HTTPException(status_code=403, detail="Invalid webhook signature")
 
         # Parse message from webhook
-        parsed = whatsapp_service.parse_whatsapp_message(webhook_data)
+        try:
+            parsed = whatsapp_service.parse_whatsapp_message(webhook_data)
+        except ValueError as exc:
+            logger.warning("Invalid WhatsApp webhook payload: %s", exc)
+            raise HTTPException(status_code=400, detail="Invalid WhatsApp webhook payload")
 
         if not parsed or not parsed.get("text"):
             logger.info("Non-text message or status update received, ignoring")

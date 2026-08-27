@@ -2,6 +2,7 @@ import httpx
 import hashlib
 import hmac
 import base64
+import re
 from typing import Optional
 from app.core.config import settings
 from cryptography.fernet import Fernet, InvalidToken
@@ -68,24 +69,41 @@ def verify_webhook_signature(payload: bytes, signature: str, app_secret: str) ->
 
 def parse_whatsapp_message(webhook_data: dict) -> Optional[dict]:
     """Extract message details from webhook payload"""
-    try:
-        entry = webhook_data.get("entry", [])[0]
-        changes = entry.get("changes", [])[0]
-        value = changes.get("value", {})
-
-        messages = value.get("messages", [])
-        if not messages:
-            return None
-
-        message = messages[0]
-
-        return {
-            "from_number": message.get("from"),
-            "message_id": message.get("id"),
-            "timestamp": message.get("timestamp"),
-            "message_type": message.get("type"),
-            "text": message.get("text", {}).get("body", "") if message.get("type") == "text" else None,
-            "business_phone_id": value.get("metadata", {}).get("phone_number_id")
-        }
-    except (KeyError, IndexError):
+    if not isinstance(webhook_data, dict) or webhook_data.get("object") != "whatsapp_business_account":
+        raise ValueError("Invalid WhatsApp webhook object")
+    entries = webhook_data.get("entry")
+    if not isinstance(entries, list) or not entries or not isinstance(entries[0], dict):
+        raise ValueError("Invalid WhatsApp webhook entry")
+    changes = entries[0].get("changes")
+    if not isinstance(changes, list) or not changes or not isinstance(changes[0], dict):
+        raise ValueError("Invalid WhatsApp webhook changes")
+    value = changes[0].get("value")
+    if not isinstance(value, dict):
+        raise ValueError("Invalid WhatsApp webhook value")
+    metadata = value.get("metadata")
+    phone_id = metadata.get("phone_number_id") if isinstance(metadata, dict) else None
+    if not isinstance(phone_id, str) or not phone_id.strip():
+        raise ValueError("Missing WhatsApp phone ID")
+    messages = value.get("messages", [])
+    if not isinstance(messages, list):
+        raise ValueError("Invalid WhatsApp messages")
+    if not messages:
         return None
+    message = messages[0]
+    if not isinstance(message, dict):
+        raise ValueError("Invalid WhatsApp message")
+    message_id, from_number, timestamp = message.get("id"), message.get("from"), message.get("timestamp")
+    if not isinstance(message_id, str) or not message_id.strip():
+        raise ValueError("Missing WhatsApp message ID")
+    if not isinstance(from_number, str) or not re.fullmatch(r"\d{5,15}", from_number):
+        raise ValueError("Invalid WhatsApp phone number")
+    if not isinstance(timestamp, str) or not timestamp.isdigit():
+        raise ValueError("Invalid WhatsApp message timestamp")
+    message_type = message.get("type")
+    text = message.get("text", {}).get("body", "") if message_type == "text" else None
+    if message_type == "text" and (not isinstance(text, str) or not text.strip()):
+        raise ValueError("Invalid WhatsApp text message")
+    return {
+        "from_number": from_number, "message_id": message_id, "timestamp": timestamp,
+        "message_type": message_type, "text": text, "business_phone_id": phone_id
+    }
