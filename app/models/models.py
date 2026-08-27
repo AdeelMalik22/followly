@@ -87,6 +87,7 @@ class Message(Base):
     content = Column(Text, nullable=False)
     timestamp = Column(DateTime, default=datetime.utcnow, index=True)
     extra_data = Column(JSON, default={})
+    whatsapp_message_id = Column(String, unique=True, index=True, nullable=True)
 
     conversation = relationship("Conversation", back_populates="messages")
 

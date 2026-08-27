@@ -45,13 +45,20 @@ def get_or_create_conversation(lead_id: int, business_id: int, channel: str, db:
 
     return conversation
 
-def save_message(conversation_id: int, role: str, content: str, db: Session) -> Message:
+def save_message(
+    conversation_id: int,
+    role: str,
+    content: str,
+    db: Session,
+    whatsapp_message_id: Optional[str] = None
+) -> Message:
     """Save a message to database"""
     message = Message(
         conversation_id=conversation_id,
         role=role,
         content=content,
-        timestamp=datetime.utcnow()
+        timestamp=datetime.utcnow(),
+        whatsapp_message_id=whatsapp_message_id
     )
     db.add(message)
     db.commit()

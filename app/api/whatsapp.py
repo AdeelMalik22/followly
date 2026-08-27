@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Request, Response, HTTPException, Depends
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from app.core.database import get_db
 from app.services import whatsapp_service, conversation_service
 from app.services.conversation_engine import process_message_with_agent
 from app.schemas.whatsapp import WhatsAppWebhook
-from app.models.models import Business, LeadStatus
+from app.models.models import Business, LeadStatus, Message
 import logging
 
 router = APIRouter(prefix="/api/v1/whatsapp", tags=["whatsapp"])
@@ -63,6 +64,17 @@ async def handle_webhook(
         from_number = parsed["from_number"]
         message_text = parsed["text"]
         business_phone_id = parsed["business_phone_id"]
+        message_id = parsed.get("message_id")
+
+        if not message_id:
+            logger.warning("WhatsApp webhook message has no message ID")
+            return {"status": "ok"}
+
+        # Meta may retry webhook deliveries. Check before doing any work so a
+        # duplicate cannot trigger another AI response or outbound message.
+        if db.query(Message.id).filter(Message.whatsapp_message_id == message_id).first():
+            logger.info("Ignoring duplicate WhatsApp message: %s", message_id)
+            return {"status": "ok"}
 
         logger.info(f"Received message from {from_number}: {message_text}")
 
@@ -84,7 +96,19 @@ async def handle_webhook(
         )
 
         # Save incoming message
-        conversation_service.save_message(conversation.id, "user", message_text, db)
+        try:
+            conversation_service.save_message(
+                conversation.id,
+                "user",
+                message_text,
+                db,
+                whatsapp_message_id=message_id
+            )
+        except IntegrityError:
+            # Another concurrent webhook request claimed this message first.
+            db.rollback()
+            logger.info("Ignoring concurrently duplicated WhatsApp message: %s", message_id)
+            return {"status": "ok"}
 
         # Update lead status to CONTACTED if NEW
         if lead.status == LeadStatus.NEW:
