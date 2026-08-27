@@ -91,6 +91,21 @@ class Message(Base):
 
     conversation = relationship("Conversation", back_populates="messages")
 
+
+class ToolCallAudit(Base):
+    __tablename__ = "tool_call_audits"
+
+    id = Column(Integer, primary_key=True, index=True)
+    conversation_id = Column(Integer, ForeignKey("conversations.id"), nullable=False, index=True)
+    tool_name = Column(String, nullable=False)
+    arguments = Column(JSON, nullable=True)
+    result = Column(JSON, nullable=True)
+    success = Column(Integer, nullable=False, default=0)
+    error = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+    conversation = relationship("Conversation")
+
 class Appointment(Base):
     __tablename__ = "appointments"
 

@@ -1,7 +1,7 @@
 import json
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
-from app.models.models import Conversation, Business, ConversationStatus, Appointment, LeadStatus
+from app.models.models import Conversation, Business, ConversationStatus, Appointment, LeadStatus, ToolCallAudit
 from app.services import conversation_service, whatsapp_service, agent_service, calendar_service
 from app.llm.client import chat
 import logging
@@ -50,7 +50,27 @@ async def process_message_with_agent(
                 logger.info(f"Tool called: {function_name} with args: {arguments}")
 
                 # Execute tool
-                result = await execute_tool(function_name, arguments, conversation, business, db)
+                try:
+                    result = await execute_tool(function_name, arguments, conversation, business, db)
+                    audit = ToolCallAudit(
+                        conversation_id=conversation.id,
+                        tool_name=function_name,
+                        arguments=arguments,
+                        result=result,
+                        success=1
+                    )
+                except Exception as exc:
+                    result = {"error": "Tool execution failed"}
+                    audit = ToolCallAudit(
+                        conversation_id=conversation.id,
+                        tool_name=function_name,
+                        arguments=arguments,
+                        result=result,
+                        success=0,
+                        error=str(exc)
+                    )
+                db.add(audit)
+                db.commit()
                 tool_results.append({
                     "tool_call_id": tool_call.id,
                     "role": "tool",
@@ -79,6 +99,13 @@ async def process_message_with_agent(
 
     except Exception as e:
         logger.error(f"Error in agent processing: {e}", exc_info=True)
+        try:
+            conversation.status = ConversationStatus.HUMAN_TAKEOVER
+            db.commit()
+            logger.warning("Conversation %s marked for human review after agent failure", conversation.id)
+        except Exception:
+            db.rollback()
+            logger.error("Could not mark conversation %s for human review", conversation.id, exc_info=True)
         return "I apologize, I'm having trouble processing your message right now. Please try again or contact us directly."
 
 async def execute_tool(

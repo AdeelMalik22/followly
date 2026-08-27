@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Followly Agent Chat</title>
+  <style>
+    body { margin: 0; background: #f4f7fb; font: 16px system-ui, sans-serif; color: #172033; }
+    .chat { max-width: 760px; margin: 40px auto; background: white; border-radius: 16px; box-shadow: 0 10px 35px #17203318; overflow: hidden; }
+    header { padding: 22px 26px; background: #172033; color: white; }
+    header h1 { margin: 0 0 5px; font-size: 22px; } header p { margin: 0; opacity: .7; }
+    .setup, form { padding: 16px 22px; display: flex; gap: 10px; flex-wrap: wrap; }
+    input, textarea, button { border: 1px solid #d8deea; border-radius: 9px; padding: 11px; font: inherit; }
+    input { flex: 1; min-width: 130px; } textarea { flex: 1; resize: vertical; min-height: 44px; }
+    button { background: #315efb; color: white; border: 0; cursor: pointer; }
+    .messages { min-height: 300px; padding: 22px; border-top: 1px solid #edf0f5; border-bottom: 1px solid #edf0f5; }
+    .message { max-width: 78%; padding: 12px 15px; margin: 10px 0; border-radius: 13px; white-space: pre-wrap; }
+    .user { margin-left: auto; background: #315efb; color: white; } .assistant { background: #edf1f8; }
+    .error { background: #fff0f0; color: #a11; }
+  </style>
+</head>
+<body><main class="chat">
+  <header><h1>Followly Agent</h1><p>Local development chat</p></header>
+  <div class="setup">
+    <input form="chat-form" name="business_id" type="number" placeholder="Business ID" value="{{ business_id }}" required>
+    <input form="chat-form" name="phone" placeholder="Phone / demo user" value="{{ phone }}">
+  </div>
+  <section class="messages">
+    {% for item in messages %}<div class="message {{ item.role }}">{{ item.content }}</div>{% endfor %}
+  </section>
+  <form id="chat-form" method="post" action="/chat">
+    <textarea name="message" placeholder="Ask the agent something..." required></textarea>
+    <button type="submit">Send</button>
+  </form>
+</main></body></html>

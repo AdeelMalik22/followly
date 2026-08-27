@@ -30,7 +30,8 @@ PROVIDER_DEFAULTS = {
 }
 
 def load_llm_config() -> LLMConfig:
-    provider = os.environ.get("LLM_PROVIDER", "openrouter").lower()
+    use_openrouter = os.environ.get("USE_OPENROUTER", "true").lower() in {"true", "1", "yes", "on"}
+    provider = "openrouter" if use_openrouter else "openai"
     if provider not in PROVIDER_DEFAULTS:
         raise ValueError(f"Unknown LLM_PROVIDER: {provider}")
 
