@@ -1,15 +1,96 @@
-from fastapi import APIRouter, Request, Response, HTTPException, Depends
+from fastapi import APIRouter, Request, Response, HTTPException, Depends, status
+from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from app.core.database import get_db
 from app.services import whatsapp_service, conversation_service
 from app.services.conversation_engine import process_message_with_agent
-from app.schemas.whatsapp import WhatsAppWebhook
+from app.schemas.whatsapp import WhatsAppWebhook, WhatsAppCredentialsUpdate, WhatsAppTestMessage
+from app.api.dependencies import get_current_business
 from app.models.models import Business, LeadStatus, Message
 import logging
 
 router = APIRouter(prefix="/api/v1/whatsapp", tags=["whatsapp"])
 logger = logging.getLogger(__name__)
+
+
+@router.get("/status")
+async def whatsapp_status(
+    business: Business = Depends(get_current_business)
+):
+    """Return WhatsApp connection status without exposing credentials."""
+    try:
+        settings_data = business.settings or {}
+        return {
+            "connected": bool(
+                settings_data.get("whatsapp_phone_id")
+                and settings_data.get("whatsapp_access_token")
+            ),
+            "phone_number_id": settings_data.get("whatsapp_phone_id"),
+        }
+    except Exception:
+        logger.exception("Error checking WhatsApp connection status")
+        raise HTTPException(status_code=500, detail="Unable to check WhatsApp status")
+
+
+@router.get("/webhook-url")
+async def whatsapp_webhook_url(
+    request: Request,
+    business: Business = Depends(get_current_business)
+):
+    """Return the webhook URL to configure in Meta."""
+    try:
+        base_url = settings.API_BASE_URL.rstrip("/") if settings.API_BASE_URL else str(request.base_url).rstrip("/")
+        return {"webhook_url": f"{base_url}/api/v1/whatsapp/webhook"}
+    except Exception:
+        logger.exception("Error generating WhatsApp webhook URL")
+        raise HTTPException(status_code=500, detail="Unable to generate webhook URL")
+
+
+@router.put("/credentials")
+async def update_whatsapp_credentials(
+    credentials: WhatsAppCredentialsUpdate,
+    business: Business = Depends(get_current_business),
+    db: Session = Depends(get_db)
+):
+    """Update WhatsApp credentials for the authenticated business."""
+    try:
+        if not credentials.phone_number_id and not credentials.access_token:
+            raise HTTPException(status_code=400, detail="At least one credential is required")
+
+        business.settings = business.settings or {}
+        if credentials.phone_number_id is not None:
+            business.settings["whatsapp_phone_id"] = credentials.phone_number_id
+        if credentials.access_token is not None:
+            business.settings["whatsapp_access_token"] = credentials.access_token
+        flag_modified(business, "settings")
+        db.commit()
+        return {"status": "success", "message": "WhatsApp credentials updated"}
+    except HTTPException:
+        raise
+    except Exception:
+        db.rollback()
+        logger.exception("Error updating WhatsApp credentials")
+        raise HTTPException(status_code=500, detail="Unable to update WhatsApp credentials")
+
+
+@router.delete("/credentials")
+async def remove_whatsapp_credentials(
+    business: Business = Depends(get_current_business),
+    db: Session = Depends(get_db)
+):
+    """Remove WhatsApp credentials for the authenticated business."""
+    try:
+        business.settings = business.settings or {}
+        business.settings.pop("whatsapp_phone_id", None)
+        business.settings.pop("whatsapp_access_token", None)
+        flag_modified(business, "settings")
+        db.commit()
+        return {"status": "success", "message": "WhatsApp credentials removed"}
+    except Exception:
+        db.rollback()
+        logger.exception("Error removing WhatsApp credentials")
+        raise HTTPException(status_code=500, detail="Unable to remove WhatsApp credentials")
 
 @router.get("/webhook")
 async def verify_webhook(
@@ -155,22 +236,24 @@ async def handle_webhook(
 async def send_message_endpoint(
     to: str,
     message: str,
+    business: Business = Depends(get_current_business),
     db: Session = Depends(get_db)
 ):
     """Manual endpoint to send WhatsApp message (for testing)"""
     # This is a test endpoint - in production, messages are sent automatically by the agent
 
-    from app.core.config import settings
-
-    if not settings.WHATSAPP_PHONE_NUMBER_ID or not settings.WHATSAPP_ACCESS_TOKEN:
+    business_settings = business.settings or {}
+    phone_number_id = business_settings.get("whatsapp_phone_id")
+    access_token = business_settings.get("whatsapp_access_token")
+    if not phone_number_id or not access_token:
         raise HTTPException(status_code=400, detail="WhatsApp credentials not configured")
 
     try:
         result = await whatsapp_service.send_whatsapp_message(
             to=to,
             message=message,
-            phone_number_id=settings.WHATSAPP_PHONE_NUMBER_ID,
-            access_token=settings.WHATSAPP_ACCESS_TOKEN
+            phone_number_id=phone_number_id,
+            access_token=access_token
         )
         return {"status": "sent", "result": result}
     except HTTPException:

@@ -14,3 +14,13 @@ class WhatsAppWebhook(BaseModel):
 class WhatsAppSendMessage(BaseModel):
     to: str
     message: str
+
+
+class WhatsAppCredentialsUpdate(BaseModel):
+    phone_number_id: Optional[str] = None
+    access_token: Optional[str] = None
+
+
+class WhatsAppTestMessage(BaseModel):
+    to: str
+    message: str
