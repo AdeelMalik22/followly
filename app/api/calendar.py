@@ -17,24 +17,30 @@ async def connect_calendar(
     db: Session = Depends(get_db)
 ):
     """Initiate OAuth flow for Google Calendar"""
-    if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
-        raise HTTPException(status_code=500, detail="Google Calendar not configured")
+    try:
+        if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
+            raise HTTPException(status_code=500, detail="Google Calendar not configured")
 
-    flow = create_oauth_flow(
-        settings.GOOGLE_CLIENT_ID,
-        settings.GOOGLE_CLIENT_SECRET,
-        settings.GOOGLE_REDIRECT_URI
-    )
+        flow = create_oauth_flow(
+            settings.GOOGLE_CLIENT_ID,
+            settings.GOOGLE_CLIENT_SECRET,
+            settings.GOOGLE_REDIRECT_URI
+        )
 
-    # Generate authorization URL with state containing business_id
-    authorization_url, state = flow.authorization_url(
-        access_type='offline',
-        include_granted_scopes='true',
-        prompt='consent',
-        state=str(business.id)
-    )
+        # Generate authorization URL with state containing business_id
+        authorization_url, state = flow.authorization_url(
+            access_type='offline',
+            include_granted_scopes='true',
+            prompt='consent',
+            state=str(business.id)
+        )
 
-    return {"authorization_url": authorization_url, "state": state}
+        return {"authorization_url": authorization_url, "state": state}
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Error initiating calendar connection")
+        raise HTTPException(status_code=500, detail="Unable to connect calendar")
 
 @router.get("/callback")
 async def calendar_callback(
@@ -92,21 +98,29 @@ async def calendar_callback(
 
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid state parameter")
+    except HTTPException:
+        db.rollback()
+        raise
     except Exception as e:
+        db.rollback()
         logger.error(f"Error in calendar callback: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Unable to connect calendar")
 
 @router.get("/status")
 async def calendar_status(
     business: Business = Depends(get_current_business)
 ):
     """Check if calendar is connected"""
-    credentials = business.settings.get("google_calendar_credentials") if business.settings else None
+    try:
+        credentials = business.settings.get("google_calendar_credentials") if business.settings else None
 
-    return {
-        "connected": credentials is not None,
-        "business_id": business.id
-    }
+        return {
+            "connected": credentials is not None,
+            "business_id": business.id
+        }
+    except Exception:
+        logger.exception("Error checking calendar status")
+        raise HTTPException(status_code=500, detail="Unable to check calendar status")
 
 @router.delete("/disconnect")
 async def disconnect_calendar(
@@ -114,8 +128,13 @@ async def disconnect_calendar(
     db: Session = Depends(get_db)
 ):
     """Disconnect Google Calendar"""
-    if business.settings and "google_calendar_credentials" in business.settings:
-        del business.settings["google_calendar_credentials"]
-        db.commit()
+    try:
+        if business.settings and "google_calendar_credentials" in business.settings:
+            del business.settings["google_calendar_credentials"]
+            db.commit()
 
-    return {"status": "success", "message": "Calendar disconnected"}
+        return {"status": "success", "message": "Calendar disconnected"}
+    except Exception:
+        db.rollback()
+        logger.exception("Error disconnecting calendar")
+        raise HTTPException(status_code=500, detail="Unable to disconnect calendar")
