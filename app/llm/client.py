@@ -20,7 +20,9 @@ def get_llm_client():
 
 def chat(messages: list[dict], tools=None, **kwargs):
     client, primary_model = get_llm_client()
-    models = [primary_model] + [m.strip() for m in os.environ.get("LLM_FALLBACK_MODELS", "").split(",") if m.strip()]
+    configured_fallbacks = [m.strip() for m in os.environ.get("LLM_FALLBACK_MODELS", "").split(",") if m.strip()]
+    default_fallbacks = ["meta-llama/llama-3.1-8b-instruct:free"] if primary_model != "meta-llama/llama-3.1-8b-instruct:free" else []
+    models = [primary_model] + configured_fallbacks + default_fallbacks
     retries = max(0, int(os.environ.get("LLM_MAX_RETRIES", "2")))
     last_error = None
     for model in models:
@@ -29,10 +31,19 @@ def chat(messages: list[dict], tools=None, **kwargs):
                 params = {"model": model, "messages": messages, **kwargs}
                 if tools:
                     params["tools"] = tools
-                return client.chat.completions.create(**params)
+                response = client.chat.completions.create(**params)
+                if not response.choices:
+                    provider_error = getattr(response, "error", None)
+                    detail = str(provider_error) if provider_error else "provider returned no choices"
+                    error = RuntimeError(f"Invalid LLM response: {detail}")
+                    error.status_code = provider_error.get("code") if isinstance(provider_error, dict) else None
+                    raise error
+                return response
             except Exception as exc:
                 last_error = exc
                 status_code = getattr(exc, "status_code", None)
+                if status_code is None and "code': 502" in str(exc):
+                    status_code = 502
                 if status_code not in {408, 429, 500, 502, 503, 504}:
                     break
                 if attempt < retries:

@@ -30,10 +30,10 @@ async def chat_message(
     phone: str = Form("demo-user"),
     db: Session = Depends(get_db),
 ):
-    messages = [{"role": "user", "content": message}]
+    messages = []
     business = db.query(Business).filter(Business.name == DEMO_BUSINESS_NAME).first()
     if not business:
-        messages.append({"role": "error", "content": "Business not found."})
+        messages.append({"role": "error", "content": "Demo business not found. Run the seed script first."})
         return templates.TemplateResponse(
             request=request, name="chat.html",
             context={"messages": messages, "phone": phone, "quick_questions": QUICK_QUESTIONS},
@@ -47,7 +47,8 @@ async def chat_message(
     conversation_service.save_message(conversation.id, "user", message, db)
     response = await process_message_with_agent(conversation, business, message, db)
     conversation_service.save_message(conversation.id, "assistant", response, db)
-    messages.append({"role": "assistant", "content": response})
+    history = conversation_service.get_conversation_history(conversation.id, limit=50, db=db)
+    messages = [{"role": "user" if item.role == "user" else "assistant", "content": item.content} for item in history]
     return templates.TemplateResponse(
         request=request, name="chat.html",
         context={"messages": messages, "phone": phone, "quick_questions": QUICK_QUESTIONS},
