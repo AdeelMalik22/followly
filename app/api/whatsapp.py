@@ -18,15 +18,21 @@ async def verify_webhook(
     challenge: str = None
 ):
     """Verify WhatsApp webhook (required by Meta)"""
-    if mode == "subscribe" and token:
-        if whatsapp_service.verify_webhook_token(token):
-            logger.info("Webhook verified successfully")
-            return Response(content=challenge, media_type="text/plain")
-        else:
-            logger.warning("Webhook verification failed - invalid token")
-            raise HTTPException(status_code=403, detail="Verification token mismatch")
+    try:
+        if mode == "subscribe" and token:
+            if whatsapp_service.verify_webhook_token(token):
+                logger.info("Webhook verified successfully")
+                return Response(content=challenge, media_type="text/plain")
+            else:
+                logger.warning("Webhook verification failed - invalid token")
+                raise HTTPException(status_code=403, detail="Verification token mismatch")
 
-    raise HTTPException(status_code=400, detail="Missing parameters")
+        raise HTTPException(status_code=400, detail="Missing parameters")
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Error verifying WhatsApp webhook")
+        raise HTTPException(status_code=500, detail="Unable to verify webhook")
 
 @router.post("/webhook")
 async def handle_webhook(
@@ -102,8 +108,9 @@ async def handle_webhook(
 
     except Exception as e:
         logger.error(f"Error handling webhook: {e}", exc_info=True)
+        db.rollback()
         # Return 200 to avoid Meta retrying
-        return {"status": "error", "message": str(e)}
+        return {"status": "error"}
 
 @router.post("/send")
 async def send_message_endpoint(
@@ -127,6 +134,8 @@ async def send_message_endpoint(
             access_token=settings.WHATSAPP_ACCESS_TOKEN
         )
         return {"status": "sent", "result": result}
-    except Exception as e:
-        logger.error(f"Error sending message: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Error sending WhatsApp message")
+        raise HTTPException(status_code=500, detail="Unable to send message")
