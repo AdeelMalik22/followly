@@ -31,6 +31,18 @@ alembic upgrade head
 uvicorn app.main:app --reload --port 8000
 ```
 
+## Web UI
+
+The server serves built-in HTML pages for authentication and the demo chat widget.
+
+| Route | Description |
+|-------|-------------|
+| `GET /login` | Login page — authenticates via `/api/v1/auth/login`, stores JWT in sessionStorage/localStorage |
+| `GET /signup` | Signup page — registers via `/api/v1/auth/signup`, stores JWT in sessionStorage |
+| `GET /chat` | Demo chat widget (requires a seeded business) |
+
+Both auth pages perform client-side validation, display inline field errors and toast notifications, and redirect to `/chat` on success.
+
 ## Testing the Agent
 
 ### Quick Test (Non-interactive)
@@ -51,8 +63,8 @@ Interactive CLI to chat with the agent. Commands:
 ## API Endpoints
 
 ### Auth
-- `POST /api/v1/auth/signup` - Create account
-- `POST /api/v1/auth/login` - Login
+- `POST /api/v1/auth/signup` — Create account (`email`, `owner_name`, `password`, `confirm_password`, `business_name`, `industry`, `terms_accepted`)
+- `POST /api/v1/auth/login` — Login (`email`, `password`) → returns `access_token`
 
 ### Knowledge Base
 - `POST /api/v1/knowledge` - Create entry
@@ -69,12 +81,23 @@ Interactive CLI to chat with the agent. Commands:
 
 ```
 app/
-├── api/          # API endpoints
-├── models/       # Database models
-├── schemas/      # Pydantic schemas
-├── services/     # Business logic
-├── tasks/        # Celery tasks
-├── llm/          # LLM client
-└── core/         # Config, auth, database
-scripts/          # CLI tools
+├── api/
+│   ├── auth.py         # Auth REST endpoints (/api/v1/auth/*)
+│   ├── pages.py        # HTML page routes (/login, /signup)
+│   ├── chat.py         # Demo chat widget (/chat)
+│   ├── knowledge.py    # Knowledge base CRUD
+│   ├── whatsapp.py     # WhatsApp webhook
+│   ├── calendar.py     # Google Calendar OAuth
+│   └── dependencies.py
+├── models/             # SQLAlchemy models
+├── schemas/            # Pydantic schemas
+├── services/           # Business logic
+├── tasks/              # Celery tasks
+├── llm/                # LLM client
+├── templates/
+│   ├── login.html      # Login page
+│   ├── signup.html     # Signup page
+│   └── chat.html       # Demo chat widget
+└── core/               # Config, security, database
+scripts/                # CLI tools
 ```

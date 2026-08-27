@@ -10,8 +10,12 @@ Followly is an AI-powered sales follow-up agent for small businesses, starting w
 followly/
 ├── app/
 │   ├── api/              # FastAPI route handlers (thin controllers)
-│   │   ├── auth.py       # Authentication endpoints
+│   │   ├── auth.py       # Auth REST endpoints (/api/v1/auth/signup, /login)
+│   │   ├── pages.py      # HTML page routes (/login, /signup)
+│   │   ├── chat.py       # Demo chat widget (/chat)
 │   │   ├── knowledge.py  # Knowledge base CRUD endpoints
+│   │   ├── whatsapp.py   # WhatsApp webhook handler
+│   │   ├── calendar.py   # Google Calendar OAuth
 │   │   └── dependencies.py # Shared dependencies (auth, business context)
 │   ├── models/           # SQLAlchemy database models
 │   │   └── models.py     # Business, User, Lead, Conversation, Message, Appointment, etc.
@@ -25,6 +29,10 @@ followly/
 │   ├── llm/              # LLM integration layer
 │   │   ├── config.py     # Provider configuration (OpenRouter/OpenAI/Anthropic)
 │   │   └── client.py     # Chat wrapper with tool support
+│   ├── templates/        # Jinja2 HTML templates
+│   │   ├── login.html    # Login page (dark glassmorphic UI)
+│   │   ├── signup.html   # Signup page (dark glassmorphic UI)
+│   │   └── chat.html     # Demo chat widget
 │   └── core/             # Core infrastructure
 │       ├── config.py     # Settings and environment variables
 │       ├── database.py   # SQLAlchemy setup and session management
@@ -145,6 +153,8 @@ uvicorn app.main:app --reload
 - [x] LLM layer with swappable providers
 - [x] Service layer separation
 - [x] CLI testing tools
+- [x] Login page (`/login`) — dark glassmorphic UI, JWT stored in sessionStorage/localStorage
+- [x] Signup page (`/signup`) — multi-field form with password strength indicator, inline validation
 
 ### 🚧 In Progress / Next Steps
 - [ ] WhatsApp Cloud API integration (webhook + send)
