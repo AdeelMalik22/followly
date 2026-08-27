@@ -2,10 +2,10 @@ from sqlalchemy.orm import Session
 from app.models.models import User, Business
 from app.core.security import get_password_hash, verify_password, create_access_token
 
-def create_user_with_business(email: str, password: str, business_name: str, db: Session):
+def create_user_with_business(email: str, password: str, business_name: str, owner_name: str, industry: str, db: Session):
     """Create a new user and associated business"""
     # Create business
-    business = Business(name=business_name)
+    business = Business(name=business_name, industry=industry)
     db.add(business)
     db.commit()
     db.refresh(business)
@@ -15,7 +15,8 @@ def create_user_with_business(email: str, password: str, business_name: str, db:
     user = User(
         email=email,
         hashed_password=hashed_password,
-        business_id=business.id
+        business_id=business.id,
+        name=owner_name,
     )
     db.add(user)
     db.commit()

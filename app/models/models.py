@@ -26,6 +26,7 @@ class Business(Base):
     name = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     settings = Column(JSON, default={})
+    industry = Column(String, nullable=False, default="Dental Clinic")
 
     users = relationship("User", back_populates="business")
     leads = relationship("Lead", back_populates="business")
@@ -39,6 +40,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     business_id = Column(Integer, ForeignKey("businesses.id"), nullable=False, index=True)
     email = Column(String, unique=True, nullable=False, index=True)
+    name = Column(String, nullable=False)
     hashed_password = Column(String, nullable=False)
     role = Column(String, default="owner")
     created_at = Column(DateTime, default=datetime.utcnow)

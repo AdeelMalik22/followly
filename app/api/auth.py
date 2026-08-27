@@ -19,6 +19,8 @@ def signup(user_data: UserCreate, db: Session = Depends(get_db)):
             email=user_data.email,
             password=user_data.password,
             business_name=user_data.business_name,
+            owner_name=user_data.owner_name,
+            industry=user_data.industry,
             db=db
         )
 
