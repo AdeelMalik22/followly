@@ -8,29 +8,47 @@ router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 @router.post("/signup", response_model=Token)
 def signup(user_data: UserCreate, db: Session = Depends(get_db)):
-    # Check if user exists
-    existing_user = auth_service.get_user_by_email(user_data.email, db)
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
+    try:
+        # Check if user exists
+        existing_user = auth_service.get_user_by_email(user_data.email, db)
+        if existing_user:
+            raise HTTPException(status_code=400, detail="Email already registered")
 
-    # Create user and business
-    user, business = auth_service.create_user_with_business(
-        email=user_data.email,
-        password=user_data.password,
-        business_name=user_data.business_name,
-        db=db
-    )
+        # Create user and business
+        user, business = auth_service.create_user_with_business(
+            email=user_data.email,
+            password=user_data.password,
+            business_name=user_data.business_name,
+            db=db
+        )
 
-    # Generate token
-    access_token = auth_service.authenticate_user(user_data.email, user_data.password, db)
-    return {"access_token": access_token}
+        # Generate token
+        access_token = auth_service.authenticate_user(user_data.email, user_data.password, db)
+        return {"access_token": access_token}
+    except HTTPException:
+        raise
+    except Exception:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to create account"
+        )
 
 @router.post("/login", response_model=Token)
 def login(user_data: UserLogin, db: Session = Depends(get_db)):
-    access_token = auth_service.authenticate_user(user_data.email, user_data.password, db)
-    if not access_token:
+    try:
+        access_token = auth_service.authenticate_user(user_data.email, user_data.password, db)
+        if not access_token:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email or password"
+            )
+        return {"access_token": access_token}
+    except HTTPException:
+        raise
+    except Exception:
+        db.rollback()
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to authenticate"
         )
-    return {"access_token": access_token}
