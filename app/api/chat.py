@@ -10,6 +10,8 @@ from app.services.conversation_engine import process_message_with_agent
 
 router = APIRouter(tags=["chat"])
 templates = Jinja2Templates(directory="app/templates")
+DEMO_BUSINESS_NAME = "Adeel Dental Clinic"
+QUICK_QUESTIONS = ["What services do you offer?", "How much does teeth whitening cost?", "I want to book a dental cleaning.", "What are your clinic hours?"]
 
 
 @router.get("/chat", response_class=HTMLResponse)
@@ -17,7 +19,7 @@ async def chat_page(request: Request):
     return templates.TemplateResponse(
         request=request,
         name="chat.html",
-        context={"messages": [], "business_id": "", "phone": "demo-user"},
+        context={"messages": [], "phone": "demo-user", "quick_questions": QUICK_QUESTIONS},
     )
 
 
@@ -25,17 +27,16 @@ async def chat_page(request: Request):
 async def chat_message(
     request: Request,
     message: str = Form(...),
-    business_id: int = Form(...),
     phone: str = Form("demo-user"),
     db: Session = Depends(get_db),
 ):
     messages = [{"role": "user", "content": message}]
-    business = db.query(Business).filter(Business.id == business_id).first()
+    business = db.query(Business).filter(Business.name == DEMO_BUSINESS_NAME).first()
     if not business:
         messages.append({"role": "error", "content": "Business not found."})
         return templates.TemplateResponse(
             request=request, name="chat.html",
-            context={"messages": messages, "business_id": business_id, "phone": phone},
+            context={"messages": messages, "phone": phone, "quick_questions": QUICK_QUESTIONS},
             status_code=404,
         )
 
@@ -49,5 +50,5 @@ async def chat_message(
     messages.append({"role": "assistant", "content": response})
     return templates.TemplateResponse(
         request=request, name="chat.html",
-        context={"messages": messages, "business_id": business_id, "phone": phone},
+        context={"messages": messages, "phone": phone, "quick_questions": QUICK_QUESTIONS},
     )

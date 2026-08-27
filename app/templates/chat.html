@@ -1,35 +1,4 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Followly Agent Chat</title>
-  <style>
-    body { margin: 0; background: #f4f7fb; font: 16px system-ui, sans-serif; color: #172033; }
-    .chat { max-width: 760px; margin: 40px auto; background: white; border-radius: 16px; box-shadow: 0 10px 35px #17203318; overflow: hidden; }
-    header { padding: 22px 26px; background: #172033; color: white; }
-    header h1 { margin: 0 0 5px; font-size: 22px; } header p { margin: 0; opacity: .7; }
-    .setup, form { padding: 16px 22px; display: flex; gap: 10px; flex-wrap: wrap; }
-    input, textarea, button { border: 1px solid #d8deea; border-radius: 9px; padding: 11px; font: inherit; }
-    input { flex: 1; min-width: 130px; } textarea { flex: 1; resize: vertical; min-height: 44px; }
-    button { background: #315efb; color: white; border: 0; cursor: pointer; }
-    .messages { min-height: 300px; padding: 22px; border-top: 1px solid #edf0f5; border-bottom: 1px solid #edf0f5; }
-    .message { max-width: 78%; padding: 12px 15px; margin: 10px 0; border-radius: 13px; white-space: pre-wrap; }
-    .user { margin-left: auto; background: #315efb; color: white; } .assistant { background: #edf1f8; }
-    .error { background: #fff0f0; color: #a11; }
-  </style>
-</head>
-<body><main class="chat">
-  <header><h1>Followly Agent</h1><p>Local development chat</p></header>
-  <div class="setup">
-    <input form="chat-form" name="business_id" type="number" placeholder="Business ID" value="{{ business_id }}" required>
-    <input form="chat-form" name="phone" placeholder="Phone / demo user" value="{{ phone }}">
-  </div>
-  <section class="messages">
-    {% for item in messages %}<div class="message {{ item.role }}">{{ item.content }}</div>{% endfor %}
-  </section>
-  <form id="chat-form" method="post" action="/chat">
-    <textarea name="message" placeholder="Ask the agent something..." required></textarea>
-    <button type="submit">Send</button>
-  </form>
-</main></body></html>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Followly — Adeel Dental Clinic</title>
+<style>
+:root{--ink:#172235;--blue:#3563e9;--muted:#718096;--line:#e7ebf2}*{box-sizing:border-box}body{margin:0;background:#eef2f7;color:var(--ink);font:15px system-ui,sans-serif}.shell{display:flex;max-width:1120px;height:min(760px,calc(100vh - 48px));margin:24px auto;background:#fff;border:1px solid var(--line);border-radius:22px;overflow:hidden;box-shadow:0 18px 55px #17223518}aside{width:280px;padding:28px 22px;background:#172235;color:#fff;display:flex;flex-direction:column}.brand{font-size:18px;font-weight:750}.mark{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:11px;background:#5f82f4;margin-right:8px}.intro{margin-top:58px}.intro h2{font-size:25px;line-height:1.15}.intro p,.hint{color:#aeb9cd;line-height:1.5}.hint{margin-top:auto;padding:14px;border:1px solid #ffffff20;border-radius:13px;font-size:13px}main{display:flex;flex:1;min-width:0;flex-direction:column}.top{display:flex;justify-content:space-between;padding:22px 28px;border-bottom:1px solid var(--line);font-weight:700}.online{color:#22956b;font-size:13px;font-weight:400}.messages{flex:1;overflow:auto;padding:30px;background:#f7f9fc}.welcome{text-align:center;color:var(--muted);margin:90px auto;max-width:390px}.welcome h3{color:var(--ink);font-size:22px}.message{width:fit-content;max-width:78%;padding:12px 15px;margin:10px 0;border-radius:15px;line-height:1.45;white-space:pre-wrap}.user{margin-left:auto;background:var(--blue);color:#fff;border-bottom-right-radius:4px}.assistant{background:#fff;border:1px solid var(--line);border-bottom-left-radius:4px}.error{color:#a33;background:#fff1f1}.quick{display:flex;gap:8px;flex-wrap:wrap;padding:0 28px 14px;background:#f7f9fc}.quick button{background:#fff;color:#40516b;border:1px solid #dce3ef;border-radius:18px;padding:8px 12px;cursor:pointer;font-size:13px}.quick button:hover{border-color:var(--blue);color:var(--blue)}form{display:flex;gap:10px;padding:16px 22px;border-top:1px solid var(--line)}textarea{flex:1;resize:none;border:1px solid #dce3ef;border-radius:13px;padding:13px;font:inherit;min-height:48px}form button{border:0;border-radius:12px;background:var(--blue);color:#fff;font-weight:650;padding:0 22px}@media(max-width:700px){.shell{height:100vh;margin:0;border-radius:0}aside{display:none}.top{padding:18px}.messages{padding:20px 16px}.quick{padding:0 16px 12px}form{padding:12px}.message{max-width:88%}}
+</style></head><body><div class="shell"><aside><div class="brand"><span class="mark">F</span>Followly</div><div class="intro"><h2>Your dental care, made simple.</h2><p>Ask about services, pricing, clinic policies, or book an appointment with Adeel Dental Clinic.</p></div><div class="hint">Local demo powered by the Followly AI agent.</div></aside><main><header class="top"><span>Adeel Dental Clinic</span><span class="online">● AI assistant online</span></header><section class="messages">{% if not messages %}<div class="welcome"><h3>How can we help today?</h3><p>Choose a question below or write a message.</p></div>{% endif %}{% for item in messages %}<div class="message {{ item.role }}">{{ item.content }}</div>{% endfor %}</section><div class="quick">{% for question in quick_questions %}<button type="button" onclick="ask({{ question|tojson }})">{{ question }}</button>{% endfor %}</div><form id="chat-form" method="post" action="/chat"><input type="hidden" name="phone" value="{{ phone }}"><textarea id="message" name="message" placeholder="Type your message..." required></textarea><button type="submit">Send</button></form></main></div><script>function ask(q){document.getElementById('message').value=q;document.getElementById('chat-form').submit()}</script></body></html>
