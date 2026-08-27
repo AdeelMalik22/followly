@@ -41,6 +41,7 @@ Add to `.env`:
 
 ```bash
 WHATSAPP_VERIFY_TOKEN=my_secure_verify_token_12345
+WHATSAPP_APP_SECRET=your_meta_app_secret
 WHATSAPP_PHONE_NUMBER_ID=123456789012345
 WHATSAPP_ACCESS_TOKEN=EAA...
 ```

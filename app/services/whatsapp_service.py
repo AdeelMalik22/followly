@@ -1,4 +1,6 @@
 import httpx
+import hashlib
+import hmac
 from typing import Optional
 from app.core.config import settings
 
@@ -26,6 +28,21 @@ async def send_whatsapp_message(to: str, message: str, phone_number_id: str, acc
 def verify_webhook_token(token: str) -> bool:
     """Verify webhook verification token"""
     return token == settings.WHATSAPP_VERIFY_TOKEN
+
+
+def verify_webhook_signature(payload: bytes, signature: str, app_secret: str) -> bool:
+    """Verify Meta's X-Hub-Signature-256 webhook signature."""
+    if not signature or not signature.startswith("sha256=") or not app_secret:
+        return False
+
+    expected_signature = hmac.new(
+        app_secret.encode("utf-8"),
+        payload,
+        hashlib.sha256
+    ).hexdigest()
+    received_signature = signature.removeprefix("sha256=")
+
+    return hmac.compare_digest(received_signature, expected_signature)
 
 def parse_whatsapp_message(webhook_data: dict) -> Optional[dict]:
     """Extract message details from webhook payload"""

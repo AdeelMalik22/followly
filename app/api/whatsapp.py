@@ -36,11 +36,23 @@ async def verify_webhook(
 
 @router.post("/webhook")
 async def handle_webhook(
+    request: Request,
     webhook_data: dict,
     db: Session = Depends(get_db)
 ):
     """Handle incoming WhatsApp messages"""
     try:
+        app_secret = settings.WHATSAPP_APP_SECRET
+        if not app_secret:
+            logger.error("WhatsApp app secret is not configured")
+            raise HTTPException(status_code=500, detail="WhatsApp webhook not configured")
+
+        signature = request.headers.get("X-Hub-Signature-256")
+        payload = await request.body()
+        if not whatsapp_service.verify_webhook_signature(payload, signature, app_secret):
+            logger.warning("WhatsApp webhook rejected: invalid signature")
+            raise HTTPException(status_code=403, detail="Invalid webhook signature")
+
         # Parse message from webhook
         parsed = whatsapp_service.parse_whatsapp_message(webhook_data)
 
@@ -106,6 +118,9 @@ async def handle_webhook(
 
         return {"status": "ok"}
 
+    except HTTPException:
+        db.rollback()
+        raise
     except Exception as e:
         logger.error(f"Error handling webhook: {e}", exc_info=True)
         db.rollback()
