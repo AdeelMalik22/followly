@@ -2,7 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.schemas.auth import UserCreate, UserLogin, Token
+from app.schemas.dashboard import UserMe
 from app.services import auth_service
+from app.api.dependencies import get_current_user
+from app.models.models import User, KnowledgeBaseEntry
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
@@ -54,3 +57,18 @@ def login(user_data: UserLogin, db: Session = Depends(get_db)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to authenticate"
         )
+
+@router.get("/me", response_model=UserMe)
+def get_me(current_user: User = Depends(get_current_user)):
+    business = current_user.business
+    kb_count = len(business.knowledge_base) if business else 0
+    return UserMe(
+        id=current_user.id,
+        email=current_user.email,
+        name=current_user.name,
+        role=current_user.role,
+        business_id=current_user.business_id,
+        business_name=business.name if business else "",
+        industry=business.industry if business else "",
+        knowledge_base_count=kb_count,
+    )

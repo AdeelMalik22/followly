@@ -156,13 +156,12 @@ uvicorn app.main:app --reload
 - [x] Login page (`/login`) — dark glassmorphic UI, JWT stored in sessionStorage/localStorage
 - [x] Signup page (`/signup`) — multi-field form with password strength indicator, inline validation
 
-### 🚧 In Progress / Next Steps
+- [x] Metrics/analytics API
+- [x] Next.js dashboard frontend
 - [ ] WhatsApp Cloud API integration (webhook + send)
 - [ ] Conversation engine with tool calling
 - [ ] Google Calendar integration (OAuth + booking)
 - [ ] Follow-up engine (Celery tasks)
-- [ ] Metrics/analytics API
-- [ ] Next.js dashboard frontend
 
 ### 📋 Planned (Phase 2+)
 - [ ] Instagram DMs integration
