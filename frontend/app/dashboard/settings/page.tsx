@@ -25,7 +25,14 @@ export default function SettingsPage() {
   const [hoursLoading, setHoursLoading] = useState(false);
   const [escalation, setEscalation] = useState({ contact_name: "", contact_phone: "", contact_email: "", instructions: "" });
   const [escalationLoading, setEscalationLoading] = useState(false);
+  const [billingStatus, setBillingStatus] = useState({ plan: "starter_trial", status: "trialing" });
   React.useEffect(() => { apiFetch<typeof escalation>("/api/v1/business/escalation-settings").then(setEscalation).catch(() => {}); }, []);
+  React.useEffect(() => { apiFetch<typeof billingStatus>("/api/v1/billing/status").then(setBillingStatus).catch(() => {}); }, []);
+
+  const startCheckout = async () => {
+    try { const data = await apiFetch<{ checkout_url: string }>("/api/v1/billing/checkout", { method: "POST" }); window.location.href = data.checkout_url; }
+    catch (err: any) { toast.error(err.message || "Billing is not configured yet."); }
+  };
   const days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
   const [hours, setHours] = useState<Record<string, { open: boolean; start: string; end: string }>>(
     Object.fromEntries(days.map((day) => [day, { open: day !== "sunday", start: "09:00", end: "17:00" }]))
@@ -284,9 +291,10 @@ export default function SettingsPage() {
           <div className="bg-[#0c1326]/40 border border-white/[0.08] p-6 rounded-2xl space-y-4">
             <h3 className="text-xs font-bold text-white uppercase tracking-wider">Subscription Plan</h3>
             <div className="bg-white/[0.03] p-4 rounded-xl border border-white/[0.06]">
-              <span className="block text-xs font-bold text-white">Starter Trial Plan</span>
-              <span className="block text-[10px] text-[#7b8aa8] mt-1">Free during initial private beta</span>
+              <span className="block text-xs font-bold text-white">{billingStatus.plan.replaceAll("_", " ")}</span>
+              <span className="block text-[10px] text-[#7b8aa8] mt-1">Status: {billingStatus.status}</span>
             </div>
+            <button onClick={startCheckout} className="w-full px-4 py-2 rounded-xl bg-[#5d7ef0] text-white text-xs font-semibold">Upgrade subscription</button>
             <div className="text-[11px] text-[#7b8aa8] leading-relaxed">
               Included: 1 connected channel, 25 monthly qualified bookings, standard email support.
             </div>

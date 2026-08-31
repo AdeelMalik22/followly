@@ -205,3 +205,10 @@ class EscalationSettings(BaseModel):
     contact_phone: str = ""
     contact_email: str = ""
     instructions: str = ""
+
+
+class BillingStatus(BaseModel):
+    plan: str
+    status: str
+    customer_id: str | None = None
+    subscription_id: str | None = None

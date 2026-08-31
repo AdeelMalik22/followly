@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 import secrets
 
 from app.api.dependencies import get_current_business, get_current_user
 from app.core.database import get_db
-from app.models.models import Business, User
+from app.models.models import Business, User, KnowledgeBaseEntry
 from app.schemas.dashboard import (
     BusinessProfileResponse, BusinessProfileUpdate, BookingSettings, BookingSettingsUpdate, WidgetConfigResponse, EscalationSettings,
 )
@@ -54,6 +54,35 @@ def get_profile(
 
 @router.post("/onboarding/complete")
 def complete_onboarding(business: Business = Depends(get_current_business), db: Session = Depends(get_db)):
+    if not business.name.strip() or not business.industry.strip():
+        raise HTTPException(status_code=400, detail="Complete your business profile first")
+
+    entries = db.query(KnowledgeBaseEntry).filter(KnowledgeBaseEntry.business_id == business.id).all()
+    categories = {entry.category for entry in entries if entry.question and entry.question.strip() and entry.answer.strip()}
+    required_categories = {"services", "pricing", "faqs", "policies"}
+    if not required_categories.issubset(categories):
+        missing = ", ".join(sorted(required_categories - categories))
+        raise HTTPException(status_code=400, detail=f"Complete knowledge-base categories: {missing}")
+
+    booking = business.settings or {}
+    hours = booking.get("working_hours", {})
+    valid_open_day = False
+    for day in hours.values():
+        if day.get("open"):
+            try:
+                from datetime import datetime
+                start = datetime.strptime(day.get("start", ""), "%H:%M").time()
+                end = datetime.strptime(day.get("end", ""), "%H:%M").time()
+                valid_open_day = valid_open_day or start < end
+            except (TypeError, ValueError):
+                continue
+    if not valid_open_day:
+        raise HTTPException(status_code=400, detail="Configure at least one valid open business day")
+
+    escalation = booking.get("escalation", {})
+    if not any((escalation.get(key) or "").strip() for key in ("contact_name", "contact_phone", "contact_email", "instructions")):
+        raise HTTPException(status_code=400, detail="Configure a human escalation contact or instruction")
+
     business.settings = business.settings or {}
     business.settings["onboarding_completed"] = True
     from sqlalchemy.orm.attributes import flag_modified

@@ -12,6 +12,7 @@ from app.api.appointments import router as appointments_router
 from app.api.analytics import router as analytics_router
 from app.api.follow_up_rules import router as follow_up_rules_router
 from app.api.business import router as business_router
+from app.api.billing import router as billing_router
 
 app = FastAPI(title="Followly API", version="1.0.0")
 
@@ -35,6 +36,7 @@ app.include_router(appointments_router)
 app.include_router(analytics_router)
 app.include_router(follow_up_rules_router)
 app.include_router(business_router)
+app.include_router(billing_router)
 
 @app.get("/")
 def read_root():

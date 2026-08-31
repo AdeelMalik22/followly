@@ -22,3 +22,4 @@ python-multipart==0.0.12
 redis==5.1.1
 SQLAlchemy==2.0.35
 uvicorn[standard]==0.30.6
+stripe>=10.0.0
