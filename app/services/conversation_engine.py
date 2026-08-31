@@ -139,6 +139,9 @@ async def handle_check_availability(arguments: dict, business: Business, db: Ses
     """Check appointment availability using Google Calendar"""
     date_str = arguments.get("date")
     service = arguments.get("service", "general")
+    business_settings = business.settings or {}
+    working_hours = business_settings.get("working_hours", {})
+    duration_minutes = business_settings.get("appointment_duration_minutes", 60)
 
     # Check if calendar is connected
     credentials = business.settings.get("google_calendar_credentials") if business.settings else None
@@ -149,23 +152,33 @@ async def handle_check_availability(arguments: dict, business: Business, db: Ses
         try:
             date_obj = datetime.strptime(date_str, "%Y-%m-%d")
             weekday = date_obj.weekday()
-
-            if weekday == 6:  # Sunday
+            day_name = date_obj.strftime("%A").lower()
+            day_hours = working_hours.get(day_name)
+            if day_hours and not day_hours.get("open", False):
                 return {
                     "available": False,
-                    "reason": "We are closed on Sundays"
+                    "reason": f"We are closed on {day_name.title()}"
                 }
 
-            # Generate mock time slots
-            if weekday < 5:  # Mon-Fri
-                slots = ["9:00 AM", "10:30 AM", "2:00 PM", "4:00 PM"]
-            else:  # Saturday
-                slots = ["9:00 AM", "11:00 AM"]
+            start_text = (day_hours or {}).get("start", "09:00")
+            end_text = (day_hours or {}).get("end", "17:00")
+            start = datetime.strptime(start_text, "%H:%M")
+            end = datetime.strptime(end_text, "%H:%M")
+            if start >= end:
+                return {"available": False, "reason": f"{day_name.title()} has invalid working hours"}
+
+            # Generate slots within this business's configured hours.
+            slots = []
+            cursor = start
+            while cursor + timedelta(minutes=duration_minutes) <= end:
+                slots.append(cursor.strftime("%-I:%M %p"))
+                cursor += timedelta(minutes=30)
 
             return {
                 "available": True,
                 "date": date_str,
                 "service": service,
+                "duration_minutes": duration_minutes,
                 "available_slots": slots,
                 "message": f"We have availability on {date_str} at the following times: {', '.join(slots)}"
             }
@@ -177,7 +190,7 @@ async def handle_check_availability(arguments: dict, business: Business, db: Ses
         result = await asyncio.to_thread(
             calendar_service.check_availability,
             credentials_json=credentials, date=date_str, service=service,
-            duration_minutes=60
+                duration_minutes=duration_minutes
         )
         return result
     except Exception as e:
@@ -200,7 +213,8 @@ async def handle_book_appointment(
         # Parse datetime
         datetime_str = f"{date_str} {time_str}"
         start_time = datetime.strptime(datetime_str, "%Y-%m-%d %H:%M")
-        end_time = start_time + timedelta(minutes=60)  # Default 60 min duration
+        duration_minutes = (business.settings or {}).get("appointment_duration_minutes", 60)
+        end_time = start_time + timedelta(minutes=duration_minutes)
 
         # Create appointment in database
         appointment = Appointment(
