@@ -197,3 +197,10 @@ class BookingSettingsUpdate(BaseModel):
 class WidgetConfigResponse(BaseModel):
     widget_key: str
     business_name: str
+
+
+class EscalationSettings(BaseModel):
+    contact_name: str = ""
+    contact_phone: str = ""
+    contact_email: str = ""
+    instructions: str = ""

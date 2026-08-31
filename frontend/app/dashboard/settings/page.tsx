@@ -23,6 +23,9 @@ export default function SettingsPage() {
   const [securityLoading, setSecurityLoading] = useState(false);
   const [duration, setDuration] = useState(60);
   const [hoursLoading, setHoursLoading] = useState(false);
+  const [escalation, setEscalation] = useState({ contact_name: "", contact_phone: "", contact_email: "", instructions: "" });
+  const [escalationLoading, setEscalationLoading] = useState(false);
+  React.useEffect(() => { apiFetch<typeof escalation>("/api/v1/business/escalation-settings").then(setEscalation).catch(() => {}); }, []);
   const days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
   const [hours, setHours] = useState<Record<string, { open: boolean; start: string; end: string }>>(
     Object.fromEntries(days.map((day) => [day, { open: day !== "sunday", start: "09:00", end: "17:00" }]))
@@ -39,6 +42,12 @@ export default function SettingsPage() {
     } catch (err: any) {
       toast.error(err.message || "Unable to save working hours.");
     } finally { setHoursLoading(false); }
+  };
+  const handleSaveEscalation = async (e: React.FormEvent) => {
+    e.preventDefault(); setEscalationLoading(true);
+    try { await apiFetch("/api/v1/business/escalation-settings", { method: "PUT", body: JSON.stringify(escalation) }); toast.success("Human escalation settings saved!"); }
+    catch (err: any) { toast.error(err.message || "Unable to save escalation settings."); }
+    finally { setEscalationLoading(false); }
   };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
@@ -177,6 +186,17 @@ export default function SettingsPage() {
               >
                 {saveLoading ? "Saving..." : "Save Business Profile"}
               </button>
+            </form>
+          </div>
+
+          <div className="bg-white/[0.02] border border-white/[0.08] p-6 rounded-2xl space-y-5 shadow-xl">
+            <div><h3 className="text-sm font-bold text-white">Human Staff Escalation</h3><p className="text-xs text-[#7b8aa8] mt-1">Configure who should handle conversations the AI cannot answer.</p></div>
+            <form onSubmit={handleSaveEscalation} className="space-y-3">
+              <input placeholder="Staff contact name" value={escalation.contact_name} onChange={(e) => setEscalation({ ...escalation, contact_name: e.target.value })} className="w-full bg-white/[0.06] border border-white/[0.08] rounded-xl p-2.5 text-xs text-white" />
+              <input placeholder="Staff phone number" value={escalation.contact_phone} onChange={(e) => setEscalation({ ...escalation, contact_phone: e.target.value })} className="w-full bg-white/[0.06] border border-white/[0.08] rounded-xl p-2.5 text-xs text-white" />
+              <input type="email" placeholder="Staff email address" value={escalation.contact_email} onChange={(e) => setEscalation({ ...escalation, contact_email: e.target.value })} className="w-full bg-white/[0.06] border border-white/[0.08] rounded-xl p-2.5 text-xs text-white" />
+              <textarea placeholder="Instructions for the assistant" value={escalation.instructions} onChange={(e) => setEscalation({ ...escalation, instructions: e.target.value })} rows={3} className="w-full bg-white/[0.06] border border-white/[0.08] rounded-xl p-2.5 text-xs text-white resize-none" />
+              <button disabled={escalationLoading} className="px-5 py-2.5 rounded-xl bg-[#5d7ef0] text-white font-semibold text-xs disabled:opacity-50">{escalationLoading ? "Saving..." : "Save Escalation Settings"}</button>
             </form>
           </div>
 

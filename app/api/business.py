@@ -6,7 +6,7 @@ from app.api.dependencies import get_current_business, get_current_user
 from app.core.database import get_db
 from app.models.models import Business, User
 from app.schemas.dashboard import (
-    BusinessProfileResponse, BusinessProfileUpdate, BookingSettings, BookingSettingsUpdate, WidgetConfigResponse,
+    BusinessProfileResponse, BusinessProfileUpdate, BookingSettings, BookingSettingsUpdate, WidgetConfigResponse, EscalationSettings,
 )
 
 router = APIRouter(prefix="/api/v1/business", tags=["business"])
@@ -22,6 +22,21 @@ def get_widget_config(business: Business = Depends(get_current_business), db: Se
         flag_modified(business, "settings")
         db.commit()
     return WidgetConfigResponse(widget_key=settings.get("widget_key", ""), business_name=business.name)
+
+
+@router.get("/escalation-settings", response_model=EscalationSettings)
+def get_escalation_settings(business: Business = Depends(get_current_business)):
+    return EscalationSettings(**((business.settings or {}).get("escalation", {})))
+
+
+@router.put("/escalation-settings", response_model=EscalationSettings)
+def update_escalation_settings(payload: EscalationSettings, business: Business = Depends(get_current_business), db: Session = Depends(get_db)):
+    business.settings = business.settings or {}
+    business.settings["escalation"] = payload.model_dump()
+    from sqlalchemy.orm.attributes import flag_modified
+    flag_modified(business, "settings")
+    db.commit()
+    return payload
 
 
 @router.get("/profile", response_model=BusinessProfileResponse)
