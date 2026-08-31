@@ -9,12 +9,49 @@ export default function ChannelsPage() {
   const [copied, setCopied] = useState(false);
   const [whatsappConnected, setWhatsappConnected] = useState(false);
   const [calendarConnected, setCalendarConnected] = useState(false);
+  const [phoneNumberId, setPhoneNumberId] = useState("");
+  const [accessToken, setAccessToken] = useState("");
+  const [whatsappLoading, setWhatsappLoading] = useState(false);
 
   React.useEffect(() => {
     apiFetch<{ connected: boolean }>("/api/v1/calendar/status")
       .then((data) => setCalendarConnected(data.connected))
       .catch((err) => toast.error(err.message || "Unable to load calendar status."));
+    apiFetch<{ connected: boolean; phone_number_id?: string }>("/api/v1/whatsapp/status")
+      .then((data) => {
+        setWhatsappConnected(data.connected);
+        setPhoneNumberId(data.phone_number_id || "");
+      })
+      .catch((err) => toast.error(err.message || "Unable to load WhatsApp status."));
   }, []);
+
+  const saveWhatsApp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!phoneNumberId.trim() || !accessToken.trim()) {
+      toast.error("Enter both the Phone Number ID and access token.");
+      return;
+    }
+    setWhatsappLoading(true);
+    try {
+      await apiFetch("/api/v1/whatsapp/credentials", {
+        method: "PUT",
+        body: JSON.stringify({ phone_number_id: phoneNumberId.trim(), access_token: accessToken.trim() }),
+      });
+      setWhatsappConnected(true);
+      setAccessToken("");
+      toast.success("WhatsApp connected successfully.");
+    } catch (err: any) { toast.error(err.message || "Unable to connect WhatsApp."); }
+    finally { setWhatsappLoading(false); }
+  };
+
+  const disconnectWhatsApp = async () => {
+    try {
+      await apiFetch("/api/v1/whatsapp/credentials", { method: "DELETE" });
+      setWhatsappConnected(false);
+      setPhoneNumberId("");
+      toast.success("WhatsApp disconnected.");
+    } catch (err: any) { toast.error(err.message || "Unable to disconnect WhatsApp."); }
+  };
 
   const embedCode = `<script src="https://cdn.followly.ai/widget.js" data-business-id="1" defer></script>`;
 
@@ -64,24 +101,21 @@ export default function ChannelsPage() {
               <div className="bg-white/[0.03] p-3 rounded-xl border border-white/[0.06] space-y-1">
                 <span className="block text-[9px] font-bold text-[#7b8aa8] uppercase">Webhook URL</span>
                 <span className="block text-[11px] font-semibold text-white break-all">
-                  https://api.followly.ai/webhook/whatsapp/1
+                  https://api.followly.ai/api/v1/whatsapp/webhook
                 </span>
               </div>
             )}
 
-            <button
-              onClick={() => {
-                setWhatsappConnected(!whatsappConnected);
-                toast.success(whatsappConnected ? "WhatsApp disconnected." : "WhatsApp successfully connected!");
-              }}
-              className={`w-full py-2.5 rounded-xl font-semibold text-xs transition-all ${
-                whatsappConnected
-                  ? "bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20"
-                  : "bg-[#5d7ef0] text-white hover:bg-[#4169e1]"
-              }`}
+            {!whatsappConnected ? <form onSubmit={saveWhatsApp} className="space-y-3">
+              <input value={phoneNumberId} onChange={(e) => setPhoneNumberId(e.target.value)} placeholder="Meta Phone Number ID" className="w-full bg-white/[0.06] border border-white/[0.08] rounded-xl py-2.5 px-3 text-xs text-white" />
+              <input type="password" value={accessToken} onChange={(e) => setAccessToken(e.target.value)} placeholder="Meta access token" className="w-full bg-white/[0.06] border border-white/[0.08] rounded-xl py-2.5 px-3 text-xs text-white" />
+              <button disabled={whatsappLoading} className="w-full py-2.5 rounded-xl bg-[#5d7ef0] text-white font-semibold text-xs disabled:opacity-50">{whatsappLoading ? "Connecting..." : "Connect WhatsApp Account"}</button>
+            </form> : <button
+              onClick={disconnectWhatsApp}
+              className="w-full py-2.5 rounded-xl font-semibold text-xs transition-all bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20"
             >
-              {whatsappConnected ? "Disconnect WhatsApp" : "Connect WhatsApp Account"}
-            </button>
+              Disconnect WhatsApp
+            </button>}
           </div>
         </div>
 
