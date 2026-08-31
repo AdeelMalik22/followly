@@ -192,3 +192,8 @@ class BookingSettings(BaseModel):
 class BookingSettingsUpdate(BaseModel):
     working_hours: dict
     appointment_duration_minutes: int = 60
+
+
+class WidgetConfigResponse(BaseModel):
+    widget_key: str
+    business_name: str

@@ -10,7 +10,6 @@ from app.services.conversation_engine import process_message_with_agent
 
 router = APIRouter(tags=["chat"])
 templates = Jinja2Templates(directory="app/templates")
-DEMO_BUSINESS_NAME = "Adeel Dental Clinic"
 QUICK_QUESTIONS = ["What services do you offer?", "How much does teeth whitening cost?", "I want to book a dental cleaning.", "What are your clinic hours?"]
 
 
@@ -19,7 +18,7 @@ async def chat_page(request: Request):
     return templates.TemplateResponse(
         request=request,
         name="chat.html",
-        context={"messages": [], "phone": "demo-user", "quick_questions": QUICK_QUESTIONS},
+        context={"messages": [], "phone": "demo-user", "business_key": request.query_params.get("business_key", ""), "quick_questions": QUICK_QUESTIONS},
     )
 
 
@@ -28,15 +27,16 @@ async def chat_message(
     request: Request,
     message: str = Form(...),
     phone: str = Form("demo-user"),
+    business_key: str = Form(...),
     db: Session = Depends(get_db),
 ):
     messages = []
-    business = db.query(Business).filter(Business.name == DEMO_BUSINESS_NAME).first()
+    business = db.query(Business).filter(Business.settings["widget_key"].astext == business_key).first()
     if not business:
         messages.append({"role": "error", "content": "Demo business not found. Run the seed script first."})
         return templates.TemplateResponse(
             request=request, name="chat.html",
-            context={"messages": messages, "phone": phone, "quick_questions": QUICK_QUESTIONS},
+            context={"messages": messages, "phone": phone, "business_key": business_key, "quick_questions": QUICK_QUESTIONS},
             status_code=404,
         )
 
@@ -51,5 +51,5 @@ async def chat_message(
     messages = [{"role": "user" if item.role == "user" else "assistant", "content": item.content} for item in history]
     return templates.TemplateResponse(
         request=request, name="chat.html",
-        context={"messages": messages, "phone": phone, "quick_questions": QUICK_QUESTIONS},
+        context={"messages": messages, "phone": phone, "business_key": business_key, "quick_questions": QUICK_QUESTIONS},
     )

@@ -1,14 +1,27 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+import secrets
 
 from app.api.dependencies import get_current_business, get_current_user
 from app.core.database import get_db
 from app.models.models import Business, User
 from app.schemas.dashboard import (
-    BusinessProfileResponse, BusinessProfileUpdate, BookingSettings, BookingSettingsUpdate,
+    BusinessProfileResponse, BusinessProfileUpdate, BookingSettings, BookingSettingsUpdate, WidgetConfigResponse,
 )
 
 router = APIRouter(prefix="/api/v1/business", tags=["business"])
+
+
+@router.get("/widget-config", response_model=WidgetConfigResponse)
+def get_widget_config(business: Business = Depends(get_current_business), db: Session = Depends(get_db)):
+    settings = business.settings or {}
+    if not settings.get("widget_key"):
+        settings["widget_key"] = secrets.token_urlsafe(24)
+        business.settings = settings
+        from sqlalchemy.orm.attributes import flag_modified
+        flag_modified(business, "settings")
+        db.commit()
+    return WidgetConfigResponse(widget_key=settings.get("widget_key", ""), business_name=business.name)
 
 
 @router.get("/profile", response_model=BusinessProfileResponse)

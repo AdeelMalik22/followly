@@ -1,11 +1,12 @@
 from sqlalchemy.orm import Session
 from app.models.models import User, Business
 from app.core.security import get_password_hash, verify_password, create_access_token
+import secrets
 
 def create_user_with_business(email: str, password: str, business_name: str, owner_name: str, industry: str, db: Session):
     """Create a new user and associated business"""
     # Create business
-    business = Business(name=business_name, industry=industry)
+    business = Business(name=business_name, industry=industry, settings={"widget_key": secrets.token_urlsafe(24)})
     db.add(business)
     db.commit()
     db.refresh(business)
