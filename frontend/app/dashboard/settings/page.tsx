@@ -21,6 +21,25 @@ export default function SettingsPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [securityLoading, setSecurityLoading] = useState(false);
+  const [duration, setDuration] = useState(60);
+  const [hoursLoading, setHoursLoading] = useState(false);
+  const days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+  const [hours, setHours] = useState<Record<string, { open: boolean; start: string; end: string }>>(
+    Object.fromEntries(days.map((day) => [day, { open: day !== "sunday", start: "09:00", end: "17:00" }]))
+  );
+
+  const handleSaveHours = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setHoursLoading(true);
+    try {
+      await apiFetch("/api/v1/business/booking-settings", {
+        method: "PUT", body: JSON.stringify({ working_hours: hours, appointment_duration_minutes: duration }),
+      });
+      toast.success("Working hours saved!");
+    } catch (err: any) {
+      toast.error(err.message || "Unable to save working hours.");
+    } finally { setHoursLoading(false); }
+  };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -158,6 +177,20 @@ export default function SettingsPage() {
               >
                 {saveLoading ? "Saving..." : "Save Business Profile"}
               </button>
+            </form>
+          </div>
+
+          {/* Security credentials */}
+          <div className="bg-white/[0.02] border border-white/[0.08] p-6 rounded-2xl space-y-5 shadow-xl">
+            <div><h3 className="text-sm font-bold text-white">Working Hours &amp; Booking</h3><p className="text-xs text-[#7b8aa8] mt-1">These hours are stored for this business and will guide appointment availability.</p></div>
+            <form onSubmit={handleSaveHours} className="space-y-3">
+              {days.map((day) => <div key={day} className="grid grid-cols-[100px_1fr_1fr] gap-2 items-center text-xs text-white">
+                <label className="capitalize flex gap-2"><input type="checkbox" checked={hours[day].open} onChange={(e) => setHours({ ...hours, [day]: { ...hours[day], open: e.target.checked } })} />{day}</label>
+                <input type="time" disabled={!hours[day].open} value={hours[day].start} onChange={(e) => setHours({ ...hours, [day]: { ...hours[day], start: e.target.value } })} className="bg-white/[0.06] border border-white/[0.08] rounded-lg p-2 disabled:opacity-40" />
+                <input type="time" disabled={!hours[day].open} value={hours[day].end} onChange={(e) => setHours({ ...hours, [day]: { ...hours[day], end: e.target.value } })} className="bg-white/[0.06] border border-white/[0.08] rounded-lg p-2 disabled:opacity-40" />
+              </div>)}
+              <label className="block text-xs text-[#aab4cb] pt-2">Default appointment duration (minutes)<input type="number" min="15" max="480" value={duration} onChange={(e) => setDuration(Number(e.target.value))} className="mt-2 w-full bg-white/[0.06] border border-white/[0.08] rounded-xl p-2.5 text-white" /></label>
+              <button disabled={hoursLoading} className="px-5 py-2.5 rounded-xl bg-[#5d7ef0] text-white font-semibold text-xs disabled:opacity-50">{hoursLoading ? "Saving..." : "Save Working Hours"}</button>
             </form>
           </div>
 

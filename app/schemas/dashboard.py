@@ -182,3 +182,13 @@ class BusinessProfileUpdate(BaseModel):
     name: str
     industry: str
     owner_name: str
+
+
+class BookingSettings(BaseModel):
+    working_hours: dict
+    appointment_duration_minutes: int = 60
+
+
+class BookingSettingsUpdate(BaseModel):
+    working_hours: dict
+    appointment_duration_minutes: int = 60
