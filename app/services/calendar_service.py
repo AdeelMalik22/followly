@@ -43,7 +43,8 @@ def check_availability(
     credentials_json: dict,
     date: str,
     service: Optional[str] = None,
-    duration_minutes: int = 60
+    duration_minutes: int = 60,
+    working_hours: Optional[dict] = None,
 ) -> Dict:
     """Check available time slots for a specific date"""
     try:
@@ -52,25 +53,28 @@ def check_availability(
         # Parse date
         target_date = datetime.strptime(date, "%Y-%m-%d")
 
-        # Check if it's Sunday (weekday == 6)
-        if target_date.weekday() == 6:
+        day_name = target_date.strftime("%A").lower()
+        day_hours = (working_hours or {}).get(day_name)
+        if day_hours is None:
+            day_hours = {"open": day_name != "sunday", "start": "09:00", "end": "17:00"}
+        if not day_hours.get("open", False):
             return {
                 "available": False,
-                "reason": "We are closed on Sundays",
+                "reason": f"We are closed on {day_name.title()}",
                 "date": date
             }
 
-        # Define business hours
-        if target_date.weekday() < 5:  # Monday-Friday
-            start_hour = 9
-            end_hour = 18
-        else:  # Saturday
-            start_hour = 9
-            end_hour = 14
+        try:
+            start_time = datetime.strptime(day_hours.get("start", "09:00"), "%H:%M").time()
+            end_time = datetime.strptime(day_hours.get("end", "17:00"), "%H:%M").time()
+        except (TypeError, ValueError):
+            return {"available": False, "reason": "Business working hours are invalid", "date": date}
+        if start_time >= end_time:
+            return {"available": False, "reason": "Business working hours are invalid", "date": date}
 
         # Set time range for freebusy query
-        time_min = target_date.replace(hour=start_hour, minute=0, second=0)
-        time_max = target_date.replace(hour=end_hour, minute=0, second=0)
+        time_min = target_date.replace(hour=start_time.hour, minute=start_time.minute, second=0)
+        time_max = target_date.replace(hour=end_time.hour, minute=end_time.minute, second=0)
 
         # Query free/busy
         body = {

@@ -190,7 +190,8 @@ async def handle_check_availability(arguments: dict, business: Business, db: Ses
         result = await asyncio.to_thread(
             calendar_service.check_availability,
             credentials_json=credentials, date=date_str, service=service,
-                duration_minutes=duration_minutes
+            duration_minutes=duration_minutes,
+            working_hours=working_hours,
         )
         return result
     except Exception as e:
