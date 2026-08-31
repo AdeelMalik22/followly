@@ -1,5 +1,7 @@
 import json
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+from app.core.config import settings
 from sqlalchemy.orm import Session
 from app.models.models import Conversation, Business, ConversationStatus, Appointment, LeadStatus, ToolCallAudit
 from app.services import conversation_service, whatsapp_service, agent_service, calendar_service
@@ -142,6 +144,10 @@ async def handle_check_availability(arguments: dict, business: Business, db: Ses
     business_settings = business.settings or {}
     working_hours = business_settings.get("working_hours", {})
     duration_minutes = business_settings.get("appointment_duration_minutes", 60)
+    try:
+        date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+    except (TypeError, ValueError):
+        return {"error": "Invalid date format. Please use YYYY-MM-DD"}
 
     # Check if calendar is connected
     credentials = business.settings.get("google_calendar_credentials") if business.settings else None
@@ -150,7 +156,6 @@ async def handle_check_availability(arguments: dict, business: Business, db: Ses
         # Fallback to mock availability if calendar not connected
         logger.warning(f"Calendar not connected for business {business.id}, using mock availability")
         try:
-            date_obj = datetime.strptime(date_str, "%Y-%m-%d")
             weekday = date_obj.weekday()
             day_name = date_obj.strftime("%A").lower()
             day_hours = working_hours.get(day_name)
@@ -174,6 +179,11 @@ async def handle_check_availability(arguments: dict, business: Business, db: Ses
                 slots.append(cursor.strftime("%-I:%M %p"))
                 cursor += timedelta(minutes=30)
 
+            # Do not offer slots that have already passed today.
+            local_now = datetime.now(ZoneInfo(settings.BUSINESS_TIMEZONE))
+            if date_obj.date() == local_now.date():
+                slots = [slot for slot in slots if datetime.strptime(slot, "%I:%M %p").time() > local_now.time()]
+
             return {
                 "available": True,
                 "date": date_str,
@@ -193,6 +203,14 @@ async def handle_check_availability(arguments: dict, business: Business, db: Ses
             duration_minutes=duration_minutes,
             working_hours=working_hours,
         )
+        # Google returns free slots across the requested day; remove elapsed
+        # slots when the requested date is today in the business timezone.
+        local_now = datetime.now(ZoneInfo(settings.BUSINESS_TIMEZONE))
+        if date_obj.date() == local_now.date() and result.get("available_slots"):
+            result["available_slots"] = [
+                slot for slot in result["available_slots"]
+                if datetime.strptime(slot, "%I:%M %p").time() > local_now.time()
+            ]
         return result
     except Exception as e:
         logger.error(f"Error checking calendar availability: {e}", exc_info=True)
