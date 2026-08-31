@@ -24,6 +24,10 @@ export default function OnboardingPage() {
   const [whatsappConnected, setWhatsappConnected] = useState(false);
   const [phoneNumberId, setPhoneNumberId] = useState("");
   const [accessToken, setAccessToken] = useState("");
+  const days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+  const [hours, setHours] = useState<Record<string, { open: boolean; start: string; end: string }>>(Object.fromEntries(days.map((day) => [day, { open: day !== "sunday", start: "09:00", end: "17:00" }])));
+  const [duration, setDuration] = useState(60);
+  const [escalation, setEscalation] = useState({ contact_name: "", contact_phone: "", contact_email: "", instructions: "" });
 
   // Auth data loads asynchronously; keep the form in sync with it on the
   // first authenticated render instead of validating stale empty state.
@@ -37,6 +41,8 @@ export default function OnboardingPage() {
   useEffect(() => {
     if (!user) return;
     apiFetch<{ connected: boolean }>("/api/v1/calendar/status").then((data) => setCalendarConnected(data.connected)).catch(() => {});
+    apiFetch<{ working_hours: typeof hours; appointment_duration_minutes: number }>("/api/v1/business/booking-settings").then((data) => { if (Object.keys(data.working_hours || {}).length) setHours(data.working_hours); setDuration(data.appointment_duration_minutes); }).catch(() => {});
+    apiFetch<typeof escalation>("/api/v1/business/escalation-settings").then(setEscalation).catch(() => {});
     apiFetch<{ connected: boolean; phone_number_id?: string }>("/api/v1/whatsapp/status").then((data) => { setWhatsappConnected(data.connected); setPhoneNumberId(data.phone_number_id || ""); }).catch(() => {});
   }, [user]);
 
@@ -52,6 +58,12 @@ export default function OnboardingPage() {
     const updated = [...kbEntries];
     updated[index][field] = value;
     setKbEntries(updated);
+  };
+
+  const saveHoursAndEscalation = async () => {
+    await apiFetch("/api/v1/business/booking-settings", { method: "PUT", body: JSON.stringify({ working_hours: hours, appointment_duration_minutes: duration }) });
+    await apiFetch("/api/v1/business/escalation-settings", { method: "PUT", body: JSON.stringify(escalation) });
+    setStep(4);
   };
 
   const addKBEntry = () => {
@@ -158,7 +170,7 @@ export default function OnboardingPage() {
             <span className="font-bold text-sm text-[#7b8aa8]">Followly Onboarding</span>
           </div>
           <div className="flex gap-2">
-            {[1, 2, 3, 4, 5].map((s) => (
+            {[1, 2, 3, 4, 5, 6].map((s) => (
               <div
                 key={s}
                 className={`h-1.5 w-10 rounded-full transition-all ${
@@ -279,19 +291,34 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* Step 3: Calendar */}
+        {/* Step 3: Hours and escalation */}
         {step === 3 && (
+          <div className="space-y-5 py-4">
+            <h2 className="text-xl font-bold">Configure Business Hours</h2>
+            <p className="text-sm text-[#7b8aa8]">The agent will only offer appointments during these hours.</p>
+            {days.map((day) => <div key={day} className="grid grid-cols-[100px_1fr_1fr] gap-2 items-center text-xs text-white"><label className="capitalize flex gap-2"><input type="checkbox" checked={hours[day].open} onChange={(e) => setHours({ ...hours, [day]: { ...hours[day], open: e.target.checked } })} />{day}</label><input type="time" value={hours[day].start} disabled={!hours[day].open} onChange={(e) => setHours({ ...hours, [day]: { ...hours[day], start: e.target.value } })} className="bg-white/[0.06] rounded-lg p-2 disabled:opacity-40" /><input type="time" value={hours[day].end} disabled={!hours[day].open} onChange={(e) => setHours({ ...hours, [day]: { ...hours[day], end: e.target.value } })} className="bg-white/[0.06] rounded-lg p-2 disabled:opacity-40" /></div>)}
+            <input type="number" min="15" max="480" value={duration} onChange={(e) => setDuration(Number(e.target.value))} placeholder="Appointment duration in minutes" className="w-full bg-white/[0.06] rounded-xl p-3 text-sm text-white" />
+            <h3 className="font-bold text-white pt-3">Human escalation contact</h3>
+            <input placeholder="Staff name" value={escalation.contact_name} onChange={(e) => setEscalation({ ...escalation, contact_name: e.target.value })} className="w-full bg-white/[0.06] rounded-xl p-3 text-sm text-white" />
+            <input placeholder="Staff phone or email" value={escalation.contact_phone} onChange={(e) => setEscalation({ ...escalation, contact_phone: e.target.value })} className="w-full bg-white/[0.06] rounded-xl p-3 text-sm text-white" />
+            <textarea placeholder="Instructions for human handoff" value={escalation.instructions} onChange={(e) => setEscalation({ ...escalation, instructions: e.target.value })} className="w-full bg-white/[0.06] rounded-xl p-3 text-sm text-white" rows={2} />
+            <button onClick={async () => { setLoading(true); try { await saveHoursAndEscalation(); } catch (err: any) { toast.error(err.message || "Unable to save settings."); } finally { setLoading(false); } }} disabled={loading} className="w-full py-3 rounded-xl bg-[#5d7ef0] text-white font-semibold text-sm">{loading ? "Saving..." : "Save & Continue →"}</button>
+          </div>
+        )}
+
+        {/* Step 4: Calendar */}
+        {step === 4 && (
           <div className="space-y-6 text-center py-6">
             <h2 className="text-xl font-bold">Connect Google Calendar</h2>
             <p className="text-sm text-[#7b8aa8]">The agent needs your calendar to check availability and book appointments.</p>
             <div className="text-sm font-semibold text-white">{calendarConnected ? "✓ Calendar connected" : "Calendar not connected"}</div>
             {!calendarConnected && <button onClick={async () => { try { const data = await apiFetch<{ authorization_url: string }>("/api/v1/calendar/connect"); window.location.href = data.authorization_url; } catch (err: any) { toast.error(err.message || "Unable to connect calendar."); } }} className="w-full py-3 rounded-xl bg-[#5d7ef0] text-white font-semibold text-sm">Connect Google Calendar</button>}
-            <button onClick={() => setStep(4)} className="w-full py-3 rounded-xl border border-white/[0.1] text-white font-semibold text-sm">{calendarConnected ? "Continue" : "Skip for now"} →</button>
+            <button onClick={() => setStep(5)} className="w-full py-3 rounded-xl border border-white/[0.1] text-white font-semibold text-sm">{calendarConnected ? "Continue" : "Skip for now"} →</button>
           </div>
         )}
 
         {/* Step 4: WhatsApp */}
-        {step === 4 && (
+        {step === 5 && (
           <div className="space-y-6 py-6">
             <h2 className="text-xl font-bold">Connect WhatsApp Business</h2>
             <p className="text-sm text-[#7b8aa8]">Enter the Meta Phone Number ID and access token for this business.</p>
@@ -300,12 +327,12 @@ export default function OnboardingPage() {
               <input type="password" value={accessToken} onChange={(e) => setAccessToken(e.target.value)} placeholder="Meta access token" className="w-full bg-white/[0.06] border border-white/[0.08] rounded-xl p-3 text-sm text-white" />
               <button onClick={async () => { if (!phoneNumberId || !accessToken) { toast.error("Enter both WhatsApp values."); return; } try { await apiFetch("/api/v1/whatsapp/credentials", { method: "PUT", body: JSON.stringify({ phone_number_id: phoneNumberId, access_token: accessToken }) }); setWhatsappConnected(true); setAccessToken(""); toast.success("WhatsApp connected."); } catch (err: any) { toast.error(err.message || "Unable to connect WhatsApp."); } }} className="w-full py-3 rounded-xl bg-[#5d7ef0] text-white font-semibold text-sm">Connect WhatsApp</button>
             </>}
-            <button onClick={() => setStep(5)} className="w-full py-3 rounded-xl border border-white/[0.1] text-white font-semibold text-sm">{whatsappConnected ? "Continue" : "Skip for now"} →</button>
+            <button onClick={() => setStep(6)} className="w-full py-3 rounded-xl border border-white/[0.1] text-white font-semibold text-sm">{whatsappConnected ? "Continue" : "Skip for now"} →</button>
           </div>
         )}
 
         {/* Step 5: Complete */}
-        {step === 5 && (
+        {step === 6 && (
           <div className="space-y-6 text-center py-6">
             <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">✓</div>
             <h2 className="text-xl font-bold">Your Setup Is Ready</h2>
