@@ -32,15 +32,28 @@ export default function OnboardingPage() {
 
   // KB inputs
   const [kbEntries, setKbEntries] = useState<KBItemInput[]>([
-    { category: "services", question: "What is your main service and cost?", answer: "We offer professional dental cleanings starting at $120." },
-    { category: "policies", question: "What is your cancellation policy?", answer: "Please cancel at least 24 hours in advance to avoid a fee." },
-    { category: "faqs", question: "Do you accept insurance?", answer: "Yes, we accept major PPO insurance plans." }
+    { category: "services", question: "", answer: "" },
+    { category: "pricing", question: "", answer: "" },
+    { category: "faqs", question: "", answer: "" },
+    { category: "policies", question: "", answer: "" },
   ]);
 
   const handleKBChange = (index: number, field: keyof KBItemInput, value: string) => {
     const updated = [...kbEntries];
     updated[index][field] = value;
     setKbEntries(updated);
+  };
+
+  const addKBEntry = () => {
+    setKbEntries([...kbEntries, { category: "faqs", question: "", answer: "" }]);
+  };
+
+  const removeKBEntry = (index: number) => {
+    if (kbEntries.length <= 4) {
+      toast.error("Keep at least one entry for each category.");
+      return;
+    }
+    setKbEntries(kbEntries.filter((_, i) => i !== index));
   };
 
   const handleNextStep = async () => {
@@ -66,7 +79,14 @@ export default function OnboardingPage() {
   };
 
   const handleFinishOnboarding = async () => {
-    // Validate
+    // Require the four core categories so the agent has useful business context.
+    const missingCategories = ["services", "pricing", "faqs", "policies"].filter(
+      (category) => !kbEntries.some((entry) => entry.category === category && entry.answer.trim())
+    );
+    if (missingCategories.length) {
+      toast.error(`Add at least one completed entry for: ${missingCategories.join(", ")}.`);
+      return;
+    }
     for (let i = 0; i < kbEntries.length; i++) {
       if (!kbEntries[i].question.trim() || !kbEntries[i].answer.trim()) {
         toast.error(`Please complete entry #${i + 1}`);
@@ -189,17 +209,20 @@ export default function OnboardingPage() {
           <div className="space-y-6">
             <div>
               <h2 className="text-xl font-bold mb-2">Build Your AI's Brain</h2>
-              <p className="text-sm text-[#7b8aa8]">The AI uses these answers to qualify leads, provide accurate quotes, and schedule appointments.</p>
+              <p className="text-sm text-[#7b8aa8]">Add the information your AI should use when answering customers. You can add more entries or manage them later from Knowledge Base.</p>
             </div>
 
             <div className="space-y-5 max-h-[400px] overflow-y-auto pr-1">
               {kbEntries.map((entry, index) => (
                 <div key={index} className="space-y-3 bg-white/[0.02] p-5 rounded-xl border border-white/[0.05]">
                   <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-[#5d7ef0] uppercase tracking-wide">
-                      Entry #{index + 1} — {entry.category}
-                    </span>
+                    <span className="text-xs font-bold text-[#5d7ef0] uppercase tracking-wide">Entry #{index + 1}</span>
+                    <button type="button" onClick={() => removeKBEntry(index)} className="text-xs text-red-400 hover:text-red-300">Remove</button>
                   </div>
+
+                  <select value={entry.category} onChange={(e) => handleKBChange(index, "category", e.target.value)} className="w-full bg-[#131929] border border-white/[0.08] rounded-lg py-2 px-3 text-xs text-white">
+                    <option value="services">Services</option><option value="pricing">Pricing</option><option value="faqs">FAQs</option><option value="policies">Policies</option>
+                  </select>
 
                   <div>
                     <label className="block text-[10px] font-bold text-[#7b8aa8] uppercase mb-1">
@@ -229,6 +252,8 @@ export default function OnboardingPage() {
                 </div>
               ))}
             </div>
+
+            <button type="button" onClick={addKBEntry} className="w-full py-2.5 rounded-xl border border-dashed border-white/[0.15] text-xs font-semibold text-[#aab4cb] hover:text-white hover:border-[#5d7ef0]">+ Add another entry</button>
 
             <button
               onClick={handleFinishOnboarding}
