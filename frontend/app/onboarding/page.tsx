@@ -20,6 +20,10 @@ export default function OnboardingPage() {
   const [businessName, setBusinessName] = useState(user?.business_name || "");
   const [industry, setIndustry] = useState(user?.industry || "");
   const [ownerName, setOwnerName] = useState(user?.name || "");
+  const [calendarConnected, setCalendarConnected] = useState(false);
+  const [whatsappConnected, setWhatsappConnected] = useState(false);
+  const [phoneNumberId, setPhoneNumberId] = useState("");
+  const [accessToken, setAccessToken] = useState("");
 
   // Auth data loads asynchronously; keep the form in sync with it on the
   // first authenticated render instead of validating stale empty state.
@@ -28,6 +32,12 @@ export default function OnboardingPage() {
     setBusinessName(user.business_name || "");
     setIndustry(user.industry || "");
     setOwnerName(user.name || "");
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    apiFetch<{ connected: boolean }>("/api/v1/calendar/status").then((data) => setCalendarConnected(data.connected)).catch(() => {});
+    apiFetch<{ connected: boolean; phone_number_id?: string }>("/api/v1/whatsapp/status").then((data) => { setWhatsappConnected(data.connected); setPhoneNumberId(data.phone_number_id || ""); }).catch(() => {});
   }, [user]);
 
   // KB inputs
@@ -148,7 +158,7 @@ export default function OnboardingPage() {
             <span className="font-bold text-sm text-[#7b8aa8]">Followly Onboarding</span>
           </div>
           <div className="flex gap-2">
-            {[1, 2, 3].map((s) => (
+            {[1, 2, 3, 4, 5].map((s) => (
               <div
                 key={s}
                 className={`h-1.5 w-10 rounded-full transition-all ${
@@ -269,25 +279,38 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* Step 3: AI is live */}
+        {/* Step 3: Calendar */}
         {step === 3 && (
           <div className="space-y-6 text-center py-6">
-            <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center text-3xl mx-auto mb-4 animate-bounce">
-              ✓
-            </div>
-            <div>
-              <h2 className="text-xl font-bold mb-2">Your AI Agent Is Ready to Activate</h2>
-              <p className="text-sm text-[#7b8aa8] max-w-md mx-auto">
-                Your business profile and knowledge base are configured. Connect your channels before sending real customer conversations.
-              </p>
-            </div>
+            <h2 className="text-xl font-bold">Connect Google Calendar</h2>
+            <p className="text-sm text-[#7b8aa8]">The agent needs your calendar to check availability and book appointments.</p>
+            <div className="text-sm font-semibold text-white">{calendarConnected ? "✓ Calendar connected" : "Calendar not connected"}</div>
+            {!calendarConnected && <button onClick={async () => { try { const data = await apiFetch<{ authorization_url: string }>("/api/v1/calendar/connect"); window.location.href = data.authorization_url; } catch (err: any) { toast.error(err.message || "Unable to connect calendar."); } }} className="w-full py-3 rounded-xl bg-[#5d7ef0] text-white font-semibold text-sm">Connect Google Calendar</button>}
+            <button onClick={() => setStep(4)} className="w-full py-3 rounded-xl border border-white/[0.1] text-white font-semibold text-sm">{calendarConnected ? "Continue" : "Skip for now"} →</button>
+          </div>
+        )}
 
-            <button
-              onClick={handleGoToDashboard}
-              className="w-full py-3 rounded-xl bg-[#5d7ef0] text-white font-semibold text-sm hover:bg-[#4169e1] transition-all"
-            >
-              {loading ? "Activating..." : "Finish Setup & Go to Dashboard →"}
-            </button>
+        {/* Step 4: WhatsApp */}
+        {step === 4 && (
+          <div className="space-y-6 py-6">
+            <h2 className="text-xl font-bold">Connect WhatsApp Business</h2>
+            <p className="text-sm text-[#7b8aa8]">Enter the Meta Phone Number ID and access token for this business.</p>
+            {whatsappConnected ? <div className="text-sm font-semibold text-emerald-400">✓ WhatsApp connected</div> : <>
+              <input value={phoneNumberId} onChange={(e) => setPhoneNumberId(e.target.value)} placeholder="Meta Phone Number ID" className="w-full bg-white/[0.06] border border-white/[0.08] rounded-xl p-3 text-sm text-white" />
+              <input type="password" value={accessToken} onChange={(e) => setAccessToken(e.target.value)} placeholder="Meta access token" className="w-full bg-white/[0.06] border border-white/[0.08] rounded-xl p-3 text-sm text-white" />
+              <button onClick={async () => { if (!phoneNumberId || !accessToken) { toast.error("Enter both WhatsApp values."); return; } try { await apiFetch("/api/v1/whatsapp/credentials", { method: "PUT", body: JSON.stringify({ phone_number_id: phoneNumberId, access_token: accessToken }) }); setWhatsappConnected(true); setAccessToken(""); toast.success("WhatsApp connected."); } catch (err: any) { toast.error(err.message || "Unable to connect WhatsApp."); } }} className="w-full py-3 rounded-xl bg-[#5d7ef0] text-white font-semibold text-sm">Connect WhatsApp</button>
+            </>}
+            <button onClick={() => setStep(5)} className="w-full py-3 rounded-xl border border-white/[0.1] text-white font-semibold text-sm">{whatsappConnected ? "Continue" : "Skip for now"} →</button>
+          </div>
+        )}
+
+        {/* Step 5: Complete */}
+        {step === 5 && (
+          <div className="space-y-6 text-center py-6">
+            <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">✓</div>
+            <h2 className="text-xl font-bold">Your Setup Is Ready</h2>
+            <p className="text-sm text-[#7b8aa8]">You can connect skipped integrations later from Channels.</p>
+            <button onClick={handleGoToDashboard} disabled={loading} className="w-full py-3 rounded-xl bg-[#5d7ef0] text-white font-semibold text-sm">{loading ? "Activating..." : "Finish Setup & Go to Dashboard →"}</button>
           </div>
         )}
       </div>
