@@ -169,3 +169,16 @@ class UserMe(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class BusinessProfileResponse(BaseModel):
+    name: str
+    industry: str
+    owner_name: str
+    owner_email: str
+
+
+class BusinessProfileUpdate(BaseModel):
+    name: str
+    industry: str
+    owner_name: str

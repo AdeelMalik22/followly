@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth-provider";
 import { apiFetch } from "@/lib/api";
@@ -17,6 +17,18 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const [businessName, setBusinessName] = useState(user?.business_name || "");
+  const [industry, setIndustry] = useState(user?.industry || "");
+  const [ownerName, setOwnerName] = useState(user?.name || "");
+
+  // Auth data loads asynchronously; keep the form in sync with it on the
+  // first authenticated render instead of validating stale empty state.
+  useEffect(() => {
+    if (!user) return;
+    setBusinessName(user.business_name || "");
+    setIndustry(user.industry || "");
+    setOwnerName(user.name || "");
+  }, [user]);
 
   // KB inputs
   const [kbEntries, setKbEntries] = useState<KBItemInput[]>([
@@ -31,8 +43,24 @@ export default function OnboardingPage() {
     setKbEntries(updated);
   };
 
-  const handleNextStep = () => {
+  const handleNextStep = async () => {
     if (step === 1) {
+      if (!businessName.trim() || !industry.trim() || !ownerName.trim()) {
+        toast.error("Please complete your business profile.");
+        return;
+      }
+      setLoading(true);
+      try {
+        await apiFetch("/api/v1/business/profile", {
+          method: "PUT",
+          body: JSON.stringify({ name: businessName, industry, owner_name: ownerName }),
+        });
+      } catch (err: any) {
+        toast.error(err.message || "Unable to save your business profile.");
+        return;
+      } finally {
+        setLoading(false);
+      }
       setStep(2);
     }
   };
@@ -119,7 +147,7 @@ export default function OnboardingPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <span className="block text-[11px] font-bold text-[#7b8aa8] uppercase">Account Owner</span>
-                  <span className="text-sm font-semibold">{user.name}</span>
+                  <input value={ownerName} onChange={(e) => setOwnerName(e.target.value)} className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg py-2 px-3 text-sm text-white" />
                 </div>
                 <div>
                   <span className="block text-[11px] font-bold text-[#7b8aa8] uppercase">Email Address</span>
@@ -130,11 +158,13 @@ export default function OnboardingPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <span className="block text-[11px] font-bold text-[#7b8aa8] uppercase">Business Name</span>
-                  <span className="text-sm font-semibold">{user.business_name}</span>
+                  <input value={businessName} onChange={(e) => setBusinessName(e.target.value)} className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg py-2 px-3 text-sm text-white" />
                 </div>
                 <div>
                   <span className="block text-[11px] font-bold text-[#7b8aa8] uppercase">Industry</span>
-                  <span className="text-sm font-semibold">{user.industry}</span>
+                  <select value={industry} onChange={(e) => setIndustry(e.target.value)} className="w-full bg-[#131929] border border-white/[0.08] rounded-lg py-2 px-3 text-sm text-white">
+                    <option>Dental Clinic</option><option>Medical Clinic</option><option>Salon &amp; Spa</option><option>Law Firm</option><option>Real Estate</option><option>Fitness &amp; Gym</option><option>Other</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -149,7 +179,7 @@ export default function OnboardingPage() {
               onClick={handleNextStep}
               className="w-full py-3 rounded-xl bg-[#5d7ef0] text-white font-semibold text-sm hover:bg-[#4169e1] transition-all"
             >
-              Continue to Knowledge Base Setup →
+              {loading ? "Saving..." : "Continue to Knowledge Base Setup →"}
             </button>
           </div>
         )}

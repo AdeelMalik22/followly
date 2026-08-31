@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 import toast from "react-hot-toast";
 import { Settings, Shield, Trash2 } from "lucide-react";
+import { apiFetch } from "@/lib/api";
 
 export default function SettingsPage() {
   const { user, refetchUser } = useAuth();
@@ -21,7 +22,7 @@ export default function SettingsPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [securityLoading, setSecurityLoading] = useState(false);
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!businessName || !ownerName) {
       toast.error("Business name and owner name cannot be empty.");
@@ -29,12 +30,18 @@ export default function SettingsPage() {
     }
 
     setSaveLoading(true);
-    // Mock save profile
-    setTimeout(() => {
+    try {
+      await apiFetch("/api/v1/business/profile", {
+        method: "PUT",
+        body: JSON.stringify({ name: businessName, industry, owner_name: ownerName }),
+      });
       toast.success("Business profile settings updated!");
-      setSaveLoading(false);
       refetchUser();
-    }, 800);
+    } catch (err: any) {
+      toast.error(err.message || "Unable to update business profile.");
+    } finally {
+      setSaveLoading(false);
+    }
   };
 
   const handleUpdatePassword = (e: React.FormEvent) => {
