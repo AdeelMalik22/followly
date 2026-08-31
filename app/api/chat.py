@@ -31,7 +31,12 @@ async def chat_message(
     db: Session = Depends(get_db),
 ):
     messages = []
-    business = db.query(Business).filter(Business.settings["widget_key"].astext == business_key).first()
+    # Compare JSON settings in Python for SQLite/PostgreSQL compatibility.
+    business = next(
+        (item for item in db.query(Business).all()
+         if (item.settings or {}).get("widget_key") == business_key),
+        None,
+    )
     if not business:
         messages.append({"role": "error", "content": "Demo business not found. Run the seed script first."})
         return templates.TemplateResponse(

@@ -73,6 +73,19 @@ async def calendar_callback(
             settings.GOOGLE_REDIRECT_URI
         )
 
+        # Google may return OpenID/profile scopes in addition to Calendar when
+        # the consent screen is configured with account identity scopes. Tell
+        # oauthlib about the scopes returned on the callback so it does not
+        # reject an otherwise valid token exchange.
+        returned_scopes = request.query_params.get("scope", "").split()
+        calendar_scope = "https://www.googleapis.com/auth/calendar"
+        if calendar_scope not in returned_scopes:
+            raise HTTPException(status_code=400, detail="Calendar permission was not granted")
+        # oauthlib compares scope strings in order, while Google is free to
+        # return the same scopes in a different order. Calendar permission was
+        # verified above, so skip that order-sensitive comparison.
+        flow.oauth2session.scope = None
+
         flow.fetch_token(code=code)
         credentials = flow.credentials
 
@@ -92,11 +105,9 @@ async def calendar_callback(
 
         logger.info(f"Calendar connected for business {business.id}")
 
-        return {
-            "status": "success",
-            "message": "Google Calendar connected successfully",
-            "business_id": business.id
-        }
+        return RedirectResponse(
+            url=f"{settings.FRONTEND_URL.rstrip('/')}/dashboard/channels?calendar=connected"
+        )
 
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid state parameter")

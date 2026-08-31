@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     WHATSAPP_REQUEST_TIMEOUT: float = 10.0
     WHATSAPP_MAX_RETRIES: int = 3
     API_BASE_URL: str = ""
+    FRONTEND_URL: str = "http://localhost:3000"
 
     GOOGLE_CLIENT_ID: str = ""
     GOOGLE_CLIENT_SECRET: str = ""

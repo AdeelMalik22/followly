@@ -170,9 +170,11 @@ async def handle_webhook(
         logger.info(f"Received message from {from_number}: {message_text}")
 
         # Find business by phone number ID
-        business = db.query(Business).filter(
-            Business.settings["whatsapp_phone_id"].astext == business_phone_id
-        ).first()
+        business = next(
+            (item for item in db.query(Business).all()
+             if (item.settings or {}).get("whatsapp_phone_id") == business_phone_id),
+            None,
+        )
 
         if not business:
             logger.warning(f"No business found for phone ID: {business_phone_id}")
