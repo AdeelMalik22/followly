@@ -18,7 +18,7 @@ async def chat_page(request: Request):
     return templates.TemplateResponse(
         request=request,
         name="chat.html",
-        context={"messages": [], "phone": "demo-user", "business_key": request.query_params.get("business_key", ""), "quick_questions": QUICK_QUESTIONS},
+        context={"messages": [], "phone": "demo-user", "business_key": request.query_params.get("business_key", ""), "business_name": "", "quick_questions": QUICK_QUESTIONS},
     )
 
 
@@ -41,7 +41,7 @@ async def chat_message(
         messages.append({"role": "error", "content": "Demo business not found. Run the seed script first."})
         return templates.TemplateResponse(
             request=request, name="chat.html",
-            context={"messages": messages, "phone": phone, "business_key": business_key, "quick_questions": QUICK_QUESTIONS},
+            context={"messages": messages, "phone": phone, "business_key": business_key, "business_name": business.name, "quick_questions": QUICK_QUESTIONS},
             status_code=404,
         )
 
@@ -56,5 +56,5 @@ async def chat_message(
     messages = [{"role": "user" if item.role == "user" else "assistant", "content": item.content} for item in history]
     return templates.TemplateResponse(
         request=request, name="chat.html",
-        context={"messages": messages, "phone": phone, "business_key": business_key, "quick_questions": QUICK_QUESTIONS},
+        context={"messages": messages, "phone": phone, "business_key": business_key, "business_name": business.name, "quick_questions": QUICK_QUESTIONS},
     )
