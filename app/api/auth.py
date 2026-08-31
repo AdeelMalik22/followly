@@ -71,4 +71,5 @@ def get_me(current_user: User = Depends(get_current_user)):
         business_name=business.name if business else "",
         industry=business.industry if business else "",
         knowledge_base_count=kb_count,
+        onboarding_completed=bool((business.settings or {}).get("onboarding_completed")) if business else False,
     )

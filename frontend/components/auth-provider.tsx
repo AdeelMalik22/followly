@@ -39,10 +39,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userData = await apiFetch<UserMe>("/api/v1/auth/me");
       setUser(userData);
       
-      // Onboarding Gate: If knowledge base count is less than 3, force user to complete onboarding
-      if (userData.knowledge_base_count < 3 && pathname !== "/onboarding") {
+      // Onboarding Gate: only the explicit completion flag ends onboarding.
+      if (!userData.onboarding_completed && pathname !== "/onboarding") {
         router.replace("/onboarding");
-      } else if (userData.knowledge_base_count >= 3 && pathname === "/onboarding") {
+      } else if (userData.onboarding_completed && pathname === "/onboarding") {
         router.replace("/dashboard");
       } else if (pathname === "/login" || pathname === "/signup") {
         router.replace("/dashboard");

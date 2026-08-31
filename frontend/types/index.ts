@@ -24,6 +24,7 @@ export interface UserMe {
   business_name: string;
   industry: string;
   knowledge_base_count: number;
+  onboarding_completed: boolean;
 }
 
 export interface Lead {

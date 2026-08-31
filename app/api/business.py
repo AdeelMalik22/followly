@@ -52,6 +52,16 @@ def get_profile(
     )
 
 
+@router.post("/onboarding/complete")
+def complete_onboarding(business: Business = Depends(get_current_business), db: Session = Depends(get_db)):
+    business.settings = business.settings or {}
+    business.settings["onboarding_completed"] = True
+    from sqlalchemy.orm.attributes import flag_modified
+    flag_modified(business, "settings")
+    db.commit()
+    return {"status": "completed"}
+
+
 @router.put("/profile", response_model=BusinessProfileResponse)
 def update_profile(
     profile: BusinessProfileUpdate,

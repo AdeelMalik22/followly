@@ -111,9 +111,6 @@ export default function OnboardingPage() {
 
       toast.success("Knowledge Base successfully configured!");
       
-      // Refetch user to update knowledge_base_count which triggers gate redirect
-      await refetchUser();
-      
       setStep(3);
     } catch (err: any) {
       toast.error(err.message || "Failed to create knowledge base entries.");
@@ -122,8 +119,15 @@ export default function OnboardingPage() {
     }
   };
 
-  const handleGoToDashboard = () => {
-    router.replace("/dashboard");
+  const handleGoToDashboard = async () => {
+    setLoading(true);
+    try {
+      await apiFetch("/api/v1/business/onboarding/complete", { method: "POST" });
+      await refetchUser();
+      router.replace("/dashboard");
+    } catch (err: any) {
+      toast.error(err.message || "Unable to complete onboarding.");
+    } finally { setLoading(false); }
   };
 
   if (!user) return null;
@@ -272,9 +276,9 @@ export default function OnboardingPage() {
               ✓
             </div>
             <div>
-              <h2 className="text-xl font-bold mb-2">Your AI Agent is Live!</h2>
+              <h2 className="text-xl font-bold mb-2">Your AI Agent Is Ready to Activate</h2>
               <p className="text-sm text-[#7b8aa8] max-w-md mx-auto">
-                Congratulations! We configured your initial Knowledge Base. Your assistant is ready to converse on WhatsApp, Instagram, and web chat.
+                Your business profile and knowledge base are configured. Connect your channels before sending real customer conversations.
               </p>
             </div>
 
@@ -282,7 +286,7 @@ export default function OnboardingPage() {
               onClick={handleGoToDashboard}
               className="w-full py-3 rounded-xl bg-[#5d7ef0] text-white font-semibold text-sm hover:bg-[#4169e1] transition-all"
             >
-              Go to Dashboard Overview →
+              {loading ? "Activating..." : "Finish Setup & Go to Dashboard →"}
             </button>
           </div>
         )}

@@ -166,6 +166,7 @@ class UserMe(BaseModel):
     business_name: str
     industry: str
     knowledge_base_count: int
+    onboarding_completed: bool = False
 
     class Config:
         from_attributes = True
