@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.attributes import flag_modified
 from app.core.database import get_db
 from app.core.config import settings
 from app.models.models import Business
@@ -85,6 +86,7 @@ async def calendar_callback(
             "client_secret": credentials.client_secret,
             "scopes": credentials.scopes
         }
+        flag_modified(business, "settings")
 
         db.commit()
 
@@ -131,6 +133,7 @@ async def disconnect_calendar(
     try:
         if business.settings and "google_calendar_credentials" in business.settings:
             del business.settings["google_calendar_credentials"]
+            flag_modified(business, "settings")
             db.commit()
 
         return {"status": "success", "message": "Calendar disconnected"}

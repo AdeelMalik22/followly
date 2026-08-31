@@ -2,12 +2,19 @@
 
 import React, { useState } from "react";
 import toast from "react-hot-toast";
+import { apiFetch } from "@/lib/api";
 import { MessageSquare, Calendar, Code, Copy, Check, ExternalLink } from "lucide-react";
 
 export default function ChannelsPage() {
   const [copied, setCopied] = useState(false);
   const [whatsappConnected, setWhatsappConnected] = useState(false);
   const [calendarConnected, setCalendarConnected] = useState(false);
+
+  React.useEffect(() => {
+    apiFetch<{ connected: boolean }>("/api/v1/calendar/status")
+      .then((data) => setCalendarConnected(data.connected))
+      .catch((err) => toast.error(err.message || "Unable to load calendar status."));
+  }, []);
 
   const embedCode = `<script src="https://cdn.followly.ai/widget.js" data-business-id="1" defer></script>`;
 
@@ -115,9 +122,19 @@ export default function ChannelsPage() {
             )}
 
             <button
-              onClick={() => {
-                setCalendarConnected(!calendarConnected);
-                toast.success(calendarConnected ? "Google Calendar disconnected." : "Google Calendar successfully connected!");
+              onClick={async () => {
+                try {
+                  if (calendarConnected) {
+                    await apiFetch("/api/v1/calendar/disconnect", { method: "DELETE" });
+                    setCalendarConnected(false);
+                    toast.success("Google Calendar disconnected.");
+                  } else {
+                    const data = await apiFetch<{ authorization_url: string }>("/api/v1/calendar/connect");
+                    window.location.href = data.authorization_url;
+                  }
+                } catch (err: any) {
+                  toast.error(err.message || "Unable to update calendar connection.");
+                }
               }}
               className={`w-full py-2.5 rounded-xl font-semibold text-xs transition-all ${
                 calendarConnected
@@ -125,7 +142,7 @@ export default function ChannelsPage() {
                   : "bg-[#5d7ef0] text-white hover:bg-[#4169e1]"
               }`}
             >
-              {calendarConnected ? "Disconnect Calendar" : "Link Google Calendar"}
+                  {calendarConnected ? "Disconnect Calendar" : "Link Google Calendar"}
             </button>
           </div>
         </div>
