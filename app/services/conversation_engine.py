@@ -214,7 +214,40 @@ async def handle_book_appointment(
         datetime_str = f"{date_str} {time_str}"
         start_time = datetime.strptime(datetime_str, "%Y-%m-%d %H:%M")
         duration_minutes = (business.settings or {}).get("appointment_duration_minutes", 60)
+        if not isinstance(duration_minutes, int) or not 15 <= duration_minutes <= 480:
+            return {"success": False, "error": "This business has an invalid appointment duration configured."}
         end_time = start_time + timedelta(minutes=duration_minutes)
+
+        # A booking must fit completely inside the business's hours.
+        day_name = start_time.strftime("%A").lower()
+        configured_hours = (business.settings or {}).get("working_hours", {})
+        day_hours = configured_hours.get(day_name)
+        if day_hours is None:
+            day_hours = {"open": day_name != "sunday", "start": "09:00", "end": "17:00"}
+        if not day_hours.get("open", False):
+            return {"success": False, "error": f"The business is closed on {day_name.title()}."}
+        try:
+            opening = datetime.strptime(day_hours.get("start", "09:00"), "%H:%M").time()
+            closing = datetime.strptime(day_hours.get("end", "17:00"), "%H:%M").time()
+        except (TypeError, ValueError):
+            return {"success": False, "error": "This business has invalid working hours configured."}
+        if opening >= closing or start_time.time() < opening or end_time.time() > closing:
+            return {"success": False, "error": f"That appointment is outside business hours on {day_name.title()}."}
+
+        # Prevent double booking within this business. Two appointments
+        # overlap when the existing one starts before the requested one ends
+        # and ends after the requested one starts.
+        overlapping = db.query(Appointment.id).filter(
+            Appointment.business_id == business.id,
+            Appointment.status == "scheduled",
+            Appointment.start_time < end_time,
+            Appointment.end_time > start_time,
+        ).first()
+        if overlapping:
+            return {
+                "success": False,
+                "error": "That time slot is no longer available. Please choose another available time.",
+            }
 
         # Create appointment in database
         appointment = Appointment(
