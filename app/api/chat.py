@@ -30,10 +30,11 @@ async def chat_page(request: Request, db: Session = Depends(get_db)):
         authenticated = bool(customer and str(customer.business_id) == str(payload.get("business_id")) and (customer.business.settings or {}).get("widget_key") == business_key)
         if authenticated:
             lead = db.query(Lead).filter(Lead.customer_id == customer.id, Lead.business_id == customer.business_id).first()
-            if lead and not new_chat:
-                conversation = db.query(Conversation).filter(Conversation.lead_id == lead.id, Conversation.channel == "web").order_by(Conversation.last_message_at.desc()).first()
-                if conversation:
-                    history = conversation_service.get_conversation_history(conversation.id, limit=50, db=db)
+            if lead:
+                if not new_chat:
+                    conversation = db.query(Conversation).filter(Conversation.lead_id == lead.id, Conversation.channel == "web").order_by(Conversation.last_message_at.desc()).first()
+                    if conversation:
+                        history = conversation_service.get_conversation_history(conversation.id, limit=50, db=db)
                 chat_list = [{"id": c.id, "title": c.lead.name or "Conversation", "updated": c.last_message_at.strftime("%b %d, %Y") if c.last_message_at else ""} for c in db.query(Conversation).filter(Conversation.lead_id == lead.id, Conversation.channel == "web").order_by(Conversation.last_message_at.desc()).limit(20).all()]
     response = templates.TemplateResponse(
         request=request,
