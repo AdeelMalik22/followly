@@ -1,42 +1,528 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Followly | Adeel Dental Clinic</title>
-  <style>
-    :root{--navy:#172238;--blue:#4169e1;--bg:#f5f7fb;--line:#e6ebf3;--muted:#718096}
-    *{box-sizing:border-box}body{margin:0;background:var(--bg);font:15px system-ui,-apple-system,sans-serif;color:var(--navy)}
-    .app{height:100vh;display:flex}.side{width:290px;background:var(--navy);color:#fff;padding:28px;display:flex;flex-direction:column}.logo{font-size:20px;font-weight:750}.logo b{display:inline-grid;place-items:center;width:36px;height:36px;border-radius:11px;background:#5d7ef0;margin-right:9px}.side h1{font-size:29px;line-height:1.12;margin:70px 0 12px}.side p{color:#aeb9cd;line-height:1.6;margin:0}.side small{margin-top:auto;color:#aeb9cd;line-height:1.5}
-    .content{flex:1;min-width:0;display:flex;flex-direction:column}.bar{height:76px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 34px}.clinic{font-weight:700;font-size:17px}.status{font-size:13px;color:#23966d}.status:before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;background:#35bd83;margin-right:7px}.thread{flex:1;overflow-y:auto;padding:38px 9%;background:linear-gradient(#fbfcfe,var(--bg))}.empty{text-align:center;max-width:450px;margin:14vh auto;color:var(--muted)}.empty strong{display:block;color:var(--navy);font-size:25px;margin-bottom:10px}.bubble{max-width:680px;width:fit-content;padding:13px 16px;margin:12px 0;border-radius:17px;line-height:1.5;white-space:pre-wrap;box-shadow:0 2px 8px #17223808}.bubble.user{margin-left:auto;background:var(--blue);color:#fff;border-bottom-right-radius:5px}.bubble.assistant{background:#fff;border:1px solid var(--line);border-bottom-left-radius:5px}.bubble.error{background:#fff0f0;color:#a33}.quick{display:flex;gap:9px;flex-wrap:wrap;padding:0 9% 17px;background:var(--bg)}.quick button{border:1px solid #d8e0ee;background:#fff;color:#40516b;border-radius:20px;padding:9px 14px;cursor:pointer}.quick button:hover{border-color:var(--blue);color:var(--blue)}.composer{display:flex;gap:12px;background:#fff;border-top:1px solid var(--line);padding:18px 9%}.composer textarea{flex:1;resize:none;min-height:50px;max-height:130px;border:1px solid #d8e0ee;border-radius:15px;padding:14px;font:inherit;outline:none}.composer textarea:focus{border-color:var(--blue)}.composer button{border:0;border-radius:14px;background:var(--blue);color:#fff;padding:0 24px;font-weight:700;cursor:pointer}.composer button:disabled{opacity:.6;cursor:wait}@media(max-width:700px){.side{display:none}.bar{padding:0 18px}.thread{padding:24px 16px}.quick{padding:0 16px 12px}.composer{padding:12px 16px}.composer button{padding:0 16px}}
-  </style>
-<style>
-  .side{width:260px;background:#0b0b0d;padding:18px 14px;border-right:1px solid #242428}.logo{padding:8px 10px;margin-bottom:18px}.side h1{font-size:25px;margin:54px 10px 12px}.side p{margin:0 10px;color:#999}.side small{margin:0 10px 0;color:#999}.bar{height:64px;padding:0 28px;background:#fff}.thread{padding:34px 10%;}.bubble{border-radius:16px}.quick{padding-left:10%;padding-right:10%}.composer{padding:14px 10%}
-  .conversation-list{margin-top:20px;border-top:1px solid #29292d;padding-top:14px}.conversation-list-title{font-size:10px;color:#85858b;padding:0 10px 8px;text-transform:uppercase}.conversation-item{padding:10px;border-radius:8px;color:#ddd;font-size:13px;cursor:pointer}.conversation-item:hover{background:#202024}.conversation-item small{display:block;color:#85858b;margin:3px 0 0}
-  .new-chat-button{display:block;width:100%;padding:11px 12px;border:1px solid #3a3a40;border-radius:8px;background:#202024;color:#fff;text-decoration:none;font-size:13px;text-align:center}.new-chat-button:hover{background:#2b2b30}.conversation-list{max-height:360px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#555 transparent}
-</style>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Followly | Adeel Dental Clinic</title>
+    <style>
+        :root {
+            --navy: #172238;
+            --blue: #4169e1;
+            --bg: #f5f7fb;
+            --line: #e6ebf3;
+            --muted: #718096
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            font: 15px system-ui, -apple-system, sans-serif;
+            color: var(--navy)
+        }
+
+        .app {
+            height: 100vh;
+            display: flex
+        }
+
+        .side {
+            width: 290px;
+            background: var(--navy);
+            color: #fff;
+            padding: 28px;
+            display: flex;
+            flex-direction: column
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 750
+        }
+
+        .logo b {
+            display: inline-grid;
+            place-items: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 11px;
+            background: #5d7ef0;
+            margin-right: 9px
+        }
+
+        .side h1 {
+            font-size: 29px;
+            line-height: 1.12;
+            margin: 70px 0 12px
+        }
+
+        .side p {
+            color: #aeb9cd;
+            line-height: 1.6;
+            margin: 0
+        }
+
+        .side small {
+            margin-top: auto;
+            color: #aeb9cd;
+            line-height: 1.5
+        }
+
+        .content {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column
+        }
+
+        .bar {
+            height: 76px;
+            background: #fff;
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 34px
+        }
+
+        .clinic {
+            font-weight: 700;
+            font-size: 17px
+        }
+
+        .status {
+            font-size: 13px;
+            color: #23966d
+        }
+
+        .status:before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #35bd83;
+            margin-right: 7px
+        }
+
+        .thread {
+            flex: 1;
+            overflow-y: auto;
+            padding: 38px 9%;
+            background: linear-gradient(#fbfcfe, var(--bg))
+        }
+
+        .empty {
+            text-align: center;
+            max-width: 450px;
+            margin: 14vh auto;
+            color: var(--muted)
+        }
+
+        .empty strong {
+            display: block;
+            color: var(--navy);
+            font-size: 25px;
+            margin-bottom: 10px
+        }
+
+        .bubble {
+            max-width: 680px;
+            width: fit-content;
+            padding: 13px 16px;
+            margin: 12px 0;
+            border-radius: 17px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            box-shadow: 0 2px 8px #17223808
+        }
+
+        .bubble.user {
+            margin-left: auto;
+            background: var(--blue);
+            color: #fff;
+            border-bottom-right-radius: 5px
+        }
+
+        .bubble.assistant {
+            background: #fff;
+            border: 1px solid var(--line);
+            border-bottom-left-radius: 5px
+        }
+
+        .bubble.error {
+            background: #fff0f0;
+            color: #a33
+        }
+
+        .quick {
+            display: flex;
+            gap: 9px;
+            flex-wrap: wrap;
+            padding: 0 9% 17px;
+            background: var(--bg)
+        }
+
+        .quick button {
+            border: 1px solid #d8e0ee;
+            background: #fff;
+            color: #40516b;
+            border-radius: 20px;
+            padding: 9px 14px;
+            cursor: pointer
+        }
+
+        .quick button:hover {
+            border-color: var(--blue);
+            color: var(--blue)
+        }
+
+        .composer {
+            display: flex;
+            gap: 12px;
+            background: #fff;
+            border-top: 1px solid var(--line);
+            padding: 18px 9%
+        }
+
+        .composer textarea {
+            flex: 1;
+            resize: none;
+            min-height: 50px;
+            max-height: 130px;
+            border: 1px solid #d8e0ee;
+            border-radius: 15px;
+            padding: 14px;
+            font: inherit;
+            outline: none
+        }
+
+        .composer textarea:focus {
+            border-color: var(--blue)
+        }
+
+        .composer button {
+            border: 0;
+            border-radius: 14px;
+            background: var(--blue);
+            color: #fff;
+            padding: 0 24px;
+            font-weight: 700;
+            cursor: pointer
+        }
+
+        .composer button:disabled {
+            opacity: .6;
+            cursor: wait
+        }
+
+        @media (max-width: 700px) {
+            .side {
+                display: none
+            }
+
+            .bar {
+                padding: 0 18px
+            }
+
+            .thread {
+                padding: 24px 16px
+            }
+
+            .quick {
+                padding: 0 16px 12px
+            }
+
+            .composer {
+                padding: 12px 16px
+            }
+
+            .composer button {
+                padding: 0 16px
+            }
+        }
+    </style>
+    <style>
+        .side {
+            width: 260px;
+            background: #0b0b0d;
+            padding: 18px 14px;
+            border-right: 1px solid #242428
+        }
+
+        .logo {
+            padding: 8px 10px;
+            margin-bottom: 18px
+        }
+
+        .side h1 {
+            font-size: 25px;
+            margin: 54px 10px 12px
+        }
+
+        .side p {
+            margin: 0 10px;
+            color: #999
+        }
+
+        .side small {
+            margin: 0 10px 0;
+            color: #999
+        }
+
+        .bar {
+            height: 64px;
+            padding: 0 28px;
+            background: #fff
+        }
+
+        .thread {
+            padding: 34px 10%;
+        }
+
+        .bubble {
+            border-radius: 16px
+        }
+
+        .quick {
+            padding-left: 10%;
+            padding-right: 10%
+        }
+
+        .composer {
+            padding: 14px 10%
+        }
+
+        .conversation-list {
+            margin-top: 20px;
+            border-top: 1px solid #29292d;
+            padding-top: 14px
+        }
+
+        .conversation-list-title {
+            font-size: 10px;
+            color: #85858b;
+            padding: 0 10px 8px;
+            text-transform: uppercase
+        }
+
+        .conversation-item {
+            padding: 10px;
+            border-radius: 8px;
+            color: #ddd;
+            font-size: 13px;
+            cursor: pointer
+        }
+
+        .conversation-item:hover {
+            background: #202024
+        }
+
+        .conversation-item small {
+            display: block;
+            color: #85858b;
+            margin: 3px 0 0
+        }
+
+        .new-chat-button {
+            display: block;
+            width: 100%;
+            padding: 11px 12px;
+            border: 1px solid #3a3a40;
+            border-radius: 8px;
+            background: #202024;
+            color: #fff;
+            text-decoration: none;
+            font-size: 13px;
+            text-align: center
+        }
+
+        .new-chat-button:hover {
+            background: #2b2b30
+        }
+
+        .conversation-list {
+            max-height: 360px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #555 transparent
+        }
+    </style>
 </head>
-<body><div class="app"><aside class="side"><div class="logo"><b>F</b>Followly</div><h1>Dental care made simple.</h1><p>Ask about treatments, pricing, clinic policies, or appointments.</p><small>Adeel Dental Clinic<br>AI assistant for local testing</small></aside><main class="content"><header class="bar"><span class="clinic">Adeel Dental Clinic</span><span class="status">Assistant online</span></header><section id="thread" class="thread">{% if not messages %}<div id="empty" class="empty"><strong>How can we help today?</strong>Choose a question below or type a message to get started.</div>{% endif %}{% for item in messages %}<div class="bubble {{ item.role }}">{{ item.content }}</div>{% endfor %}</section><nav class="quick">{% for question in quick_questions %}<button type="button" data-question="{{ question }}">{{ question }}</button>{% endfor %}</nav><form id="composer" class="composer"><input type="hidden" name="phone" value="{{ phone }}"><textarea id="message" name="message" placeholder="Write a message..." autocomplete="off" required></textarea><button id="send" type="submit">Send</button></form></main></div>
-<input type="hidden" name="business_key" value="{{ business_key }}"><script>
-const businessKey={{ business_key|default('', true)|tojson }}, form=document.getElementById('composer'), input=document.getElementById('message'), thread=document.getElementById('thread'), send=document.getElementById('send');
-const authenticated={{ authenticated|default(false, true)|tojson }};
-const chatList={{ chat_list|default([], true)|tojson }};
-const newChat={{ new_chat|default(false, true)|tojson }};
-document.querySelector('.clinic').textContent={{ business_name|default('', true)|tojson }} || 'Business assistant';
-document.title='Followly | '+({{ business_name|default('', true)|tojson }} || 'Business Assistant');
-const businessName={{ business_name|default('', true)|tojson }} || 'Your business';
-document.querySelector('.side h1').innerHTML=businessName+'<br>made simple.';
-document.querySelector('.side small').innerHTML=businessName+'<br>AI assistant powered by Followly';
-if (authenticated) { const newChatButton=document.createElement('a'); newChatButton.className='new-chat-button'; newChatButton.href='?business_key='+encodeURIComponent(businessKey)+'&new=1'; newChatButton.textContent='+ New chat'; document.querySelector('.side').insertBefore(newChatButton, document.querySelector('.side h1')); form.insertAdjacentHTML('afterbegin', '<input type="hidden" name="new_chat" value="'+(newChat?'1':'0')+'">'); }
-const signIn=document.createElement('a');
-signIn.href='/api/v1/customer/auth/google?business_key='+encodeURIComponent(businessKey);
-signIn.textContent='Sign in with Google';
-signIn.style.cssText='margin-left:18px;padding:9px 14px;border:1px solid #d8e0ee;border-radius:20px;color:#40516b;text-decoration:none;font-size:13px;background:#fff';
-document.querySelector('.bar').appendChild(signIn);
-if (authenticated) signIn.textContent='Signed in with Google';
-else { form.style.display='none'; const notice=document.createElement('div'); notice.textContent='Sign in with Google above to start chatting and save your conversation history.'; notice.style.cssText='text-align:center;padding:24px;color:#718096;font-size:14px'; document.querySelector('.content').appendChild(notice); }
-if (authenticated && chatList.length) { const list=document.createElement('div'); list.className='conversation-list'; list.innerHTML='<div class="conversation-list-title">Your conversations</div>'+chatList.map(c=>`<div class="conversation-item" data-conversation-id="${c.id}">${c.title}<small>${c.updated}</small></div>`).join(''); document.querySelector('.side').appendChild(list); document.querySelectorAll('[data-conversation-id]').forEach(item=>item.onclick=()=>{ window.location.href='?business_key='+encodeURIComponent(businessKey)+'&conversation_id='+item.dataset.conversationId; }); }
-form.insertAdjacentHTML('afterbegin', `<input type="hidden" name="business_key" value="${businessKey}">`);
-function addBubble(text, role){const el=document.createElement('div');el.className='bubble '+role;el.textContent=text;thread.querySelector('#empty')?.remove();thread.appendChild(el);thread.scrollTop=thread.scrollHeight;return el;}
-async function submitMessage(text){text=(text||'').trim();if(!text||send.disabled)return;addBubble(text,'user');input.value='';send.disabled=true;const thinking=addBubble('AI is thinking...','assistant');thinking.classList.add('thinking');try{const body=new FormData(form);body.set('message',text);const response=await fetch('/chat',{method:'POST',body});const html=await response.text();const doc=new DOMParser().parseFromString(html,'text/html');const bubbles=doc.querySelectorAll('.bubble');const reply=bubbles[bubbles.length-1];thinking.remove();if(reply&&reply.classList.contains('assistant'))addBubble(reply.textContent,'assistant');else if(!response.ok)addBubble('Unable to reach the assistant. Please try again.','error');}catch(e){thinking.remove();addBubble('Unable to reach the assistant. Please try again.','error')}finally{send.disabled=false;input.focus();}}
-form.addEventListener('submit',e=>{e.preventDefault();submitMessage(input.value)});input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();form.requestSubmit()}});document.querySelectorAll('[data-question]').forEach(b=>b.addEventListener('click',()=>submitMessage(b.dataset.question)));thread.scrollTop=thread.scrollHeight;
-</script></body></html>
+<body>
+<div class="app">
+    <aside class="side">
+        <div class="logo"><b>F</b>Followly</div>
+        <h1>Dental care made simple.</h1>
+        <p>Ask about treatments, pricing, clinic policies, or appointments.</p><small>Adeel Dental Clinic<br>AI
+        assistant for local testing</small></aside>
+    <main class="content">
+        <header class="bar"><span class="clinic">Adeel Dental Clinic</span><span class="status">Assistant online</span>
+        </header>
+        <section id="thread" class="thread">{% if not messages %}
+            <div id="empty" class="empty"><strong>How can we help today?</strong>Choose a question below or type a
+                message to get started.
+            </div>
+            {% endif %}{% for item in messages %}
+            <div class="bubble {{ item.role }}">{{ item.content }}</div>
+            {% endfor %}
+        </section>
+        <nav class="quick">{% for question in quick_questions %}
+            <button type="button" data-question="{{ question }}">{{ question }}</button>
+            {% endfor %}
+        </nav>
+        <form id="composer" class="composer"><input type="hidden" name="phone" value="{{ phone }}"><textarea
+                id="message" name="message" placeholder="Write a message..." autocomplete="off" required></textarea>
+            <button id="send" type="submit">Send</button>
+        </form>
+    </main>
+</div>
+<input type="hidden" name="business_key" value="{{ business_key }}">
+<script>
+    const businessKey = {
+    {
+        business_key |
+    default
+        ('', true) | tojson
+    }
+    },
+    form = document.getElementById('composer'), input = document.getElementById('message'), thread = document.getElementById('thread'), send = document.getElementById('send');
+    const authenticated = {
+    {
+        authenticated |
+    default
+        (false, true) | tojson
+    }
+    }
+    ;
+    const chatList = {
+    {
+        chat_list |
+    default
+        ([], true) | tojson
+    }
+    }
+    ;
+    const newChat = {
+    {
+        new_chat |
+    default
+        (false, true) | tojson
+    }
+    }
+    ;
+    document.querySelector('.clinic').textContent = {
+    {
+        business_name |
+    default
+        ('', true) | tojson
+    }
+    } ||
+    'Business assistant';
+    document.title = 'Followly | ' + ({
+    {
+        business_name |
+    default
+        ('', true) | tojson
+    }
+    } ||
+    'Business Assistant'
+    )
+    ;
+    const businessName = {
+    {
+        business_name |
+    default
+        ('', true) | tojson
+    }
+    } ||
+    'Your business';
+    document.querySelector('.side h1').innerHTML = businessName + '<br>made simple.';
+    document.querySelector('.side small').innerHTML = businessName + '<br>AI assistant powered by Followly';
+    if (authenticated) {
+        const newChatButton = document.createElement('a');
+        newChatButton.className = 'new-chat-button';
+        newChatButton.href = '?business_key=' + encodeURIComponent(businessKey) + '&new=1';
+        newChatButton.textContent = '+ New chat';
+        document.querySelector('.side').insertBefore(newChatButton, document.querySelector('.side h1'));
+        form.insertAdjacentHTML('afterbegin', '<input type="hidden" name="new_chat" value="' + (newChat ? '1' : '0') + '">');
+    }
+    const signIn = document.createElement('a');
+    signIn.href = '/api/v1/customer/auth/google?business_key=' + encodeURIComponent(businessKey);
+    signIn.textContent = 'Sign in with Google';
+    signIn.style.cssText = 'margin-left:18px;padding:9px 14px;border:1px solid #d8e0ee;border-radius:20px;color:#40516b;text-decoration:none;font-size:13px;background:#fff';
+    document.querySelector('.bar').appendChild(signIn);
+    if (authenticated) signIn.textContent = 'Signed in with Google';
+    else {
+        form.style.display = 'none';
+        const notice = document.createElement('div');
+        notice.textContent = 'Sign in with Google above to start chatting and save your conversation history.';
+        notice.style.cssText = 'text-align:center;padding:24px;color:#718096;font-size:14px';
+        document.querySelector('.content').appendChild(notice);
+    }
+    if (authenticated && chatList.length) {
+        const list = document.createElement('div');
+        list.className = 'conversation-list';
+        list.innerHTML = '<div class="conversation-list-title">Your conversations</div>' + chatList.map(c => `<div class="conversation-item" data-conversation-id="${c.id}">${c.title}<small>${c.updated}</small></div>`).join('');
+        document.querySelector('.side').appendChild(list);
+        document.querySelectorAll('[data-conversation-id]').forEach(item => item.onclick = () => {
+            window.location.href = '?business_key=' + encodeURIComponent(businessKey) + '&conversation_id=' + item.dataset.conversationId;
+        });
+    }
+    form.insertAdjacentHTML('afterbegin', `<input type="hidden" name="business_key" value="${businessKey}">`);
+
+    function addBubble(text, role) {
+        const el = document.createElement('div');
+        el.className = 'bubble ' + role;
+        el.textContent = text;
+        thread.querySelector('#empty')?.remove();
+        thread.appendChild(el);
+        thread.scrollTop = thread.scrollHeight;
+        return el;
+    }
+
+    async function submitMessage(text) {
+        text = (text || '').trim();
+        if (!text || send.disabled) return;
+        addBubble(text, 'user');
+        input.value = '';
+        send.disabled = true;
+        const thinking = addBubble('AI is thinking...', 'assistant');
+        thinking.classList.add('thinking');
+        try {
+            const body = new FormData(form);
+            body.set('message', text);
+            const response = await fetch('/chat', {method: 'POST', body});
+            const html = await response.text();
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            const bubbles = doc.querySelectorAll('.bubble');
+            const reply = bubbles[bubbles.length - 1];
+            thinking.remove();
+            if (reply && reply.classList.contains('assistant')) addBubble(reply.textContent, 'assistant'); else if (!response.ok) addBubble('Unable to reach the assistant. Please try again.', 'error');
+        } catch (e) {
+            thinking.remove();
+            addBubble('Unable to reach the assistant. Please try again.', 'error')
+        } finally {
+            send.disabled = false;
+            input.focus();
+        }
+    }
+
+    form.addEventListener('submit', e => {
+        e.preventDefault();
+        submitMessage(input.value)
+    });
+    input.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            form.requestSubmit()
+        }
+    });
+    document.querySelectorAll('[data-question]').forEach(b => b.addEventListener('click', () => submitMessage(b.dataset.question)));
+    thread.scrollTop = thread.scrollHeight;
+</script>
+</body>
+</html>
