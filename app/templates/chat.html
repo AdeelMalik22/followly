@@ -12,10 +12,10 @@
 </head>
 <body><div class="app"><aside class="side"><div class="logo"><b>F</b>Followly</div><h1>Dental care made simple.</h1><p>Ask about treatments, pricing, clinic policies, or appointments.</p><small>Adeel Dental Clinic<br>AI assistant for local testing</small></aside><main class="content"><header class="bar"><span class="clinic">Adeel Dental Clinic</span><span class="status">Assistant online</span></header><section id="thread" class="thread">{% if not messages %}<div id="empty" class="empty"><strong>How can we help today?</strong>Choose a question below or type a message to get started.</div>{% endif %}{% for item in messages %}<div class="bubble {{ item.role }}">{{ item.content }}</div>{% endfor %}</section><nav class="quick">{% for question in quick_questions %}<button type="button" data-question="{{ question }}">{{ question }}</button>{% endfor %}</nav><form id="composer" class="composer"><input type="hidden" name="phone" value="{{ phone }}"><textarea id="message" name="message" placeholder="Write a message..." autocomplete="off" required></textarea><button id="send" type="submit">Send</button></form></main></div>
 <input type="hidden" name="business_key" value="{{ business_key }}"><script>
-const businessKey={{ business_key|tojson }}, form=document.getElementById('composer'), input=document.getElementById('message'), thread=document.getElementById('thread'), send=document.getElementById('send');
-const authenticated={{ authenticated|tojson }};
-document.querySelector('.clinic').textContent={{ business_name|tojson }} || 'Business assistant';
-document.title='Followly | '+({{ business_name|tojson }} || 'Business Assistant');
+const businessKey={{ business_key|default('', true)|tojson }}, form=document.getElementById('composer'), input=document.getElementById('message'), thread=document.getElementById('thread'), send=document.getElementById('send');
+const authenticated={{ authenticated|default(false, true)|tojson }};
+document.querySelector('.clinic').textContent={{ business_name|default('', true)|tojson }} || 'Business assistant';
+document.title='Followly | '+({{ business_name|default('', true)|tojson }} || 'Business Assistant');
 const signIn=document.createElement('a');
 signIn.href='/api/v1/customer/auth/google?business_key='+encodeURIComponent(businessKey);
 signIn.textContent='Sign in with Google';
