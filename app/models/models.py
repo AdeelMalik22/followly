@@ -33,6 +33,7 @@ class Business(Base):
     conversations = relationship("Conversation", back_populates="business")
     appointments = relationship("Appointment", back_populates="business")
     knowledge_base = relationship("KnowledgeBaseEntry", back_populates="business")
+    customers = relationship("Customer", back_populates="business")
 
 class User(Base):
     __tablename__ = "users"
@@ -47,11 +48,26 @@ class User(Base):
 
     business = relationship("Business", back_populates="users")
 
+
+class Customer(Base):
+    __tablename__ = "customers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    business_id = Column(Integer, ForeignKey("businesses.id"), nullable=False, index=True)
+    email = Column(String, nullable=True, index=True)
+    name = Column(String, nullable=True)
+    google_id = Column(String, nullable=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    business = relationship("Business", back_populates="customers")
+    leads = relationship("Lead", back_populates="customer")
+
 class Lead(Base):
     __tablename__ = "leads"
 
     id = Column(Integer, primary_key=True, index=True)
     business_id = Column(Integer, ForeignKey("businesses.id"), nullable=False, index=True)
+    customer_id = Column(Integer, ForeignKey("customers.id"), nullable=True, index=True)
     phone = Column(String, index=True)
     name = Column(String)
     email = Column(String, index=True)
@@ -64,6 +80,7 @@ class Lead(Base):
     business = relationship("Business", back_populates="leads")
     conversations = relationship("Conversation", back_populates="lead")
     appointments = relationship("Appointment", back_populates="lead")
+    customer = relationship("Customer", back_populates="leads")
 
 class Conversation(Base):
     __tablename__ = "conversations"
