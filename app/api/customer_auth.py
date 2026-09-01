@@ -36,7 +36,7 @@ def google_login(business_key: str, db: Session = Depends(get_db)):
     flow = customer_flow()
     nonce = secrets.token_urlsafe(16)
     url, _ = flow.authorization_url(access_type="offline", prompt="select_account", state=f"{business.id}:{nonce}")
-    return {"authorization_url": url}
+    return RedirectResponse(url=url)
 
 
 @router.get("/callback")
@@ -47,6 +47,10 @@ def google_callback(code: str, state: str, db: Session = Depends(get_db)):
         if not business:
             raise HTTPException(status_code=404, detail="Business not found")
         flow = customer_flow()
+        # Google may reorder/expand identity scopes in the callback. The
+        # callback is dedicated to identity login, so avoid oauthlib's
+        # order-sensitive scope comparison.
+        flow.oauth2session.scope = None
         flow.fetch_token(code=code)
         token_info = id_token.verify_oauth2_token(flow.credentials.id_token, google_requests.Request(), settings.GOOGLE_CLIENT_ID)
         google_id = token_info["sub"]
@@ -67,4 +71,6 @@ def google_callback(code: str, state: str, db: Session = Depends(get_db)):
         raise
     except Exception as exc:
         db.rollback()
+        import logging
+        logging.getLogger(__name__).exception("Customer Google OAuth callback failed")
         raise HTTPException(status_code=400, detail="Unable to sign in with Google") from exc
