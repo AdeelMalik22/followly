@@ -32,6 +32,13 @@ async def chat_page(request: Request, db: Session = Depends(get_db)):
         if authenticated:
             lead = db.query(Lead).filter(Lead.customer_id == customer.id, Lead.business_id == customer.business_id).first()
             if lead:
+                if customer.name and not lead.name:
+                    lead.name = customer.name
+                if customer.email and not lead.email:
+                    lead.email = customer.email
+                if lead.source == "whatsapp":
+                    lead.source = "web"
+                db.commit()
                 if not new_chat:
                     conversation = db.query(Conversation).filter(Conversation.lead_id == lead.id, Conversation.channel == "web")
                     if selected_id and selected_id.isdigit():
@@ -83,8 +90,20 @@ async def chat_message(
     lead = db.query(Lead).filter(Lead.customer_id == customer.id, Lead.business_id == business.id).first()
     if not lead:
         lead = conversation_service.get_or_create_lead(phone, business.id, db)
+    changed = False
     if lead.customer_id != customer.id:
         lead.customer_id = customer.id
+        changed = True
+    if customer.name and lead.name != customer.name:
+        lead.name = customer.name
+        changed = True
+    if customer.email and lead.email != customer.email:
+        lead.email = customer.email
+        changed = True
+    if lead.source != "web":
+        lead.source = "web"
+        changed = True
+    if changed:
         db.commit()
     if new_chat == "1":
         conversation = Conversation(lead_id=lead.id, business_id=business.id, channel="web")
