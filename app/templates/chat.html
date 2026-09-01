@@ -382,63 +382,18 @@
 </div>
 <input type="hidden" name="business_key" value="{{ business_key }}">
 <script>
-    const businessKey = {
-    {
-        business_key |
-    default
-        ('', true) | tojson
-    }
-    },
+    const businessKey = {{ business_key|default('', true)|tojson }},
     form = document.getElementById('composer'), input = document.getElementById('message'), thread = document.getElementById('thread'), send = document.getElementById('send');
-    const authenticated = {
-    {
-        authenticated |
-    default
-        (false, true) | tojson
-    }
-    }
-    ;
-    const chatList = {
-    {
-        chat_list |
-    default
-        ([], true) | tojson
-    }
-    }
-    ;
-    const newChat = {
-    {
-        new_chat |
-    default
-        (false, true) | tojson
-    }
-    }
-    ;
-    document.querySelector('.clinic').textContent = {
-    {
-        business_name |
-    default
-        ('', true) | tojson
-    }
-    } ||
+    const authenticated = {{ authenticated|default(false, true)|tojson }};
+    const chatList = {{ chat_list|default([], true)|tojson }};
+    const newChat = {{ new_chat|default(false, true)|tojson }};
+    document.querySelector('.clinic').textContent = {{ business_name|default('', true)|tojson }} ||
     'Business assistant';
-    document.title = 'Followly | ' + ({
-    {
-        business_name |
-    default
-        ('', true) | tojson
-    }
-    } ||
+    document.title = 'Followly | ' + ({{ business_name|default('', true)|tojson }} ||
     'Business Assistant'
     )
     ;
-    const businessName = {
-    {
-        business_name |
-    default
-        ('', true) | tojson
-    }
-    } ||
+    const businessName = {{ business_name|default('', true)|tojson }} ||
     'Your business';
     document.querySelector('.side h1').innerHTML = businessName + '<br>made simple.';
     document.querySelector('.side small').innerHTML = businessName + '<br>AI assistant powered by Followly';
