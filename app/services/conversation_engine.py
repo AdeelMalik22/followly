@@ -237,6 +237,14 @@ async def handle_book_appointment(
             return {"success": False, "error": "This business has an invalid appointment duration configured."}
         end_time = start_time + timedelta(minutes=duration_minutes)
 
+        # Never allow the model to create an appointment in the past, even if
+        # it selected a stale date after the availability conversation.
+        local_now = datetime.now(ZoneInfo(settings.BUSINESS_TIMEZONE)).replace(tzinfo=None)
+        if start_time.date() < local_now.date():
+            return {"success": False, "error": "That appointment date has already passed. Please choose a future date."}
+        if start_time.date() == local_now.date() and start_time <= local_now:
+            return {"success": False, "error": "That appointment time has already passed. Please choose a later time."}
+
         # A booking must fit completely inside the business's hours.
         day_name = start_time.strftime("%A").lower()
         configured_hours = (business.settings or {}).get("working_hours", {})
