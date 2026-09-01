@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse
+import secrets
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
@@ -15,18 +16,21 @@ QUICK_QUESTIONS = ["What services do you offer?", "How much does teeth whitening
 
 @router.get("/chat", response_class=HTMLResponse)
 async def chat_page(request: Request):
-    return templates.TemplateResponse(
+    phone = request.cookies.get("followly_visitor_id") or f"web-{secrets.token_urlsafe(16)}"
+    response = templates.TemplateResponse(
         request=request,
         name="chat.html",
-        context={"messages": [], "phone": "demo-user", "business_key": request.query_params.get("business_key", ""), "business_name": "", "quick_questions": QUICK_QUESTIONS},
+        context={"messages": [], "phone": phone, "business_key": request.query_params.get("business_key", ""), "business_name": "", "quick_questions": QUICK_QUESTIONS},
     )
+    response.set_cookie("followly_visitor_id", phone, httponly=True, samesite="lax", max_age=60 * 60 * 24 * 30)
+    return response
 
 
 @router.post("/chat", response_class=HTMLResponse)
 async def chat_message(
     request: Request,
     message: str = Form(...),
-    phone: str = Form("demo-user"),
+    phone: str = Form(...),
     business_key: str = Form(...),
     db: Session = Depends(get_db),
 ):
