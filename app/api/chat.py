@@ -20,6 +20,7 @@ async def chat_page(request: Request, db: Session = Depends(get_db)):
     phone = request.cookies.get("followly_visitor_id") or f"web-{secrets.token_urlsafe(16)}"
     business_key = request.query_params.get("business_key", "")
     new_chat = request.query_params.get("new") == "1"
+    selected_id = request.query_params.get("conversation_id")
     token = request.cookies.get("followly_customer_token")
     authenticated = False
     history = []
@@ -32,7 +33,10 @@ async def chat_page(request: Request, db: Session = Depends(get_db)):
             lead = db.query(Lead).filter(Lead.customer_id == customer.id, Lead.business_id == customer.business_id).first()
             if lead:
                 if not new_chat:
-                    conversation = db.query(Conversation).filter(Conversation.lead_id == lead.id, Conversation.channel == "web").order_by(Conversation.last_message_at.desc()).first()
+                    conversation = db.query(Conversation).filter(Conversation.lead_id == lead.id, Conversation.channel == "web")
+                    if selected_id and selected_id.isdigit():
+                        conversation = conversation.filter(Conversation.id == int(selected_id))
+                    conversation = conversation.order_by(Conversation.last_message_at.desc()).first()
                     if conversation:
                         history = conversation_service.get_conversation_history(conversation.id, limit=50, db=db)
                 chat_list = [{"id": c.id, "title": c.lead.name or "Conversation", "updated": c.last_message_at.strftime("%b %d, %Y") if c.last_message_at else ""} for c in db.query(Conversation).filter(Conversation.lead_id == lead.id, Conversation.channel == "web").order_by(Conversation.last_message_at.desc()).limit(20).all()]
