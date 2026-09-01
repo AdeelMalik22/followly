@@ -410,7 +410,15 @@
     signIn.textContent = 'Sign in with Google';
     signIn.style.cssText = 'margin-left:18px;padding:9px 14px;border:1px solid #d8e0ee;border-radius:20px;color:#40516b;text-decoration:none;font-size:13px;background:#fff';
     document.querySelector('.bar').appendChild(signIn);
-    if (authenticated) signIn.textContent = 'Signed in with Google';
+    if (authenticated) {
+        signIn.textContent = 'Sign out';
+        signIn.href = '#';
+        signIn.onclick = async (event) => {
+            event.preventDefault();
+            await fetch('/api/v1/customer/auth/logout', { method: 'POST' });
+            window.location.reload();
+        };
+    }
     else {
         form.style.display = 'none';
         const notice = document.createElement('div');

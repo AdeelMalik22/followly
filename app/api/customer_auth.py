@@ -74,3 +74,11 @@ def google_callback(code: str, state: str, db: Session = Depends(get_db)):
         import logging
         logging.getLogger(__name__).exception("Customer Google OAuth callback failed")
         raise HTTPException(status_code=400, detail="Unable to sign in with Google") from exc
+
+
+@router.post("/logout")
+def customer_logout():
+    response = RedirectResponse(url="/", status_code=303)
+    response.delete_cookie("followly_customer_token")
+    response.delete_cookie("followly_visitor_id")
+    return response
