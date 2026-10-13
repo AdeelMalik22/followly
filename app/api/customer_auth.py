@@ -74,7 +74,14 @@ def google_callback(code: str, state: str, db: Session = Depends(get_db)):
         # order-sensitive scope comparison.
         flow.oauth2session.scope = None
         flow.fetch_token(code=code)
-        token_info = id_token.verify_oauth2_token(flow.credentials.id_token, google_requests.Request(), settings.GOOGLE_CLIENT_ID)
+        google_id_token = flow.credentials.id_token
+        if not google_id_token:
+            raise HTTPException(status_code=400, detail="Google did not return an identity token")
+        token_info = id_token.verify_oauth2_token(
+            google_id_token,
+            google_requests.Request(),
+            settings.GOOGLE_CLIENT_ID,
+        )
         if token_info.get("nonce") != state_payload.get("nonce"):
             raise HTTPException(status_code=400, detail="Invalid OAuth nonce")
         if not token_info.get("email_verified"):
