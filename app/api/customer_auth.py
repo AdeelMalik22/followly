@@ -46,7 +46,9 @@ def _decode_oauth_state(state: str) -> dict:
 
 @router.get("/google")
 def google_login(business_key: str, db: Session = Depends(get_db)):
-    business = next((item for item in db.query(Business).all() if (item.settings or {}).get("widget_key") == business_key), None)
+    business = db.query(Business).filter(
+        Business.settings["widget_key"].as_string() == business_key
+    ).first()
     if not business:
         raise HTTPException(status_code=404, detail="Business not found")
     if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET or not settings.CUSTOMER_GOOGLE_REDIRECT_URI:
