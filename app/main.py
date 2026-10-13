@@ -14,12 +14,19 @@ from app.api.follow_up_rules import router as follow_up_rules_router
 from app.api.business import router as business_router
 from app.api.billing import router as billing_router
 from app.api.customer_auth import router as customer_auth_router
+from app.core.config import settings
 
 app = FastAPI(title="Followly API", version="1.0.0")
 
+cors_origins = [
+    origin.strip()
+    for origin in (settings.CORS_ORIGINS or settings.FRONTEND_URL).split(",")
+    if origin.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
