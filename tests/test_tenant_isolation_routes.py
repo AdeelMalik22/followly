@@ -236,6 +236,14 @@ def test_appointment_status_update_is_tenant_scoped():
     )
     assert updated.status == "completed"
 
+    fetched = appointments.get_appointment(appointment.id, first, db)
+    assert fetched.id == appointment.id
+    assert fetched.status == "completed"
+
+    with pytest.raises(HTTPException) as error:
+        appointments.get_appointment(appointment.id, second, db)
+    assert error.value.status_code == 404
+
     with pytest.raises(HTTPException) as error:
         appointments.update_appointment(
             appointment.id,

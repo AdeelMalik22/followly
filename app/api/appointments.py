@@ -43,6 +43,21 @@ def list_appointments(
     return result
 
 
+@router.get("/{appointment_id}", response_model=AppointmentResponse)
+def get_appointment(
+    appointment_id: int,
+    business: Business = Depends(get_current_business),
+    db: Session = Depends(get_db),
+):
+    appointment = db.query(Appointment).filter(
+        Appointment.id == appointment_id,
+        Appointment.business_id == business.id,
+    ).first()
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+    return _appointment_response(appointment)
+
+
 @router.patch("/{appointment_id}", response_model=AppointmentResponse)
 def update_appointment(
     appointment_id: int,
