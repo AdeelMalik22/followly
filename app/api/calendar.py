@@ -1,5 +1,7 @@
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
+from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 from app.core.database import get_db
@@ -11,6 +13,21 @@ import logging
 
 router = APIRouter(prefix="/api/v1/calendar", tags=["calendar"])
 logger = logging.getLogger(__name__)
+
+
+def _create_calendar_state(business_id: int) -> str:
+    payload = {
+        "business_id": business_id,
+        "exp": datetime.now(timezone.utc) + timedelta(minutes=10),
+    }
+    return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+
+def _decode_calendar_state(state: str) -> dict:
+    try:
+        return jwt.decode(state, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+    except JWTError as exc:
+        raise HTTPException(status_code=400, detail="Invalid calendar OAuth state") from exc
 
 @router.get("/connect")
 async def connect_calendar(
@@ -28,12 +45,12 @@ async def connect_calendar(
             settings.GOOGLE_REDIRECT_URI
         )
 
-        # Generate authorization URL with state containing business_id
+        # Generate a signed, expiring state containing the tenant identity.
         authorization_url, state = flow.authorization_url(
             access_type='offline',
             include_granted_scopes='true',
             prompt='consent',
-            state=str(business.id)
+            state=_create_calendar_state(business.id)
         )
 
         return {"authorization_url": authorization_url, "state": state}
@@ -60,7 +77,8 @@ async def calendar_callback(
         raise HTTPException(status_code=400, detail="Missing code or state")
 
     try:
-        business_id = int(state)
+        state_payload = _decode_calendar_state(state)
+        business_id = int(state_payload["business_id"])
         business = db.query(Business).filter(Business.id == business_id).first()
 
         if not business:
