@@ -329,3 +329,41 @@ def test_appointment_list_scopes_lead_filter_to_business():
     assert len(appointments_for_first) == 1
     assert appointments_for_first[0].business_id == first.id
     assert appointments_for_first[0].lead_id == first_lead.id
+
+
+def test_appointment_list_applies_date_range_filters():
+    db = make_session()
+    first, _ = make_two_businesses(db)
+    lead = Lead(business_id=first.id, phone="111")
+    db.add(lead)
+    db.flush()
+    db.add_all([
+        Appointment(
+            business_id=first.id,
+            lead_id=lead.id,
+            start_time=datetime(2027, 1, 1, 10, 0),
+            end_time=datetime(2027, 1, 1, 11, 0),
+            status="scheduled",
+        ),
+        Appointment(
+            business_id=first.id,
+            lead_id=lead.id,
+            start_time=datetime(2027, 2, 1, 10, 0),
+            end_time=datetime(2027, 2, 1, 11, 0),
+            status="scheduled",
+        ),
+    ])
+    db.commit()
+
+    filtered = appointments.list_appointments(
+        None,
+        None,
+        datetime(2027, 1, 15),
+        datetime(2027, 1, 31),
+        0,
+        50,
+        first,
+        db,
+    )
+
+    assert filtered == []
