@@ -24,7 +24,7 @@ async def whatsapp_status(
         return {
             "connected": bool(
                 (business.whatsapp_phone_id or settings_data.get("whatsapp_phone_id"))
-                and settings_data.get("whatsapp_access_token")
+                and (business.whatsapp_access_token or settings_data.get("whatsapp_access_token"))
             ),
             "phone_number_id": business.whatsapp_phone_id or settings_data.get("whatsapp_phone_id"),
         }
@@ -63,9 +63,10 @@ async def update_whatsapp_credentials(
             business.settings["whatsapp_phone_id"] = credentials.phone_number_id
             business.whatsapp_phone_id = credentials.phone_number_id
         if credentials.access_token is not None:
-            business.settings["whatsapp_access_token"] = whatsapp_service.encrypt_access_token(
+            business.whatsapp_access_token = whatsapp_service.encrypt_access_token(
                 credentials.access_token
             )
+            business.settings["whatsapp_access_token"] = business.whatsapp_access_token
         flag_modified(business, "settings")
         db.commit()
         return {"status": "success", "message": "WhatsApp credentials updated"}
@@ -88,6 +89,7 @@ async def remove_whatsapp_credentials(
         business.settings.pop("whatsapp_phone_id", None)
         business.settings.pop("whatsapp_access_token", None)
         business.whatsapp_phone_id = None
+        business.whatsapp_access_token = None
         flag_modified(business, "settings")
         db.commit()
         return {"status": "success", "message": "WhatsApp credentials removed"}
@@ -232,13 +234,14 @@ async def handle_webhook(
         conversation_service.save_message(conversation.id, business.id, "assistant", agent_response, db)
 
         # Send response via WhatsApp
-        whatsapp_phone_id = business.settings.get("whatsapp_phone_id")
-        whatsapp_token = business.settings.get("whatsapp_access_token")
+        whatsapp_phone_id = business.whatsapp_phone_id or business.settings.get("whatsapp_phone_id")
+        whatsapp_token = business.whatsapp_access_token or business.settings.get("whatsapp_access_token")
         if whatsapp_token:
             legacy_plaintext = not whatsapp_token.startswith("fernet:")
             whatsapp_token = whatsapp_service.decrypt_access_token(whatsapp_token)
             if legacy_plaintext:
-                business.settings["whatsapp_access_token"] = whatsapp_service.encrypt_access_token(whatsapp_token)
+                business.whatsapp_access_token = whatsapp_service.encrypt_access_token(whatsapp_token)
+                business.settings["whatsapp_access_token"] = business.whatsapp_access_token
                 flag_modified(business, "settings")
                 db.commit()
 
@@ -281,12 +284,13 @@ async def send_message_endpoint(
 
     business_settings = business.settings or {}
     phone_number_id = business_settings.get("whatsapp_phone_id")
-    access_token = business_settings.get("whatsapp_access_token")
+    access_token = business.whatsapp_access_token or business_settings.get("whatsapp_access_token")
     if access_token:
         legacy_plaintext = not access_token.startswith("fernet:")
         access_token = whatsapp_service.decrypt_access_token(access_token)
         if legacy_plaintext:
-            business.settings["whatsapp_access_token"] = whatsapp_service.encrypt_access_token(access_token)
+            business.whatsapp_access_token = whatsapp_service.encrypt_access_token(access_token)
+            business.settings["whatsapp_access_token"] = business.whatsapp_access_token
             flag_modified(business, "settings")
             db.commit()
     if not phone_number_id or not access_token:
