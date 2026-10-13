@@ -11,6 +11,7 @@ from app.core.config import settings
 from app.models.models import Business, Conversation, ConversationStatus, Lead, LeadStatus, KnowledgeBaseEntry, OAuthState
 from app.models.models import User
 from app.services.oauth_state_service import consume_oauth_state, store_oauth_state
+from app.services.whatsapp_service import decrypt_access_token, encrypt_access_token
 from app.schemas.dashboard import LeadUpdate
 from app.schemas.knowledge import KnowledgeBaseUpdate
 
@@ -181,3 +182,21 @@ def test_storing_oauth_state_prunes_expired_states():
     )
 
     assert db.query(OAuthState).filter(OAuthState.state_hash != "").count() == 1
+
+
+def test_whatsapp_credentials_are_encrypted_and_business_scoped():
+    db = make_session()
+    first, second = make_two_businesses(db)
+    first.whatsapp_phone_id = "phone-first"
+    first.whatsapp_access_token = encrypt_access_token("token-first")
+    second.whatsapp_phone_id = "phone-second"
+    second.whatsapp_access_token = encrypt_access_token("token-second")
+    db.commit()
+
+    db.refresh(first)
+    db.refresh(second)
+    assert first.whatsapp_access_token != second.whatsapp_access_token
+    assert first.whatsapp_access_token.startswith("fernet:")
+    assert second.whatsapp_access_token.startswith("fernet:")
+    assert decrypt_access_token(first.whatsapp_access_token) == "token-first"
+    assert decrypt_access_token(second.whatsapp_access_token) == "token-second"
