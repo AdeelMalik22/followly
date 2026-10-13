@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 10080
+    CUSTOMER_TOKEN_EXPIRE_MINUTES: int = 43200
 
     LLM_PROVIDER: str = "openrouter"
     OPENROUTER_API_KEY: str = ""

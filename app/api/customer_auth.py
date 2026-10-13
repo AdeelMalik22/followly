@@ -88,7 +88,11 @@ def google_callback(code: str, state: str, db: Session = Depends(get_db)):
             customer.email = token_info.get("email") or customer.email
             customer.name = token_info.get("name") or customer.name
         db.commit()
-        access_token = create_access_token(data={"customer_id": str(customer.id), "business_id": business.id})
+        customer_token_lifetime = timedelta(minutes=settings.CUSTOMER_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"customer_id": str(customer.id), "business_id": business.id},
+            expires_delta=customer_token_lifetime,
+        )
         chat_base = settings.API_BASE_URL.rstrip("/") or "http://localhost:8000"
         response = RedirectResponse(f"{chat_base}/chat?business_key={(business.settings or {}).get('widget_key', '')}")
         response.set_cookie(
@@ -97,7 +101,7 @@ def google_callback(code: str, state: str, db: Session = Depends(get_db)):
             httponly=True,
             secure=settings.API_BASE_URL.startswith("https://"),
             samesite="lax",
-            max_age=60 * 60 * 24 * 30,
+            max_age=int(customer_token_lifetime.total_seconds()),
         )
         return response
     except HTTPException:
