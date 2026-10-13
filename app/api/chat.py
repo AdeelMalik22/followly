@@ -27,7 +27,14 @@ async def chat_page(request: Request, db: Session = Depends(get_db)):
     chat_list = []
     if token:
         payload = decode_access_token(token) or {}
-        customer = db.query(Customer).filter(Customer.id == int(payload.get("customer_id", 0))).first() if str(payload.get("customer_id", "")).isdigit() else None
+        customer_id = payload.get("customer_id")
+        token_business_id = payload.get("business_id")
+        customer = None
+        if str(customer_id).isdigit() and str(token_business_id).isdigit():
+            customer = db.query(Customer).filter(
+                Customer.id == int(customer_id),
+                Customer.business_id == int(token_business_id),
+            ).first()
         authenticated = bool(customer and str(customer.business_id) == str(payload.get("business_id")) and customer.business.widget_key == business_key)
         if authenticated:
             lead = db.query(Lead).filter(Lead.customer_id == customer.id, Lead.business_id == customer.business_id).first()
@@ -68,7 +75,13 @@ async def chat_message(
     token = request.cookies.get("followly_customer_token")
     payload = decode_access_token(token) if token else None
     customer_id = payload.get("customer_id") if payload else None
-    customer = db.query(Customer).filter(Customer.id == int(customer_id)).first() if str(customer_id).isdigit() else None
+    token_business_id = payload.get("business_id") if payload else None
+    customer = None
+    if str(customer_id).isdigit() and str(token_business_id).isdigit():
+        customer = db.query(Customer).filter(
+            Customer.id == int(customer_id),
+            Customer.business_id == int(token_business_id),
+        ).first()
     business_for_key = db.query(Business).filter(
         Business.widget_key == business_key
     ).first()
