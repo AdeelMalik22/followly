@@ -12,6 +12,7 @@ from app.models.models import Business, Conversation, ConversationStatus, Lead, 
 from app.models.models import User
 from app.services.oauth_state_service import consume_oauth_state, store_oauth_state
 from app.services.whatsapp_service import decrypt_access_token, encrypt_access_token
+from app.core.secret_storage import decrypt_json, encrypt_json
 from app.schemas.dashboard import LeadUpdate
 from app.schemas.knowledge import KnowledgeBaseUpdate
 
@@ -200,3 +201,11 @@ def test_whatsapp_credentials_are_encrypted_and_business_scoped():
     assert second.whatsapp_access_token.startswith("fernet:")
     assert decrypt_access_token(first.whatsapp_access_token) == "token-first"
     assert decrypt_access_token(second.whatsapp_access_token) == "token-second"
+
+
+def test_calendar_credentials_can_be_encrypted_and_decrypted():
+    credentials = {"refresh_token": "refresh-first", "client_secret": "secret-first"}
+    encrypted = encrypt_json(credentials)
+
+    assert encrypted != str(credentials)
+    assert decrypt_json(encrypted) == credentials

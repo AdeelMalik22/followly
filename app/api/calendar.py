@@ -10,6 +10,7 @@ from app.models.models import Business
 from app.api.dependencies import get_current_business, get_current_user
 from app.services.calendar_service import create_oauth_flow
 from app.services.oauth_state_service import consume_oauth_state, store_oauth_state
+from app.core.secret_storage import decrypt_json, encrypt_json
 import logging
 
 router = APIRouter(prefix="/api/v1/calendar", tags=["calendar"])
@@ -128,6 +129,7 @@ async def calendar_callback(
             "scopes": credentials.scopes
         }
         business.google_calendar_credentials = credentials_data
+        business.google_calendar_credentials_encrypted = encrypt_json(credentials_data)
         business.settings = business.settings or {}
         business.settings["google_calendar_credentials"] = credentials_data
         flag_modified(business, "settings")
@@ -156,9 +158,13 @@ async def calendar_status(
 ):
     """Check if calendar is connected"""
     try:
-        credentials = business.google_calendar_credentials or (
-            business.settings.get("google_calendar_credentials") if business.settings else None
-        )
+        credentials = None
+        if business.google_calendar_credentials_encrypted:
+            credentials = decrypt_json(business.google_calendar_credentials_encrypted)
+        else:
+            credentials = business.google_calendar_credentials or (
+                business.settings.get("google_calendar_credentials") if business.settings else None
+            )
 
         return {
             "connected": credentials is not None,
@@ -176,6 +182,7 @@ async def disconnect_calendar(
     """Disconnect Google Calendar"""
     try:
         business.google_calendar_credentials = None
+        business.google_calendar_credentials_encrypted = None
         if business.settings and "google_calendar_credentials" in business.settings:
             del business.settings["google_calendar_credentials"]
             flag_modified(business, "settings")

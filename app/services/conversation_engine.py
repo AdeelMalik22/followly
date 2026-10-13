@@ -5,11 +5,20 @@ from app.core.config import settings
 from sqlalchemy.orm import Session
 from app.models.models import Conversation, Business, ConversationStatus, Appointment, LeadStatus, ToolCallAudit
 from app.services import conversation_service, whatsapp_service, agent_service, calendar_service
+from app.core.secret_storage import decrypt_json
 from app.llm.client import chat
 import logging
 import asyncio
 
 logger = logging.getLogger(__name__)
+
+
+def _get_calendar_credentials(business: Business):
+    if business.google_calendar_credentials_encrypted:
+        return decrypt_json(business.google_calendar_credentials_encrypted)
+    return business.google_calendar_credentials or (
+        business.settings.get("google_calendar_credentials") if business.settings else None
+    )
 
 async def process_message_with_agent(
     conversation: Conversation,
@@ -159,9 +168,7 @@ async def handle_check_availability(arguments: dict, business: Business, db: Ses
         return {"error": "Invalid date format. Please use YYYY-MM-DD"}
 
     # Check if calendar is connected
-    credentials = business.google_calendar_credentials or (
-        business.settings.get("google_calendar_credentials") if business.settings else None
-    )
+    credentials = _get_calendar_credentials(business)
 
     if not credentials:
         # Fallback to mock availability if calendar not connected
@@ -304,9 +311,7 @@ async def handle_book_appointment(
             lead.name = patient_name
 
         # Check if calendar is connected
-        credentials = business.google_calendar_credentials or (
-            business.settings.get("google_calendar_credentials") if business.settings else None
-        )
+        credentials = _get_calendar_credentials(business)
 
         if credentials:
             # Create event in Google Calendar
@@ -367,9 +372,7 @@ async def handle_reschedule_appointment(arguments, conversation, business, db) -
     except (KeyError, ValueError):
         return {"error": "Invalid date/time format"}
     end = start + timedelta(minutes=60)
-    credentials = business.google_calendar_credentials or (
-        business.settings.get("google_calendar_credentials") if business.settings else None
-    )
+    credentials = _get_calendar_credentials(business)
     if credentials and appointment.calendar_event_id:
         result = await asyncio.to_thread(calendar_service.update_calendar_event, credentials, appointment.calendar_event_id, start, end)
         if not result.get("success"):
@@ -388,9 +391,7 @@ async def handle_cancel_appointment(arguments, conversation, business, db) -> di
     ).first()
     if not appointment:
         return {"error": "Appointment not found"}
-    credentials = business.google_calendar_credentials or (
-        business.settings.get("google_calendar_credentials") if business.settings else None
-    )
+    credentials = _get_calendar_credentials(business)
     if credentials and appointment.calendar_event_id:
         result = await asyncio.to_thread(calendar_service.delete_calendar_event, credentials, appointment.calendar_event_id)
         if not result.get("success"):
