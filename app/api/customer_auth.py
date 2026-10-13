@@ -47,7 +47,7 @@ def _decode_oauth_state(state: str) -> dict:
 @router.get("/google")
 def google_login(business_key: str, db: Session = Depends(get_db)):
     business = db.query(Business).filter(
-        Business.settings["widget_key"].as_string() == business_key
+        Business.widget_key == business_key
     ).first()
     if not business:
         raise HTTPException(status_code=404, detail="Business not found")
@@ -101,7 +101,7 @@ def google_callback(code: str, state: str, db: Session = Depends(get_db)):
             expires_delta=customer_token_lifetime,
         )
         chat_base = settings.FRONTEND_URL.rstrip("/") or settings.API_BASE_URL.rstrip("/") or "http://localhost:8000"
-        response = RedirectResponse(f"{chat_base}/chat?business_key={(business.settings or {}).get('widget_key', '')}")
+        response = RedirectResponse(f"{chat_base}/chat?business_key={business.widget_key or ''}")
         response.set_cookie(
             "followly_customer_token",
             access_token,

@@ -6,7 +6,13 @@ import secrets
 def create_user_with_business(email: str, password: str, business_name: str, owner_name: str, industry: str, db: Session):
     """Create a new user and associated business"""
     # Create business
-    business = Business(name=business_name, industry=industry, settings={"widget_key": secrets.token_urlsafe(24)})
+    widget_key = secrets.token_urlsafe(24)
+    business = Business(
+        name=business_name,
+        industry=industry,
+        widget_key=widget_key,
+        settings={"widget_key": widget_key},
+    )
     db.add(business)
     db.commit()
     db.refresh(business)

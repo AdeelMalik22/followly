@@ -28,7 +28,7 @@ async def chat_page(request: Request, db: Session = Depends(get_db)):
     if token:
         payload = decode_access_token(token) or {}
         customer = db.query(Customer).filter(Customer.id == int(payload.get("customer_id", 0))).first() if str(payload.get("customer_id", "")).isdigit() else None
-        authenticated = bool(customer and str(customer.business_id) == str(payload.get("business_id")) and (customer.business.settings or {}).get("widget_key") == business_key)
+        authenticated = bool(customer and str(customer.business_id) == str(payload.get("business_id")) and customer.business.widget_key == business_key)
         if authenticated:
             lead = db.query(Lead).filter(Lead.customer_id == customer.id, Lead.business_id == customer.business_id).first()
             if lead:
@@ -70,7 +70,7 @@ async def chat_message(
     customer_id = payload.get("customer_id") if payload else None
     customer = db.query(Customer).filter(Customer.id == int(customer_id)).first() if str(customer_id).isdigit() else None
     business_for_key = db.query(Business).filter(
-        Business.settings["widget_key"].as_string() == business_key
+        Business.widget_key == business_key
     ).first()
     if not customer or not business_for_key or customer.business_id != business_for_key.id or str(customer.business_id) != str(payload.get("business_id")):
         raise HTTPException(status_code=401, detail="Sign in with Google before chatting")

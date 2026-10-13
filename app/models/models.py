@@ -26,6 +26,7 @@ class Business(Base):
     name = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     settings = Column(JSON, default={})
+    widget_key = Column(String, unique=True, index=True, nullable=True)
     industry = Column(String, nullable=False, default="Dental Clinic")
 
     users = relationship("User", back_populates="business")

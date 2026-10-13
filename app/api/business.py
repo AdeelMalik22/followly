@@ -15,13 +15,12 @@ router = APIRouter(prefix="/api/v1/business", tags=["business"])
 @router.get("/widget-config", response_model=WidgetConfigResponse)
 def get_widget_config(business: Business = Depends(get_current_business), db: Session = Depends(get_db)):
     settings = business.settings or {}
-    if not settings.get("widget_key"):
-        settings["widget_key"] = secrets.token_urlsafe(24)
+    if not business.widget_key:
+        business.widget_key = settings.get("widget_key") or secrets.token_urlsafe(24)
+        settings["widget_key"] = business.widget_key
         business.settings = settings
-        from sqlalchemy.orm.attributes import flag_modified
-        flag_modified(business, "settings")
         db.commit()
-    return WidgetConfigResponse(widget_key=settings.get("widget_key", ""), business_name=business.name)
+    return WidgetConfigResponse(widget_key=business.widget_key, business_name=business.name)
 
 
 @router.get("/escalation-settings", response_model=EscalationSettings)
