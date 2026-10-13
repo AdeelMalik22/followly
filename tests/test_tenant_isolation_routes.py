@@ -1,8 +1,13 @@
 import pytest
 from fastapi import HTTPException
+from fastapi.security import HTTPAuthorizationCredentials
+from jose import jwt
 
 from app.api import conversations, knowledge, leads
+from app.api.dependencies import get_current_user
+from app.core.config import settings
 from app.models.models import Business, Conversation, ConversationStatus, Lead, LeadStatus, KnowledgeBaseEntry
+from app.models.models import User
 from app.schemas.dashboard import LeadUpdate
 from app.schemas.knowledge import KnowledgeBaseUpdate
 
@@ -94,3 +99,26 @@ def test_conversation_route_hides_conversation_from_other_business():
         conversations.get_conversation(conversation.id, second, db)
 
     assert error.value.status_code == 404
+
+
+def test_business_user_rejects_mismatched_tenant_claim():
+    db = make_session()
+    first, second = make_two_businesses(db)
+    user = User(
+        business_id=first.id,
+        email="owner@example.com",
+        name="Owner",
+        hashed_password="not-used",
+    )
+    db.add(user)
+    db.commit()
+    token = jwt.encode(
+        {"sub": str(user.id), "business_id": second.id},
+        settings.SECRET_KEY,
+        algorithm=settings.ALGORITHM,
+    )
+
+    with pytest.raises(HTTPException) as error:
+        get_current_user(HTTPAuthorizationCredentials(scheme="Bearer", credentials=token), db)
+
+    assert error.value.status_code == 401

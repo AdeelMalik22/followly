@@ -29,6 +29,10 @@ def get_current_user(
         if not user:
             raise HTTPException(status_code=401, detail="User not found")
 
+        token_business_id = payload.get("business_id")
+        if token_business_id is not None and str(token_business_id) != str(user.business_id):
+            raise HTTPException(status_code=401, detail="Invalid tenant credentials")
+
         return user
     except HTTPException:
         raise
