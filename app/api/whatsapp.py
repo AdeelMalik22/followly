@@ -209,20 +209,20 @@ async def handle_webhook(
 
         # Update lead status to CONTACTED if NEW
         if lead.status == LeadStatus.NEW:
-            conversation_service.update_lead_status(lead.id, LeadStatus.CONTACTED, db)
+            conversation_service.update_lead_status(lead.id, business.id, LeadStatus.CONTACTED, db)
 
         normalized_message = message_text.lower().strip()
         if any(phrase in normalized_message for phrase in (
             "not interested", "stop", "unsubscribe", "don't contact", "do not contact"
         )):
-            conversation_service.update_lead_status(lead.id, LeadStatus.NOT_INTERESTED, db)
+            conversation_service.update_lead_status(lead.id, business.id, LeadStatus.NOT_INTERESTED, db)
             logger.info("Lead %s marked not interested", lead.id)
             return {"status": "ok"}
 
         if lead.status == LeadStatus.CONTACTED and any(keyword in normalized_message for keyword in (
             "book", "appointment", "schedule", "cleaning", "whitening", "exam", "consultation"
         )):
-            conversation_service.update_lead_status(lead.id, LeadStatus.QUALIFIED, db)
+            conversation_service.update_lead_status(lead.id, business.id, LeadStatus.QUALIFIED, db)
 
         # Process with AI agent and get response
         agent_response = await process_message_with_agent(conversation, business, message_text, db)
@@ -253,7 +253,7 @@ async def handle_webhook(
             logger.warning(f"WhatsApp credentials not found in business settings for {business.id}")
 
         # Update conversation timestamp
-        conversation_service.update_conversation_timestamp(conversation.id, db)
+        conversation_service.update_conversation_timestamp(conversation.id, business.id, db)
 
         logger.info(f"Message processed for conversation {conversation.id}")
 

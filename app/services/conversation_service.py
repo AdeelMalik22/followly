@@ -71,16 +71,22 @@ def get_conversation_history(conversation_id: int, limit: int, db: Session) -> l
         Message.conversation_id == conversation_id
     ).order_by(Message.timestamp.desc()).limit(limit).all()[::-1]
 
-def update_conversation_timestamp(conversation_id: int, db: Session):
+def update_conversation_timestamp(conversation_id: int, business_id: int, db: Session):
     """Update last_message_at for conversation"""
-    conversation = db.query(Conversation).filter(Conversation.id == conversation_id).first()
+    conversation = db.query(Conversation).filter(
+        Conversation.id == conversation_id,
+        Conversation.business_id == business_id,
+    ).first()
     if conversation:
         conversation.last_message_at = datetime.utcnow()
         db.commit()
 
-def update_lead_status(lead_id: int, status: LeadStatus, db: Session):
+def update_lead_status(lead_id: int, business_id: int, status: LeadStatus, db: Session):
     """Update lead status"""
-    lead = db.query(Lead).filter(Lead.id == lead_id).first()
+    lead = db.query(Lead).filter(
+        Lead.id == lead_id,
+        Lead.business_id == business_id,
+    ).first()
     if lead:
         lead.status = status
         lead.last_contact_at = datetime.utcnow()
