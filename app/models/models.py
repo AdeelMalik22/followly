@@ -29,6 +29,7 @@ class Business(Base):
     widget_key = Column(String, unique=True, index=True, nullable=True)
     whatsapp_phone_id = Column(String, unique=True, index=True, nullable=True)
     whatsapp_access_token = Column(String, nullable=True)
+    google_calendar_credentials = Column(JSON, nullable=True)
     industry = Column(String, nullable=False, default="Dental Clinic")
 
     users = relationship("User", back_populates="business")

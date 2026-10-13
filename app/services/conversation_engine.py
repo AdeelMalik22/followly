@@ -159,7 +159,9 @@ async def handle_check_availability(arguments: dict, business: Business, db: Ses
         return {"error": "Invalid date format. Please use YYYY-MM-DD"}
 
     # Check if calendar is connected
-    credentials = business.settings.get("google_calendar_credentials") if business.settings else None
+    credentials = business.google_calendar_credentials or (
+        business.settings.get("google_calendar_credentials") if business.settings else None
+    )
 
     if not credentials:
         # Fallback to mock availability if calendar not connected
@@ -302,7 +304,9 @@ async def handle_book_appointment(
             lead.name = patient_name
 
         # Check if calendar is connected
-        credentials = business.settings.get("google_calendar_credentials") if business.settings else None
+        credentials = business.google_calendar_credentials or (
+            business.settings.get("google_calendar_credentials") if business.settings else None
+        )
 
         if credentials:
             # Create event in Google Calendar
@@ -363,7 +367,9 @@ async def handle_reschedule_appointment(arguments, conversation, business, db) -
     except (KeyError, ValueError):
         return {"error": "Invalid date/time format"}
     end = start + timedelta(minutes=60)
-    credentials = business.settings.get("google_calendar_credentials") if business.settings else None
+    credentials = business.google_calendar_credentials or (
+        business.settings.get("google_calendar_credentials") if business.settings else None
+    )
     if credentials and appointment.calendar_event_id:
         result = await asyncio.to_thread(calendar_service.update_calendar_event, credentials, appointment.calendar_event_id, start, end)
         if not result.get("success"):
@@ -382,7 +388,9 @@ async def handle_cancel_appointment(arguments, conversation, business, db) -> di
     ).first()
     if not appointment:
         return {"error": "Appointment not found"}
-    credentials = business.settings.get("google_calendar_credentials") if business.settings else None
+    credentials = business.google_calendar_credentials or (
+        business.settings.get("google_calendar_credentials") if business.settings else None
+    )
     if credentials and appointment.calendar_event_id:
         result = await asyncio.to_thread(calendar_service.delete_calendar_event, credentials, appointment.calendar_event_id)
         if not result.get("success"):

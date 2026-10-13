@@ -119,8 +119,7 @@ async def calendar_callback(
         credentials = flow.credentials
 
         # Store credentials in business settings
-        business.settings = business.settings or {}
-        business.settings["google_calendar_credentials"] = {
+        credentials_data = {
             "token": credentials.token,
             "refresh_token": credentials.refresh_token,
             "token_uri": credentials.token_uri,
@@ -128,6 +127,9 @@ async def calendar_callback(
             "client_secret": credentials.client_secret,
             "scopes": credentials.scopes
         }
+        business.google_calendar_credentials = credentials_data
+        business.settings = business.settings or {}
+        business.settings["google_calendar_credentials"] = credentials_data
         flag_modified(business, "settings")
 
         db.commit()
@@ -154,7 +156,9 @@ async def calendar_status(
 ):
     """Check if calendar is connected"""
     try:
-        credentials = business.settings.get("google_calendar_credentials") if business.settings else None
+        credentials = business.google_calendar_credentials or (
+            business.settings.get("google_calendar_credentials") if business.settings else None
+        )
 
         return {
             "connected": credentials is not None,
@@ -171,6 +175,7 @@ async def disconnect_calendar(
 ):
     """Disconnect Google Calendar"""
     try:
+        business.google_calendar_credentials = None
         if business.settings and "google_calendar_credentials" in business.settings:
             del business.settings["google_calendar_credentials"]
             flag_modified(business, "settings")
