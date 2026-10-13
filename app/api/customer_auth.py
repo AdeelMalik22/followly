@@ -13,6 +13,7 @@ from app.core.database import get_db
 from app.core.config import settings
 from app.core.security import create_access_token
 from app.models.models import Business, Customer
+from app.services.oauth_state_service import consume_oauth_state, store_oauth_state
 
 router = APIRouter(prefix="/api/v1/customer/auth", tags=["customer-auth"])
 SCOPES = ["openid", "email", "profile"]
@@ -56,6 +57,13 @@ def google_login(business_key: str, db: Session = Depends(get_db)):
     flow = customer_flow()
     nonce = secrets.token_urlsafe(16)
     state = _create_oauth_state(business.id, nonce)
+    store_oauth_state(
+        state,
+        business.id,
+        "google_customer",
+        datetime.now(timezone.utc) + timedelta(minutes=10),
+        db,
+    )
     url, _ = flow.authorization_url(access_type="offline", prompt="select_account", state=state, nonce=nonce)
     return RedirectResponse(url=url)
 
@@ -65,6 +73,8 @@ def google_callback(code: str, state: str, db: Session = Depends(get_db)):
     try:
         state_payload = _decode_oauth_state(state)
         business_id = int(state_payload["business_id"])
+        if not consume_oauth_state(state, business_id, "google_customer", db):
+            raise HTTPException(status_code=400, detail="OAuth state has expired or was already used")
         business = db.query(Business).filter(Business.id == business_id).first()
         if not business:
             raise HTTPException(status_code=404, detail="Business not found")

@@ -36,6 +36,17 @@ class Business(Base):
     knowledge_base = relationship("KnowledgeBaseEntry", back_populates="business")
     customers = relationship("Customer", back_populates="business")
 
+
+class OAuthState(Base):
+    __tablename__ = "oauth_states"
+
+    id = Column(Integer, primary_key=True, index=True)
+    business_id = Column(Integer, ForeignKey("businesses.id"), nullable=False, index=True)
+    state_hash = Column(String, unique=True, nullable=False, index=True)
+    provider = Column(String, nullable=False)
+    expires_at = Column(DateTime, nullable=False, index=True)
+    used_at = Column(DateTime, nullable=True)
+
 class User(Base):
     __tablename__ = "users"
 
