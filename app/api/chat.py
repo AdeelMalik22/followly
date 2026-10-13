@@ -69,16 +69,13 @@ async def chat_message(
     payload = decode_access_token(token) if token else None
     customer_id = payload.get("customer_id") if payload else None
     customer = db.query(Customer).filter(Customer.id == int(customer_id)).first() if str(customer_id).isdigit() else None
-    business_for_key = next((item for item in db.query(Business).all() if (item.settings or {}).get("widget_key") == business_key), None)
+    business_for_key = db.query(Business).filter(
+        Business.settings["widget_key"].as_string() == business_key
+    ).first()
     if not customer or not business_for_key or customer.business_id != business_for_key.id or str(customer.business_id) != str(payload.get("business_id")):
         raise HTTPException(status_code=401, detail="Sign in with Google before chatting")
     messages = []
-    # Compare JSON settings in Python for SQLite/PostgreSQL compatibility.
-    business = next(
-        (item for item in db.query(Business).all()
-         if (item.settings or {}).get("widget_key") == business_key),
-        None,
-    )
+    business = business_for_key
     if not business:
         messages.append({"role": "error", "content": "Demo business not found. Run the seed script first."})
         return templates.TemplateResponse(
