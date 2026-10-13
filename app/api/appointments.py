@@ -29,6 +29,7 @@ def _appointment_response(appointment: Appointment) -> AppointmentResponse:
 @router.get("", response_model=List[AppointmentResponse])
 def list_appointments(
     status: Optional[str] = Query(None, description="scheduled|completed|no_show|cancelled"),
+    lead_id: Optional[int] = Query(None, ge=1),
     start_from: Optional[datetime] = Query(None, description="Appointments starting at or after this time"),
     start_to: Optional[datetime] = Query(None, description="Appointments starting before or at this time"),
     skip: int = Query(0, ge=0),
@@ -44,6 +45,8 @@ def list_appointments(
     q = db.query(Appointment).filter(Appointment.business_id == business.id)
     if status:
         q = q.filter(Appointment.status == status)
+    if lead_id:
+        q = q.filter(Appointment.lead_id == lead_id)
     if start_from:
         q = q.filter(Appointment.start_time >= start_from)
     if start_to:

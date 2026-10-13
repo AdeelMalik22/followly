@@ -285,6 +285,7 @@ def test_appointment_list_rejects_reversed_date_range():
     with pytest.raises(HTTPException) as error:
         appointments.list_appointments(
             None,
+            None,
             datetime(2027, 2, 1, 10, 0),
             datetime(2027, 1, 1, 10, 0),
             0,
@@ -294,3 +295,37 @@ def test_appointment_list_rejects_reversed_date_range():
         )
 
     assert error.value.status_code == 422
+
+
+def test_appointment_list_scopes_lead_filter_to_business():
+    db = make_session()
+    first, second = make_two_businesses(db)
+    first_lead = Lead(business_id=first.id, phone="111")
+    second_lead = Lead(business_id=second.id, phone="222")
+    db.add_all([first_lead, second_lead])
+    db.flush()
+    db.add_all([
+        Appointment(
+            business_id=first.id,
+            lead_id=first_lead.id,
+            start_time=datetime(2027, 1, 1, 10, 0),
+            end_time=datetime(2027, 1, 1, 11, 0),
+            status="scheduled",
+        ),
+        Appointment(
+            business_id=second.id,
+            lead_id=second_lead.id,
+            start_time=datetime(2027, 1, 1, 10, 0),
+            end_time=datetime(2027, 1, 1, 11, 0),
+            status="scheduled",
+        ),
+    ])
+    db.commit()
+
+    appointments_for_first = appointments.list_appointments(
+        None, first_lead.id, None, None, 0, 50, first, db
+    )
+
+    assert len(appointments_for_first) == 1
+    assert appointments_for_first[0].business_id == first.id
+    assert appointments_for_first[0].lead_id == first_lead.id
