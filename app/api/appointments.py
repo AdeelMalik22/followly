@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from datetime import datetime
 from typing import Optional, List
 from app.core.database import get_db
 from app.models.models import Appointment, Business
@@ -28,6 +29,8 @@ def _appointment_response(appointment: Appointment) -> AppointmentResponse:
 @router.get("", response_model=List[AppointmentResponse])
 def list_appointments(
     status: Optional[str] = Query(None, description="scheduled|completed|no_show|cancelled"),
+    start_from: Optional[datetime] = Query(None, description="Appointments starting at or after this time"),
+    start_to: Optional[datetime] = Query(None, description="Appointments starting before or at this time"),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, le=200),
     business: Business = Depends(get_current_business),
@@ -35,10 +38,16 @@ def list_appointments(
 ):
     if status is not None and status not in VALID_APPOINTMENT_STATUSES:
         raise HTTPException(status_code=422, detail="Invalid appointment status")
+    if start_from and start_to and start_from > start_to:
+        raise HTTPException(status_code=422, detail="start_from must be before start_to")
 
     q = db.query(Appointment).filter(Appointment.business_id == business.id)
     if status:
         q = q.filter(Appointment.status == status)
+    if start_from:
+        q = q.filter(Appointment.start_time >= start_from)
+    if start_to:
+        q = q.filter(Appointment.start_time <= start_to)
     appointments = q.order_by(Appointment.start_time.desc()).offset(skip).limit(limit).all()
     result = []
     for appt in appointments:
