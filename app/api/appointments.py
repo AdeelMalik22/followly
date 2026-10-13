@@ -33,6 +33,9 @@ def list_appointments(
     business: Business = Depends(get_current_business),
     db: Session = Depends(get_db),
 ):
+    if status is not None and status not in VALID_APPOINTMENT_STATUSES:
+        raise HTTPException(status_code=422, detail="Invalid appointment status")
+
     q = db.query(Appointment).filter(Appointment.business_id == business.id)
     if status:
         q = q.filter(Appointment.status == status)

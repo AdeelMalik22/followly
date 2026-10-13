@@ -266,3 +266,13 @@ def test_appointment_status_update_rejects_unknown_status():
             db,
         )
     assert error.value.status_code == 422
+
+
+def test_appointment_list_rejects_unknown_status():
+    db = make_session()
+    first, _ = make_two_businesses(db)
+
+    with pytest.raises(HTTPException) as error:
+        appointments.list_appointments("pending", 0, 50, first, db)
+
+    assert error.value.status_code == 422
