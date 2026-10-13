@@ -5,6 +5,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.config import settings
 from app.models.models import Business, Customer, Lead, Conversation
 from app.core.security import decode_access_token
 from app.services import conversation_service
@@ -59,7 +60,14 @@ async def chat_page(request: Request, db: Session = Depends(get_db)):
         name="chat.html",
         context={"messages": [{"role": "user" if item.role == "user" else "assistant", "content": item.content} for item in history], "chat_list": chat_list, "new_chat": new_chat, "phone": phone, "business_key": business_key, "business_name": "", "authenticated": authenticated, "quick_questions": QUICK_QUESTIONS},
     )
-    response.set_cookie("followly_visitor_id", phone, httponly=True, samesite="lax", max_age=60 * 60 * 24 * 30)
+    response.set_cookie(
+        "followly_visitor_id",
+        phone,
+        httponly=True,
+        secure=settings.COOKIE_SECURE,
+        samesite="lax",
+        max_age=60 * 60 * 24 * 30,
+    )
     return response
 
 

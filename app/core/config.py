@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     API_BASE_URL: str = ""
     FRONTEND_URL: str = "http://localhost:3000"
     CORS_ORIGINS: str = ""
+    COOKIE_SECURE: bool = False
     BUSINESS_TIMEZONE: str = "Asia/Karachi"
     STRIPE_SECRET_KEY: str = ""
     STRIPE_PRICE_ID: str = ""

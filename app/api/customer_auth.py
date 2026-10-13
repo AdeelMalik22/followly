@@ -116,7 +116,7 @@ def google_callback(code: str, state: str, db: Session = Depends(get_db)):
             "followly_customer_token",
             access_token,
             httponly=True,
-            secure=settings.API_BASE_URL.startswith("https://"),
+            secure=settings.COOKIE_SECURE,
             samesite="lax",
             max_age=int(customer_token_lifetime.total_seconds()),
         )
