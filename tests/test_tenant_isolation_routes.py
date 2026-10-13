@@ -1,5 +1,6 @@
 import pytest
 from datetime import datetime, timedelta, timezone
+from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
 from jose import jwt
@@ -136,3 +137,25 @@ def test_oauth_state_is_single_use_and_business_scoped():
     assert consume_oauth_state(state, first.id, "google_customer", db) is True
     assert consume_oauth_state(state, first.id, "google_customer", db) is False
     assert consume_oauth_state(state, second.id, "google_customer", db) is False
+
+
+def test_whatsapp_phone_id_resolves_to_one_business():
+    db = make_session()
+    first, second = make_two_businesses(db)
+    first.whatsapp_phone_id = "phone-first"
+    second.whatsapp_phone_id = "phone-second"
+    db.commit()
+
+    resolved = db.query(Business).filter(Business.whatsapp_phone_id == "phone-second").first()
+
+    assert resolved is second
+
+
+def test_duplicate_whatsapp_phone_id_is_rejected():
+    db = make_session()
+    first, second = make_two_businesses(db)
+    first.whatsapp_phone_id = "phone-shared"
+    second.whatsapp_phone_id = "phone-shared"
+
+    with pytest.raises(IntegrityError):
+        db.commit()
