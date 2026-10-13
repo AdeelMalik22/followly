@@ -1,7 +1,9 @@
 import secrets
+from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import RedirectResponse
+from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 from google_auth_oauthlib.flow import Flow
 from google.oauth2 import id_token
@@ -26,6 +28,22 @@ def customer_flow() -> Flow:
     }}, scopes=SCOPES, redirect_uri=settings.CUSTOMER_GOOGLE_REDIRECT_URI)
 
 
+def _create_oauth_state(business_id: int, nonce: str) -> str:
+    payload = {
+        "business_id": business_id,
+        "nonce": nonce,
+        "exp": datetime.now(timezone.utc) + timedelta(minutes=10),
+    }
+    return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+
+def _decode_oauth_state(state: str) -> dict:
+    try:
+        return jwt.decode(state, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+    except JWTError as exc:
+        raise HTTPException(status_code=400, detail="Invalid OAuth state") from exc
+
+
 @router.get("/google")
 def google_login(business_key: str, db: Session = Depends(get_db)):
     business = next((item for item in db.query(Business).all() if (item.settings or {}).get("widget_key") == business_key), None)
@@ -35,14 +53,16 @@ def google_login(business_key: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=503, detail="Customer Google login is not configured")
     flow = customer_flow()
     nonce = secrets.token_urlsafe(16)
-    url, _ = flow.authorization_url(access_type="offline", prompt="select_account", state=f"{business.id}:{nonce}")
+    state = _create_oauth_state(business.id, nonce)
+    url, _ = flow.authorization_url(access_type="offline", prompt="select_account", state=state, nonce=nonce)
     return RedirectResponse(url=url)
 
 
 @router.get("/callback")
 def google_callback(code: str, state: str, db: Session = Depends(get_db)):
     try:
-        business_id = int(state.split(":", 1)[0])
+        state_payload = _decode_oauth_state(state)
+        business_id = int(state_payload["business_id"])
         business = db.query(Business).filter(Business.id == business_id).first()
         if not business:
             raise HTTPException(status_code=404, detail="Business not found")
@@ -53,6 +73,10 @@ def google_callback(code: str, state: str, db: Session = Depends(get_db)):
         flow.oauth2session.scope = None
         flow.fetch_token(code=code)
         token_info = id_token.verify_oauth2_token(flow.credentials.id_token, google_requests.Request(), settings.GOOGLE_CLIENT_ID)
+        if token_info.get("nonce") != state_payload.get("nonce"):
+            raise HTTPException(status_code=400, detail="Invalid OAuth nonce")
+        if not token_info.get("email_verified"):
+            raise HTTPException(status_code=400, detail="Google email is not verified")
         google_id = token_info["sub"]
         customer = db.query(Customer).filter(Customer.business_id == business.id, Customer.google_id == google_id).first()
         if not customer:
@@ -65,7 +89,14 @@ def google_callback(code: str, state: str, db: Session = Depends(get_db)):
         access_token = create_access_token(data={"customer_id": str(customer.id), "business_id": business.id})
         chat_base = settings.API_BASE_URL.rstrip("/") or "http://localhost:8000"
         response = RedirectResponse(f"{chat_base}/chat?business_key={(business.settings or {}).get('widget_key', '')}")
-        response.set_cookie("followly_customer_token", access_token, httponly=True, samesite="lax", max_age=60 * 60 * 24 * 30)
+        response.set_cookie(
+            "followly_customer_token",
+            access_token,
+            httponly=True,
+            secure=settings.API_BASE_URL.startswith("https://"),
+            samesite="lax",
+            max_age=60 * 60 * 24 * 30,
+        )
         return response
     except HTTPException:
         raise

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, JSON, ForeignKey, Text, Enum as SQLEnum
+from sqlalchemy import Column, Integer, String, DateTime, JSON, ForeignKey, Text, Enum as SQLEnum, UniqueConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import enum
@@ -51,6 +51,7 @@ class User(Base):
 
 class Customer(Base):
     __tablename__ = "customers"
+    __table_args__ = (UniqueConstraint("business_id", "google_id", name="uq_customers_business_google_id"),)
 
     id = Column(Integer, primary_key=True, index=True)
     business_id = Column(Integer, ForeignKey("businesses.id"), nullable=False, index=True)
