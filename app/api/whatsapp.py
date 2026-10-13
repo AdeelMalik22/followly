@@ -190,6 +190,7 @@ async def handle_webhook(
         try:
             conversation_service.save_message(
                 conversation.id,
+                business.id,
                 "user",
                 message_text,
                 db,
@@ -226,7 +227,7 @@ async def handle_webhook(
         agent_response = await process_message_with_agent(conversation, business, message_text, db)
 
         # Save agent response to database
-        conversation_service.save_message(conversation.id, "assistant", agent_response, db)
+        conversation_service.save_message(conversation.id, business.id, "assistant", agent_response, db)
 
         # Send response via WhatsApp
         whatsapp_phone_id = business.settings.get("whatsapp_phone_id")

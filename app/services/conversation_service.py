@@ -47,12 +47,19 @@ def get_or_create_conversation(lead_id: int, business_id: int, channel: str, db:
 
 def save_message(
     conversation_id: int,
+    business_id: int,
     role: str,
     content: str,
     db: Session,
     whatsapp_message_id: Optional[str] = None
 ) -> Message:
     """Save a message to database"""
+    conversation = db.query(Conversation).filter(
+        Conversation.id == conversation_id,
+        Conversation.business_id == business_id,
+    ).first()
+    if not conversation:
+        raise ValueError("Conversation does not belong to business")
     message = Message(
         conversation_id=conversation_id,
         role=role,
@@ -65,10 +72,12 @@ def save_message(
     db.refresh(message)
     return message
 
-def get_conversation_history(conversation_id: int, limit: int, db: Session) -> list[Message]:
+def get_conversation_history(conversation_id: int, business_id: int, limit: int, db: Session) -> list[Message]:
     """Get recent messages from conversation"""
-    return db.query(Message).filter(
-        Message.conversation_id == conversation_id
+    return db.query(Message).join(Conversation).filter(
+        Message.conversation_id == conversation_id,
+        Conversation.id == conversation_id,
+        Conversation.business_id == business_id,
     ).order_by(Message.timestamp.desc()).limit(limit).all()[::-1]
 
 def update_conversation_timestamp(conversation_id: int, business_id: int, db: Session):

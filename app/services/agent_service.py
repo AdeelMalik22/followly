@@ -74,7 +74,7 @@ def build_conversation_messages(conversation: Conversation, db: Session) -> List
     """Build message history for LLM context"""
     from app.services.conversation_service import get_conversation_history
 
-    messages = get_conversation_history(conversation.id, limit=20, db=db)
+    messages = get_conversation_history(conversation.id, conversation.business_id, limit=20, db=db)
 
     return [
         {
