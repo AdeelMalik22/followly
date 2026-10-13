@@ -119,6 +119,15 @@ async def execute_tool(
 ) -> dict:
     """Execute a tool function and return result"""
 
+    if conversation.business_id != business.id:
+        logger.warning(
+            "Rejected tool %s for conversation %s from business %s",
+            function_name,
+            conversation.id,
+            business.id,
+        )
+        return {"error": "Conversation does not belong to business"}
+
     if function_name == "check_availability":
         return await handle_check_availability(arguments, business, db)
 

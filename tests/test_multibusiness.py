@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.models.models import Base, Appointment, Business, Conversation, ConversationStatus, Lead, LeadStatus, KnowledgeBaseEntry
-from app.services.conversation_engine import handle_book_appointment
+from app.services.conversation_engine import execute_tool, handle_book_appointment
 from app.services.conversation_service import update_conversation_timestamp, update_lead_status
 from app.services.knowledge_service import get_knowledge_entries
 
@@ -100,3 +100,28 @@ def test_conversation_timestamp_update_requires_matching_business():
     db.refresh(conversation)
 
     assert conversation.last_message_at == original_timestamp
+
+
+def test_agent_tool_rejects_mismatched_business_context():
+    db = make_session()
+    first = Business(name="First Clinic", industry="Dental Clinic")
+    second = Business(name="Second Clinic", industry="Dental Clinic")
+    db.add_all([first, second])
+    db.flush()
+    lead = Lead(business_id=first.id, phone="111")
+    db.add(lead)
+    db.flush()
+    conversation = Conversation(
+        business_id=first.id,
+        lead_id=lead.id,
+        channel="web",
+        status=ConversationStatus.ACTIVE,
+    )
+    db.add(conversation)
+    db.commit()
+
+    result = asyncio.run(execute_tool("escalate_to_human", {}, conversation, second, db))
+
+    assert result == {"error": "Conversation does not belong to business"}
+    db.refresh(conversation)
+    assert conversation.status == ConversationStatus.ACTIVE
