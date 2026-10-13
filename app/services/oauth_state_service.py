@@ -1,6 +1,7 @@
 import hashlib
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.models.models import OAuthState
@@ -13,6 +14,13 @@ def store_oauth_state(
     expires_at: datetime,
     db: Session,
 ) -> None:
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    db.query(OAuthState).filter(
+        or_(
+            OAuthState.expires_at <= now,
+            OAuthState.used_at <= now - timedelta(days=1),
+        )
+    ).delete(synchronize_session=False)
     db.add(OAuthState(
         business_id=business_id,
         state_hash=hashlib.sha256(state.encode()).hexdigest(),

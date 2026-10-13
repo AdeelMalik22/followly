@@ -8,7 +8,7 @@ from jose import jwt
 from app.api import conversations, knowledge, leads
 from app.api.dependencies import get_current_user
 from app.core.config import settings
-from app.models.models import Business, Conversation, ConversationStatus, Lead, LeadStatus, KnowledgeBaseEntry
+from app.models.models import Business, Conversation, ConversationStatus, Lead, LeadStatus, KnowledgeBaseEntry, OAuthState
 from app.models.models import User
 from app.services.oauth_state_service import consume_oauth_state, store_oauth_state
 from app.schemas.dashboard import LeadUpdate
@@ -159,3 +159,25 @@ def test_duplicate_whatsapp_phone_id_is_rejected():
 
     with pytest.raises(IntegrityError):
         db.commit()
+
+
+def test_storing_oauth_state_prunes_expired_states():
+    db = make_session()
+    first, _ = make_two_businesses(db)
+    store_oauth_state(
+        "expired-state",
+        first.id,
+        "google_customer",
+        datetime.now(timezone.utc) - timedelta(minutes=1),
+        db,
+    )
+
+    store_oauth_state(
+        "active-state",
+        first.id,
+        "google_customer",
+        datetime.now(timezone.utc) + timedelta(minutes=10),
+        db,
+    )
+
+    assert db.query(OAuthState).filter(OAuthState.state_hash != "").count() == 1
