@@ -9,6 +9,7 @@ from app.core.config import settings
 from app.models.models import Business
 from app.api.dependencies import get_current_business, get_current_user
 from app.services.calendar_service import create_oauth_flow
+from app.services.oauth_state_service import consume_oauth_state, store_oauth_state
 import logging
 
 router = APIRouter(prefix="/api/v1/calendar", tags=["calendar"])
@@ -46,11 +47,19 @@ async def connect_calendar(
         )
 
         # Generate a signed, expiring state containing the tenant identity.
+        calendar_state = _create_calendar_state(business.id)
+        store_oauth_state(
+            calendar_state,
+            business.id,
+            "google_calendar",
+            datetime.now(timezone.utc) + timedelta(minutes=10),
+            db,
+        )
         authorization_url, state = flow.authorization_url(
             access_type='offline',
             include_granted_scopes='true',
             prompt='consent',
-            state=_create_calendar_state(business.id)
+            state=calendar_state
         )
 
         return {"authorization_url": authorization_url, "state": state}
@@ -79,6 +88,8 @@ async def calendar_callback(
     try:
         state_payload = _decode_calendar_state(state)
         business_id = int(state_payload["business_id"])
+        if not consume_oauth_state(state, business_id, "google_calendar", db):
+            raise HTTPException(status_code=400, detail="OAuth state has expired or was already used")
         business = db.query(Business).filter(Business.id == business_id).first()
 
         if not business:
