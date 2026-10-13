@@ -27,6 +27,7 @@ class Business(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     settings = Column(JSON, default={})
     widget_key = Column(String, unique=True, index=True, nullable=True)
+    whatsapp_phone_id = Column(String, unique=True, index=True, nullable=True)
     industry = Column(String, nullable=False, default="Dental Clinic")
 
     users = relationship("User", back_populates="business")

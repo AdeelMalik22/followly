@@ -23,10 +23,10 @@ async def whatsapp_status(
         settings_data = business.settings or {}
         return {
             "connected": bool(
-                settings_data.get("whatsapp_phone_id")
+                (business.whatsapp_phone_id or settings_data.get("whatsapp_phone_id"))
                 and settings_data.get("whatsapp_access_token")
             ),
-            "phone_number_id": settings_data.get("whatsapp_phone_id"),
+            "phone_number_id": business.whatsapp_phone_id or settings_data.get("whatsapp_phone_id"),
         }
     except Exception:
         logger.exception("Error checking WhatsApp connection status")
@@ -61,6 +61,7 @@ async def update_whatsapp_credentials(
         business.settings = business.settings or {}
         if credentials.phone_number_id is not None:
             business.settings["whatsapp_phone_id"] = credentials.phone_number_id
+            business.whatsapp_phone_id = credentials.phone_number_id
         if credentials.access_token is not None:
             business.settings["whatsapp_access_token"] = whatsapp_service.encrypt_access_token(
                 credentials.access_token
@@ -86,6 +87,7 @@ async def remove_whatsapp_credentials(
         business.settings = business.settings or {}
         business.settings.pop("whatsapp_phone_id", None)
         business.settings.pop("whatsapp_access_token", None)
+        business.whatsapp_phone_id = None
         flag_modified(business, "settings")
         db.commit()
         return {"status": "success", "message": "WhatsApp credentials removed"}
@@ -171,7 +173,7 @@ async def handle_webhook(
 
         # Find business by phone number ID
         business = db.query(Business).filter(
-            Business.settings["whatsapp_phone_id"].as_string() == business_phone_id
+            Business.whatsapp_phone_id == business_phone_id
         ).first()
 
         if not business:
