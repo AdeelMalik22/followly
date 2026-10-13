@@ -5,11 +5,12 @@ from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
 from jose import jwt
 
-from app.api import conversations, knowledge, leads
+from app.api import appointments, conversations, knowledge, leads
 from app.api.dependencies import get_current_user
 from app.core.config import settings
-from app.models.models import Business, Conversation, ConversationStatus, Lead, LeadStatus, KnowledgeBaseEntry, OAuthState
+from app.models.models import Appointment, Business, Conversation, ConversationStatus, Lead, LeadStatus, KnowledgeBaseEntry, OAuthState
 from app.models.models import User
+from app.schemas.dashboard import AppointmentUpdate
 from app.services.oauth_state_service import consume_oauth_state, store_oauth_state
 from app.services.whatsapp_service import decrypt_access_token, encrypt_access_token
 from app.core.secret_storage import decrypt_json, encrypt_json
@@ -209,3 +210,51 @@ def test_calendar_credentials_can_be_encrypted_and_decrypted():
 
     assert encrypted != str(credentials)
     assert decrypt_json(encrypted) == credentials
+
+
+def test_appointment_status_update_is_tenant_scoped():
+    db = make_session()
+    first, second = make_two_businesses(db)
+    lead = Lead(business_id=first.id, phone="111")
+    db.add(lead)
+    db.flush()
+    appointment = Appointment(
+        business_id=first.id,
+        lead_id=lead.id,
+        start_time=datetime(2027, 1, 1, 10, 0),
+        end_time=datetime(2027, 1, 1, 11, 0),
+        status="scheduled",
+    )
+    db.add(appointment)
+    db.commit()
+
+    updated = appointments.update_appointment(
+        appointment.id,
+        AppointmentUpdate(status="completed"),
+        first,
+        db,
+    )
+    assert updated.status == "completed"
+
+    with pytest.raises(HTTPException) as error:
+        appointments.update_appointment(
+            appointment.id,
+            AppointmentUpdate(status="cancelled"),
+            second,
+            db,
+        )
+    assert error.value.status_code == 404
+
+
+def test_appointment_status_update_rejects_unknown_status():
+    db = make_session()
+    first, _ = make_two_businesses(db)
+
+    with pytest.raises(HTTPException) as error:
+        appointments.update_appointment(
+            1,
+            AppointmentUpdate(status="unknown"),
+            first,
+            db,
+        )
+    assert error.value.status_code == 422

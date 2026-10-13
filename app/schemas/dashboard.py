@@ -104,6 +104,10 @@ class AppointmentResponse(BaseModel):
         from_attributes = True
 
 
+class AppointmentUpdate(BaseModel):
+    status: str
+
+
 # ── Follow-up rule schemas ────────────────────────────────────────────────────
 
 class FollowUpRuleCreate(BaseModel):
