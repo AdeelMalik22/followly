@@ -224,6 +224,31 @@ def test_booking_settings_update_requires_sensitive_business_role():
     assert error.value.status_code == 403
 
 
+def test_escalation_settings_update_requires_sensitive_business_role():
+    escalation_route = next(route for route in business.router.routes if route.path.endswith("/escalation-settings") and "PUT" in route.methods)
+    role_dependency = next(
+        dependency.call
+        for dependency in escalation_route.dependant.dependencies
+        if dependency.call.__name__ == "role_dependency"
+    )
+    db = make_session()
+    tenant, _ = make_two_businesses(db)
+    staff = User(
+        business_id=tenant.id,
+        email="escalation-staff@example.com",
+        name="Escalation Staff",
+        role="staff",
+        hashed_password="not-used",
+    )
+    db.add(staff)
+    db.commit()
+
+    with pytest.raises(HTTPException) as error:
+        role_dependency(staff)
+
+    assert error.value.status_code == 403
+
+
 def test_oauth_state_is_single_use_and_business_scoped():
     db = make_session()
     first, second = make_two_businesses(db)

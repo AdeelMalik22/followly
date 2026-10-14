@@ -29,7 +29,12 @@ def get_escalation_settings(business: Business = Depends(get_current_business)):
 
 
 @router.put("/escalation-settings", response_model=EscalationSettings)
-def update_escalation_settings(payload: EscalationSettings, business: Business = Depends(get_current_business), db: Session = Depends(get_db)):
+def update_escalation_settings(
+    payload: EscalationSettings,
+    business: Business = Depends(get_current_business),
+    db: Session = Depends(get_db),
+    _authorized_user=Depends(require_business_roles("owner", "admin")),
+):
     business.settings = business.settings or {}
     business.settings["escalation"] = payload.model_dump()
     from sqlalchemy.orm.attributes import flag_modified
