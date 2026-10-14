@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import List, Dict
 from app.models.models import Business, Conversation, Message
 from app.services.knowledge_service import get_knowledge_entries
+from app.services.business_config_service import get_business_configuration
 
 def build_system_prompt(business: Business, db: Session) -> str:
     """Build system prompt with business context and knowledge base"""
@@ -37,8 +38,8 @@ def build_system_prompt(business: Business, db: Session) -> str:
         kb_sections.append(f"**Common Questions:**\n{faqs_text}")
 
     kb_text = "\n\n".join(kb_sections) if kb_sections else "No knowledge base entries yet."
-    escalation = (business.settings or {}).get("escalation", {})
-    escalation_text = escalation.get("instructions") or "Transfer the conversation to clinic staff using the configured human handoff process."
+    escalation = get_business_configuration(business).escalation
+    escalation_text = escalation.instructions or "Transfer the conversation to clinic staff using the configured human handoff process."
 
     # Build system prompt
     system_prompt = f"""You are Followly, the autonomous patient-conversion assistant for {business.name}, a dental clinic.
