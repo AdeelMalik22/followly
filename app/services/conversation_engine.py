@@ -7,6 +7,7 @@ from app.models.models import Conversation, Business, ConversationStatus, Appoin
 from app.services import conversation_service, whatsapp_service, agent_service, calendar_service
 from app.core.secret_storage import decrypt_json
 from app.llm.client import chat
+from app.services.tenant_context import TenantContext
 import logging
 import asyncio
 
@@ -28,8 +29,11 @@ async def process_message_with_agent(
 ) -> str:
     """Process user message with AI agent and return response"""
 
-    # Build system prompt with business context
-    system_prompt = agent_service.build_system_prompt(business, db)
+    tenant_context = TenantContext.from_business(business)
+    tenant_context.validate_conversation(conversation)
+
+    # Build system prompt with explicit tenant context.
+    system_prompt = agent_service.build_system_prompt(business, db, tenant_context)
 
     # Get conversation history
     history = agent_service.build_conversation_messages(conversation, db)
@@ -62,7 +66,7 @@ async def process_message_with_agent(
 
                 # Execute tool
                 try:
-                    result = await execute_tool(function_name, arguments, conversation, business, db)
+                    result = await execute_tool(function_name, arguments, conversation, business, db, tenant_context)
                     audit = ToolCallAudit(
                         conversation_id=conversation.id,
                         tool_name=function_name,
@@ -124,11 +128,17 @@ async def execute_tool(
     arguments: dict,
     conversation: Conversation,
     business: Business,
-    db: Session
+    db: Session,
+    tenant_context: TenantContext | None = None,
 ) -> dict:
     """Execute a tool function and return result"""
 
-    if conversation.business_id != business.id:
+    tenant_context = tenant_context or TenantContext.from_business(business)
+    if tenant_context.business_id != business.id:
+        return {"error": "Business does not belong to tenant context"}
+    try:
+        tenant_context.validate_conversation(conversation)
+    except ValueError:
         logger.warning(
             "Rejected tool %s for conversation %s from business %s",
             function_name,

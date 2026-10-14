@@ -13,6 +13,7 @@ from app.models.models import Appointment, AppointmentStatusHistory, Business, C
 from app.models.models import User
 from app.schemas.dashboard import AppointmentUpdate, FollowUpRuleUpdate
 from app.services.oauth_state_service import consume_oauth_state, store_oauth_state
+from app.services.tenant_context import TenantContext, knowledge_cache_key, prompt_cache_key
 from app.services.whatsapp_service import decrypt_access_token, encrypt_access_token
 from app.core.secret_storage import decrypt_json, encrypt_json
 from app.schemas.dashboard import LeadUpdate
@@ -853,3 +854,11 @@ def test_business_owned_routes_require_tenant_context():
         if "get_current_business" not in dependency_names(route.dependant)
     ]
     assert missing == []
+
+
+def test_agent_context_and_cache_keys_are_tenant_scoped():
+    first_context = TenantContext(101)
+    second_context = TenantContext(202)
+
+    assert knowledge_cache_key(first_context) != knowledge_cache_key(second_context)
+    assert prompt_cache_key(first_context) != prompt_cache_key(second_context)

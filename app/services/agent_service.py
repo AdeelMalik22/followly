@@ -4,9 +4,18 @@ from typing import List, Dict
 from app.models.models import Business, Conversation, Message
 from app.services.knowledge_service import get_knowledge_entries
 from app.services.business_config_service import get_business_configuration
+from app.services.tenant_context import TenantContext, knowledge_cache_key
 
-def build_system_prompt(business: Business, db: Session) -> str:
+def build_system_prompt(
+    business: Business,
+    db: Session,
+    tenant_context: TenantContext | None = None,
+) -> str:
     """Build system prompt with business context and knowledge base"""
+
+    tenant_context = tenant_context or TenantContext.from_business(business)
+    if tenant_context.business_id != business.id:
+        raise ValueError("Business does not belong to tenant context")
 
     # Get all knowledge base entries
     knowledge_entries = get_knowledge_entries(business.id, db=db)
@@ -43,6 +52,8 @@ def build_system_prompt(business: Business, db: Session) -> str:
 
     # Build system prompt
     system_prompt = f"""You are Followly, the autonomous patient-conversion assistant for {business.name}, a dental clinic.
+
+Tenant context: business_id={tenant_context.business_id}. Use only this tenant's configuration, knowledge, conversations, and appointments.
 
 Your mission is to turn conversations into helpful next steps: understand what the patient needs, answer accurately, qualify genuine interest, and help them book an appointment.
 

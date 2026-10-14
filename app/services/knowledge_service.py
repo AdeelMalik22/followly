@@ -2,6 +2,12 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from typing import List, Optional
 from app.models.models import KnowledgeBaseEntry
+from app.services.tenant_context import TenantContext, knowledge_cache_key
+
+
+def get_knowledge_cache_key(business_id: int, category: Optional[str] = None) -> str:
+    """Return a tenant-namespaced key for knowledge retrieval caches."""
+    return knowledge_cache_key(TenantContext(business_id), category)
 
 def create_knowledge_entry(
     business_id: int,
