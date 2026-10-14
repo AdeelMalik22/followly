@@ -23,3 +23,7 @@ class TeamInvitationAccept(BaseModel):
     token: str = Field(min_length=20)
     name: str = Field(min_length=2, max_length=120)
     password: str = Field(min_length=8)
+
+
+class TeamRoleUpdate(BaseModel):
+    role: str = Field(pattern="^(admin|staff)$")

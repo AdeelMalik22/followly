@@ -9,7 +9,7 @@ from app.api.dependencies import get_current_business, get_current_user, require
 from app.core.database import get_db
 from app.core.security import get_password_hash
 from app.models.models import Business, TeamInvitation, User
-from app.schemas.team import TeamInvitationAccept, TeamInvitationCreate, TeamInvitationResponse
+from app.schemas.team import TeamInvitationAccept, TeamInvitationCreate, TeamInvitationResponse, TeamRoleUpdate
 
 router = APIRouter(prefix="/api/v1/team", tags=["team"])
 
@@ -72,3 +72,21 @@ def accept_invitation(payload: TeamInvitationAccept, db: Session = Depends(get_d
     db.add(user)
     db.commit()
     return {"status": "accepted", "user_id": user.id, "business_id": user.business_id}
+
+
+@router.patch("/members/{user_id}/role")
+def update_member_role(
+    user_id: int,
+    payload: TeamRoleUpdate,
+    business: Business = Depends(get_current_business),
+    _authorized_user=Depends(require_business_roles("owner", "admin")),
+    db: Session = Depends(get_db),
+):
+    member = db.query(User).filter(User.id == user_id, User.business_id == business.id).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="Team member not found")
+    if member.role == "owner":
+        raise HTTPException(status_code=400, detail="Transfer ownership before changing the owner role")
+    member.role = payload.role
+    db.commit()
+    return {"id": member.id, "email": member.email, "role": member.role}
