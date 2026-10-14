@@ -57,7 +57,11 @@ def get_profile(
 
 
 @router.post("/onboarding/complete")
-def complete_onboarding(business: Business = Depends(get_current_business), db: Session = Depends(get_db)):
+def complete_onboarding(
+    business: Business = Depends(get_current_business),
+    db: Session = Depends(get_db),
+    _authorized_user=Depends(require_business_roles("owner", "admin")),
+):
     if not business.name.strip() or not business.industry.strip():
         raise HTTPException(status_code=400, detail="Complete your business profile first")
 
