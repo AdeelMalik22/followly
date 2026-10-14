@@ -48,13 +48,21 @@ async def chat_page(request: Request, db: Session = Depends(get_db)):
                     lead.source = "web"
                 db.commit()
                 if not new_chat:
-                    conversation = db.query(Conversation).filter(Conversation.lead_id == lead.id, Conversation.channel == "web")
+                    conversation = db.query(Conversation).filter(
+                        Conversation.lead_id == lead.id,
+                        Conversation.business_id == customer.business_id,
+                        Conversation.channel == "web",
+                    )
                     if selected_id and selected_id.isdigit():
                         conversation = conversation.filter(Conversation.id == int(selected_id))
                     conversation = conversation.order_by(Conversation.last_message_at.desc()).first()
                     if conversation:
                         history = conversation_service.get_conversation_history(conversation.id, business.id, limit=50, db=db)
-                chat_list = [{"id": c.id, "title": c.lead.name or "Conversation", "updated": c.last_message_at.strftime("%b %d, %Y") if c.last_message_at else ""} for c in db.query(Conversation).filter(Conversation.lead_id == lead.id, Conversation.channel == "web").order_by(Conversation.last_message_at.desc()).limit(20).all()]
+                chat_list = [{"id": c.id, "title": c.lead.name or "Conversation", "updated": c.last_message_at.strftime("%b %d, %Y") if c.last_message_at else ""} for c in db.query(Conversation).filter(
+                    Conversation.lead_id == lead.id,
+                    Conversation.business_id == customer.business_id,
+                    Conversation.channel == "web",
+                ).order_by(Conversation.last_message_at.desc()).limit(20).all()]
     response = templates.TemplateResponse(
         request=request,
         name="chat.html",
