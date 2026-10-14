@@ -8,6 +8,8 @@ from app.models.models import Business, User, KnowledgeBaseEntry
 from app.schemas.dashboard import (
     BusinessProfileResponse, BusinessProfileUpdate, BookingSettings, BookingSettingsUpdate, WidgetConfigResponse, EscalationSettings,
 )
+from app.schemas.business_config import EscalationConfiguration
+from app.services.business_config_service import get_business_configuration, save_business_configuration
 
 router = APIRouter(prefix="/api/v1/business", tags=["business"])
 
@@ -25,7 +27,7 @@ def get_widget_config(business: Business = Depends(get_current_business), db: Se
 
 @router.get("/escalation-settings", response_model=EscalationSettings)
 def get_escalation_settings(business: Business = Depends(get_current_business)):
-    return EscalationSettings(**((business.settings or {}).get("escalation", {})))
+    return EscalationSettings(**get_business_configuration(business).escalation.model_dump())
 
 
 @router.put("/escalation-settings", response_model=EscalationSettings)
@@ -35,11 +37,9 @@ def update_escalation_settings(
     db: Session = Depends(get_db),
     _authorized_user=Depends(require_business_roles("owner", "admin")),
 ):
-    business.settings = business.settings or {}
-    business.settings["escalation"] = payload.model_dump()
-    from sqlalchemy.orm.attributes import flag_modified
-    flag_modified(business, "settings")
-    db.commit()
+    configuration = get_business_configuration(business)
+    configuration.escalation = EscalationConfiguration.model_validate(payload.model_dump())
+    save_business_configuration(business, configuration, db, updated_by=_authorized_user.id)
     return payload
 
 
@@ -123,10 +123,10 @@ def update_profile(
 
 @router.get("/booking-settings", response_model=BookingSettings)
 def get_booking_settings(business: Business = Depends(get_current_business)):
-    settings = business.settings or {}
+    booking = get_business_configuration(business).booking
     return BookingSettings(
-        working_hours=settings.get("working_hours", {}),
-        appointment_duration_minutes=settings.get("appointment_duration_minutes", 60),
+        working_hours=booking.working_hours,
+        appointment_duration_minutes=booking.appointment_duration_minutes,
     )
 
 
@@ -140,10 +140,8 @@ def update_booking_settings(
     if not 15 <= payload.appointment_duration_minutes <= 480:
         from fastapi import HTTPException
         raise HTTPException(status_code=422, detail="Appointment duration must be between 15 and 480 minutes")
-    business.settings = business.settings or {}
-    business.settings["working_hours"] = payload.working_hours
-    business.settings["appointment_duration_minutes"] = payload.appointment_duration_minutes
-    from sqlalchemy.orm.attributes import flag_modified
-    flag_modified(business, "settings")
-    db.commit()
+    configuration = get_business_configuration(business)
+    configuration.booking.working_hours = payload.working_hours
+    configuration.booking.appointment_duration_minutes = payload.appointment_duration_minutes
+    save_business_configuration(business, configuration, db, updated_by=_authorized_user.id)
     return payload
