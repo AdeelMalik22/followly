@@ -214,6 +214,9 @@ class BookingSettingsUpdate(BaseModel):
 class WidgetConfigResponse(BaseModel):
     widget_key: str
     business_name: str
+    embed_code: str = ""
+    primary_color: str = "#2563eb"
+    logo_url: str = ""
 
 
 class EscalationSettings(BaseModel):

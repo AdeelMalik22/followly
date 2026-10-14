@@ -4,6 +4,7 @@ import secrets
 
 from app.api.dependencies import get_current_business, get_current_user, require_business_roles
 from app.core.database import get_db
+from app.core.config import settings
 from app.models.models import Business, User, KnowledgeBaseEntry
 from app.schemas.dashboard import (
     BusinessProfileResponse, BusinessProfileUpdate, BookingSettings, BookingSettingsUpdate, WidgetConfigResponse, EscalationSettings,
@@ -47,7 +48,30 @@ def get_widget_config(business: Business = Depends(get_current_business), db: Se
         settings["widget_key"] = business.widget_key
         business.settings = settings
         db.commit()
-    return WidgetConfigResponse(widget_key=business.widget_key, business_name=business.name)
+    branding = get_business_configuration(business).branding
+    embed_code = f'<script src="{settings.FRONTEND_URL.rstrip("/")}/widget.js" data-business-key="{business.widget_key}" defer></script>'
+    return WidgetConfigResponse(
+        widget_key=business.widget_key,
+        business_name=business.name,
+        embed_code=embed_code,
+        primary_color=branding.primary_color,
+        logo_url=branding.logo_url,
+    )
+
+
+@router.get("/public-widget-config/{widget_key}", response_model=WidgetConfigResponse)
+def get_public_widget_config(widget_key: str, db: Session = Depends(get_db)):
+    business = db.query(Business).filter(Business.widget_key == widget_key).first()
+    if not business:
+        raise HTTPException(status_code=404, detail="Widget not found")
+    branding = get_business_configuration(business).branding
+    return WidgetConfigResponse(
+        widget_key=business.widget_key,
+        business_name=business.name,
+        embed_code="",
+        primary_color=branding.primary_color,
+        logo_url=branding.logo_url,
+    )
 
 
 @router.get("/escalation-settings", response_model=EscalationSettings)

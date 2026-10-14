@@ -847,6 +847,7 @@ def test_business_owned_routes_require_tenant_context():
     business_routes = [
         route for route in app.routes
         if getattr(route, "path", "").startswith(protected_prefixes)
+        and not getattr(route, "path", "").startswith("/api/v1/business/public-widget-config")
     ]
     assert business_routes
     missing = [
