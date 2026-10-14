@@ -80,6 +80,16 @@ async def reconnect_calendar(
     """Start a fresh Calendar OAuth flow for a disconnected or unhealthy tenant."""
     return await connect_calendar(business, _authorized_user, db)
 
+
+@router.post("/rotate")
+async def rotate_calendar_credentials(
+    business: Business = Depends(get_current_business),
+    _authorized_user=Depends(require_business_roles("owner", "admin")),
+    db: Session = Depends(get_db),
+):
+    """Replace Calendar credentials through a fresh OAuth grant."""
+    return await connect_calendar(business, _authorized_user, db)
+
 @router.get("/callback")
 async def calendar_callback(
     request: Request,

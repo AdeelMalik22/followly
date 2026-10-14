@@ -117,6 +117,17 @@ async def reconnect_whatsapp(
         "business_id": business.id,
     }
 
+
+@router.post("/credentials/rotate")
+async def rotate_whatsapp_credentials(
+    credentials: WhatsAppCredentialsUpdate,
+    business: Business = Depends(get_current_business),
+    _authorized_user=Depends(require_business_roles("owner", "admin")),
+    db: Session = Depends(get_db),
+):
+    """Replace WhatsApp credentials atomically using encrypted storage."""
+    return await update_whatsapp_credentials(credentials, business, _authorized_user, db)
+
 @router.get("/webhook")
 async def verify_webhook(
     request: Request,
