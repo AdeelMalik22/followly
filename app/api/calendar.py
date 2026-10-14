@@ -7,7 +7,7 @@ from sqlalchemy.orm.attributes import flag_modified
 from app.core.database import get_db
 from app.core.config import settings
 from app.models.models import Business
-from app.api.dependencies import get_current_business, get_current_user
+from app.api.dependencies import get_current_business, get_current_user, require_business_roles
 from app.services.calendar_service import create_oauth_flow
 from app.services.oauth_state_service import consume_oauth_state, store_oauth_state
 from app.core.secret_storage import decrypt_json, encrypt_json
@@ -34,6 +34,7 @@ def _decode_calendar_state(state: str) -> dict:
 @router.get("/connect")
 async def connect_calendar(
     business: Business = Depends(get_current_business),
+    _authorized_user=Depends(require_business_roles("owner", "admin")),
     db: Session = Depends(get_db)
 ):
     """Initiate OAuth flow for Google Calendar"""
@@ -177,6 +178,7 @@ async def calendar_status(
 @router.delete("/disconnect")
 async def disconnect_calendar(
     business: Business = Depends(get_current_business),
+    _authorized_user=Depends(require_business_roles("owner", "admin")),
     db: Session = Depends(get_db)
 ):
     """Disconnect Google Calendar"""
