@@ -90,3 +90,21 @@ def update_member_role(
     member.role = payload.role
     db.commit()
     return {"id": member.id, "email": member.email, "role": member.role}
+
+
+@router.delete("/members/{user_id}", status_code=204)
+def remove_member(
+    user_id: int,
+    business: Business = Depends(get_current_business),
+    _authorized_user=Depends(require_business_roles("owner", "admin")),
+    db: Session = Depends(get_db),
+):
+    member = db.query(User).filter(User.id == user_id, User.business_id == business.id).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="Team member not found")
+    if member.role == "owner":
+        raise HTTPException(status_code=400, detail="Transfer ownership before removing the owner")
+    if member.id == _authorized_user.id:
+        raise HTTPException(status_code=400, detail="You cannot remove yourself")
+    db.delete(member)
+    db.commit()
