@@ -225,11 +225,33 @@ class KnowledgeBaseEntry(Base):
     extra_data = Column(JSON, default={})
     source_name = Column(String, nullable=True)
     source_uri = Column(String, nullable=True)
+    source_id = Column(Integer, ForeignKey("knowledge_sources.id"), nullable=True, index=True)
+    visibility = Column(String, nullable=False, default="active", index=True)
     version = Column(Integer, nullable=False, default=1)
     deleted_at = Column(DateTime, nullable=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     business = relationship("Business", back_populates="knowledge_base")
+    source = relationship("KnowledgeSource", back_populates="entries")
+
+
+class KnowledgeSource(Base):
+    __tablename__ = "knowledge_sources"
+
+    id = Column(Integer, primary_key=True, index=True)
+    business_id = Column(Integer, ForeignKey("businesses.id"), nullable=False, index=True)
+    name = Column(String, nullable=False)
+    source_type = Column(String, nullable=False, default="document")
+    uri = Column(String, nullable=True)
+    mime_type = Column(String, nullable=True)
+    status = Column(String, nullable=False, default="pending", index=True)
+    visibility = Column(String, nullable=False, default="active", index=True)
+    version = Column(Integer, nullable=False, default=1)
+    error = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    entries = relationship("KnowledgeBaseEntry", back_populates="source")
 
 class FollowUpRule(Base):
     __tablename__ = "follow_up_rules"
