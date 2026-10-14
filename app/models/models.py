@@ -65,6 +65,20 @@ class OAuthState(Base):
     expires_at = Column(DateTime, nullable=False, index=True)
     used_at = Column(DateTime, nullable=True)
 
+
+class WebhookEvent(Base):
+    __tablename__ = "webhook_events"
+    __table_args__ = (UniqueConstraint("business_id", "event_id", name="uq_webhook_events_business_event"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    business_id = Column(Integer, ForeignKey("businesses.id"), nullable=False, index=True)
+    provider = Column(String, nullable=False)
+    event_id = Column(String, nullable=False)
+    status = Column(String, nullable=False, default="processing", index=True)
+    received_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    processed_at = Column(DateTime, nullable=True)
+    error = Column(Text, nullable=True)
+
 class User(Base):
     __tablename__ = "users"
 

@@ -5,6 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from app.core.database import get_db
 from app.services import whatsapp_service, conversation_service
 from app.services.conversation_engine import process_message_with_agent
+from app.services.webhook_event_service import claim_webhook_event, complete_webhook_event
 from app.schemas.whatsapp import WhatsAppWebhook, WhatsAppCredentialsUpdate, WhatsAppTestMessage
 from app.api.dependencies import get_current_business, require_business_roles
 from app.models.models import Business, Conversation, LeadStatus, Message
@@ -128,6 +129,8 @@ async def handle_webhook(
     db: Session = Depends(get_db)
 ):
     """Handle incoming WhatsApp messages"""
+    claimed_business_id = None
+    claimed_event_id = None
     try:
         app_secret = settings.WHATSAPP_APP_SECRET
         if not app_secret:
@@ -184,6 +187,12 @@ async def handle_webhook(
         ).first():
             logger.info("Ignoring duplicate WhatsApp message: %s", message_id)
             return {"status": "ok"}
+
+        if not claim_webhook_event(business.id, "whatsapp", message_id, db):
+            logger.info("Ignoring persisted duplicate WhatsApp event: %s", message_id)
+            return {"status": "ok"}
+        claimed_business_id = business.id
+        claimed_event_id = message_id
 
         # Get or create lead
         lead = conversation_service.get_or_create_lead(from_number, business.id, db)
@@ -263,6 +272,8 @@ async def handle_webhook(
 
         logger.info(f"Message processed for conversation {conversation.id}")
 
+        complete_webhook_event(business.id, "whatsapp", message_id, db)
+
         return {"status": "ok"}
 
     except HTTPException:
@@ -270,6 +281,14 @@ async def handle_webhook(
         raise
     except Exception as e:
         logger.error(f"Error handling webhook: {e}", exc_info=True)
+        if claimed_business_id and claimed_event_id:
+            complete_webhook_event(
+                claimed_business_id,
+                "whatsapp",
+                claimed_event_id,
+                db,
+                error=str(e),
+            )
         db.rollback()
         # Return 200 to avoid Meta retrying
         return {"status": "error"}
