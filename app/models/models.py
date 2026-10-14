@@ -94,6 +94,21 @@ class User(Base):
     business = relationship("Business", back_populates="users", foreign_keys=[business_id])
 
 
+class TeamInvitation(Base):
+    __tablename__ = "team_invitations"
+    __table_args__ = (UniqueConstraint("business_id", "email", "status", name="uq_team_invites_business_email_status"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    business_id = Column(Integer, ForeignKey("businesses.id"), nullable=False, index=True)
+    email = Column(String, nullable=False, index=True)
+    role = Column(String, nullable=False, default="staff")
+    token_hash = Column(String, unique=True, nullable=False, index=True)
+    status = Column(String, nullable=False, default="pending", index=True)
+    expires_at = Column(DateTime, nullable=False, index=True)
+    accepted_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
 class Customer(Base):
     __tablename__ = "customers"
     __table_args__ = (UniqueConstraint("business_id", "google_id", name="uq_customers_business_google_id"),)
