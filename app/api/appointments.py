@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from datetime import datetime
-from typing import Optional, List
+from typing import Literal, Optional, List
 from app.core.database import get_db
 from app.models.models import Appointment, Business, Lead
 from app.api.dependencies import get_current_business
@@ -39,6 +39,7 @@ def list_appointments(
     lead_id: Optional[int] = Query(None, ge=1),
     search: Optional[str] = Query(None, min_length=1, max_length=100),
     service: Optional[str] = Query(None, min_length=1, max_length=100),
+    sort: Literal["asc", "desc"] = Query("desc"),
     start_from: Optional[datetime] = Query(None, description="Appointments starting at or after this time"),
     start_to: Optional[datetime] = Query(None, description="Appointments starting before or at this time"),
     skip: int = Query(0, ge=0),
@@ -69,7 +70,8 @@ def list_appointments(
         q = q.filter(Appointment.start_time >= start_from)
     if start_to:
         q = q.filter(Appointment.start_time <= start_to)
-    appointments = q.order_by(Appointment.start_time.desc()).offset(skip).limit(limit).all()
+    ordering = Appointment.start_time.asc() if sort == "asc" else Appointment.start_time.desc()
+    appointments = q.order_by(ordering).offset(skip).limit(limit).all()
     result = []
     for appt in appointments:
         result.append(_appointment_response(appt))
