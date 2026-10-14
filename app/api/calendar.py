@@ -70,6 +70,16 @@ async def connect_calendar(
         logger.exception("Error initiating calendar connection")
         raise HTTPException(status_code=500, detail="Unable to connect calendar")
 
+
+@router.post("/reconnect")
+async def reconnect_calendar(
+    business: Business = Depends(get_current_business),
+    _authorized_user=Depends(require_business_roles("owner", "admin")),
+    db: Session = Depends(get_db),
+):
+    """Start a fresh Calendar OAuth flow for a disconnected or unhealthy tenant."""
+    return await connect_calendar(business, _authorized_user, db)
+
 @router.get("/callback")
 async def calendar_callback(
     request: Request,

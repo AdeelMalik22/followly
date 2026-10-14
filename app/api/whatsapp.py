@@ -104,6 +104,19 @@ async def remove_whatsapp_credentials(
         logger.exception("Error removing WhatsApp credentials")
         raise HTTPException(status_code=500, detail="Unable to remove WhatsApp credentials")
 
+
+@router.post("/reconnect")
+async def reconnect_whatsapp(
+    business: Business = Depends(get_current_business),
+    _authorized_user=Depends(require_business_roles("owner", "admin")),
+):
+    return {
+        "provider": "whatsapp",
+        "status": "reconnect_required",
+        "credentials_endpoint": "/api/v1/whatsapp/credentials",
+        "business_id": business.id,
+    }
+
 @router.get("/webhook")
 async def verify_webhook(
     request: Request,
