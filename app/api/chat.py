@@ -11,6 +11,8 @@ from app.core.security import decode_access_token
 from app.services import conversation_service
 from app.services.conversation_engine import process_message_with_agent
 from app.services.business_config_service import get_business_configuration
+from app.services.tenant_cache_service import allow_rate
+from app.services.tenant_context import TenantContext
 
 router = APIRouter(tags=["chat"])
 templates = Jinja2Templates(directory="app/templates")
@@ -112,6 +114,12 @@ async def chat_message(
     new_chat: str = Form("0"),
     db: Session = Depends(get_db),
 ):
+    if business_key:
+        business_for_limit = db.query(Business).filter(Business.widget_key == business_key).first()
+        if business_for_limit:
+            identity = request.client.host if request.client else "unknown"
+            if not allow_rate(TenantContext(business_for_limit.id), identity):
+                raise HTTPException(status_code=429, detail="Too many chat requests")
     token = request.cookies.get("followly_customer_token")
     payload = decode_access_token(token) if token else None
     customer_id = payload.get("customer_id") if payload else None

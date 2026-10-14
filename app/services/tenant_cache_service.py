@@ -47,3 +47,16 @@ def delete_cached(context: TenantContext, key: str) -> bool:
     except Exception:
         logger.warning("Tenant cache delete failed", exc_info=True)
         return False
+
+
+def allow_rate(context: TenantContext, identity: str, limit: int = 30, window_seconds: int = 60) -> bool:
+    try:
+        key = namespaced_key(context, f"rate:chat:{identity}")
+        client = _redis_client()
+        count = client.incr(key)
+        if count == 1:
+            client.expire(key, window_seconds)
+        return count <= limit
+    except Exception:
+        logger.warning("Tenant rate limit check failed", exc_info=True)
+        return True
