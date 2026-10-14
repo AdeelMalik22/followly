@@ -466,3 +466,45 @@ def test_appointment_list_filters_by_service_within_business():
 
     assert len(results) == 1
     assert results[0].service == "Teeth Cleaning"
+
+
+def test_appointment_summary_is_tenant_scoped():
+    db = make_session()
+    first, second = make_two_businesses(db)
+    first_lead = Lead(business_id=first.id, phone="111")
+    second_lead = Lead(business_id=second.id, phone="222")
+    db.add_all([first_lead, second_lead])
+    db.flush()
+    db.add_all([
+        Appointment(
+            business_id=first.id,
+            lead_id=first_lead.id,
+            start_time=datetime(2027, 1, 1, 10, 0),
+            end_time=datetime(2027, 1, 1, 11, 0),
+            status="scheduled",
+        ),
+        Appointment(
+            business_id=first.id,
+            lead_id=first_lead.id,
+            start_time=datetime(2027, 1, 2, 10, 0),
+            end_time=datetime(2027, 1, 2, 11, 0),
+            status="completed",
+        ),
+        Appointment(
+            business_id=second.id,
+            lead_id=second_lead.id,
+            start_time=datetime(2027, 1, 1, 10, 0),
+            end_time=datetime(2027, 1, 1, 11, 0),
+            status="cancelled",
+        ),
+    ])
+    db.commit()
+
+    summary = appointments.appointment_summary(first, db)
+
+    assert summary == {
+        "scheduled": 1,
+        "completed": 1,
+        "no_show": 0,
+        "cancelled": 0,
+    }

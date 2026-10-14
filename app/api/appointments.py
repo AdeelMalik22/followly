@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from datetime import datetime
 from typing import Optional, List
@@ -73,6 +74,19 @@ def list_appointments(
     for appt in appointments:
         result.append(_appointment_response(appt))
     return result
+
+
+@router.get("/summary")
+def appointment_summary(
+    business: Business = Depends(get_current_business),
+    db: Session = Depends(get_db),
+):
+    rows = db.query(Appointment.status, func.count(Appointment.id)).filter(
+        Appointment.business_id == business.id,
+    ).group_by(Appointment.status).all()
+    counts = {status: 0 for status in VALID_APPOINTMENT_STATUSES}
+    counts.update({status: count for status, count in rows})
+    return counts
 
 
 @router.get("/{appointment_id}", response_model=AppointmentResponse)
