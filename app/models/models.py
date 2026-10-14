@@ -27,6 +27,18 @@ class Business(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     settings = Column(JSON, default={})
     configuration = Column(JSON, nullable=True)
+    configuration_updated_at = Column(DateTime, nullable=True)
+    configuration_updated_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    lifecycle_status = Column(String, nullable=False, default="onboarding", index=True)
+    lifecycle_changed_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    plan_code = Column(String, nullable=False, default="starter_trial", index=True)
+    subscription_status = Column(String, nullable=False, default="trialing", index=True)
+    stripe_customer_id = Column(String, nullable=True, index=True)
+    stripe_subscription_id = Column(String, nullable=True, index=True)
+    usage_period_start = Column(DateTime, nullable=True)
+    usage_period_end = Column(DateTime, nullable=True)
+    usage_messages = Column(Integer, nullable=False, default=0)
+    usage_llm_tokens = Column(Integer, nullable=False, default=0)
     widget_key = Column(String, unique=True, index=True, nullable=True)
     whatsapp_phone_id = Column(String, unique=True, index=True, nullable=True)
     whatsapp_access_token = Column(String, nullable=True)
@@ -34,7 +46,7 @@ class Business(Base):
     google_calendar_credentials_encrypted = Column(Text, nullable=True)
     industry = Column(String, nullable=False, default="Dental Clinic")
 
-    users = relationship("User", back_populates="business")
+    users = relationship("User", back_populates="business", foreign_keys="User.business_id")
     leads = relationship("Lead", back_populates="business")
     conversations = relationship("Conversation", back_populates="business")
     appointments = relationship("Appointment", back_populates="business")
@@ -63,7 +75,7 @@ class User(Base):
     role = Column(String, default="owner")
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    business = relationship("Business", back_populates="users")
+    business = relationship("Business", back_populates="users", foreign_keys=[business_id])
 
 
 class Customer(Base):

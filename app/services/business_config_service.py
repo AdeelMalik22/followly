@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlalchemy.orm import Session
 
 from app.models.models import Business
@@ -15,8 +17,11 @@ def save_business_configuration(
     business: Business,
     configuration: BusinessConfiguration,
     db: Session,
+    updated_by: int | None = None,
 ) -> BusinessConfiguration:
     business.configuration = configuration.model_dump()
+    business.configuration_updated_at = datetime.utcnow()
+    business.configuration_updated_by = updated_by
     db.commit()
     db.refresh(business)
     return configuration
