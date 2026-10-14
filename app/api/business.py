@@ -42,6 +42,11 @@ def integration_status(business: Business = Depends(get_current_business)):
     }
 
 
+@router.get("/webhook-metrics")
+def webhook_metrics(business: Business = Depends(get_current_business)):
+    return business.webhook_metrics or {"received": 0, "processed": 0, "failed": 0, "retried": 0}
+
+
 @router.get("/integration-health")
 async def integration_health(
     business: Business = Depends(get_current_business),

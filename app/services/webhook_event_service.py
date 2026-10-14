@@ -3,7 +3,16 @@ from datetime import datetime, timedelta
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.models.models import WebhookEvent
+from app.models.models import Business, WebhookEvent
+
+
+def record_webhook_metric(business_id: int, metric: str, db: Session) -> None:
+    business = db.query(Business).filter(Business.id == business_id).first()
+    if business:
+        metrics = dict(business.webhook_metrics or {})
+        metrics[metric] = int(metrics.get(metric, 0)) + 1
+        business.webhook_metrics = metrics
+        db.flush()
 
 
 def claim_webhook_event(
@@ -30,6 +39,8 @@ def claim_webhook_event(
         existing.error = None
         existing.processed_at = None
         db.commit()
+        record_webhook_metric(business_id, "retried", db)
+        db.commit()
         return True
     event = WebhookEvent(
         business_id=business_id,
@@ -40,6 +51,8 @@ def claim_webhook_event(
     )
     db.add(event)
     try:
+        db.commit()
+        record_webhook_metric(business_id, "received", db)
         db.commit()
         return True
     except IntegrityError:
@@ -63,6 +76,7 @@ def complete_webhook_event(
         event.status = "failed" if error else "processed"
         event.error = error
         event.processed_at = datetime.utcnow()
+        record_webhook_metric(business_id, "failed" if error else "processed", db)
         db.commit()
 
 
