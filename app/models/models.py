@@ -39,6 +39,7 @@ class Business(Base):
     usage_period_end = Column(DateTime, nullable=True)
     usage_messages = Column(Integer, nullable=False, default=0)
     usage_llm_tokens = Column(Integer, nullable=False, default=0)
+    usage_tool_calls = Column(Integer, nullable=False, default=0)
     widget_key = Column(String, unique=True, index=True, nullable=True)
     whatsapp_phone_id = Column(String, unique=True, index=True, nullable=True)
     whatsapp_access_token = Column(String, nullable=True)

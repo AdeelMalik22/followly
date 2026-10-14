@@ -8,6 +8,7 @@ from app.services import conversation_service, whatsapp_service, agent_service, 
 from app.core.secret_storage import decrypt_json
 from app.llm.client import chat
 from app.services.tenant_context import TenantContext
+from app.services.usage_service import record_agent_usage
 import logging
 import asyncio
 
@@ -52,6 +53,13 @@ async def process_message_with_agent(
     try:
         for _ in range(3):
             response = await asyncio.to_thread(chat, messages, tools=tools, tool_choice="auto")
+            usage = getattr(response, "usage", None)
+            record_agent_usage(
+                business,
+                db,
+                llm_tokens=int(getattr(usage, "total_tokens", 0) or 0),
+                tool_calls=len(getattr(response.choices[0].message, "tool_calls", None) or []),
+            )
             response_message = response.choices[0].message
             if not response_message.tool_calls:
                 return response_message.content
