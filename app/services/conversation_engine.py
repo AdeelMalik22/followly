@@ -31,7 +31,7 @@ async def process_message_with_agent(
 
     tenant_context = TenantContext.from_business(business)
     tenant_context.validate_conversation(conversation)
-    enforce_usage_limit(business, "messages")
+    enforce_usage_limit(business, "messages", db)
 
     # Build system prompt with explicit tenant context.
     system_prompt = agent_service.build_system_prompt(business, db, tenant_context)
@@ -142,7 +142,7 @@ async def execute_tool(
     """Execute a tool function and return result"""
 
     tenant_context = tenant_context or TenantContext.from_business(business)
-    enforce_usage_limit(business, "tool_calls")
+    enforce_usage_limit(business, "tool_calls", db)
     if tenant_context.business_id != business.id:
         return {"error": "Business does not belong to tenant context"}
     try:

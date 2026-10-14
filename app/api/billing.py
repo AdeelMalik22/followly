@@ -6,6 +6,7 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.models.models import Business
 from app.schemas.dashboard import BillingStatus
+from app.services.usage_service import PLAN_LIMITS
 
 router = APIRouter(prefix="/api/v1/billing", tags=["billing"])
 
@@ -17,6 +18,9 @@ def billing_status(business: Business = Depends(get_current_business)):
         status=business.subscription_status or "trialing",
         customer_id=business.stripe_customer_id,
         subscription_id=business.stripe_subscription_id,
+        limits={**PLAN_LIMITS.get(business.plan_code or "starter_trial", {}), **(business.usage_limits or {})},
+        usage_period_start=business.usage_period_start,
+        usage_period_end=business.usage_period_end,
     )
 
 

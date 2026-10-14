@@ -231,3 +231,6 @@ class BillingStatus(BaseModel):
     status: str
     customer_id: str | None = None
     subscription_id: str | None = None
+    limits: dict[str, int] = {}
+    usage_period_start: datetime | None = None
+    usage_period_end: datetime | None = None
