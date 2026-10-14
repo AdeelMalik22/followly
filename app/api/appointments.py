@@ -78,12 +78,22 @@ def list_appointments(
 
 @router.get("/summary")
 def appointment_summary(
+    start_from: Optional[datetime] = Query(None, description="Appointments starting at or after this time"),
+    start_to: Optional[datetime] = Query(None, description="Appointments starting before or at this time"),
     business: Business = Depends(get_current_business),
     db: Session = Depends(get_db),
 ):
-    rows = db.query(Appointment.status, func.count(Appointment.id)).filter(
+    if start_from and start_to and start_from > start_to:
+        raise HTTPException(status_code=422, detail="start_from must be before start_to")
+
+    query = db.query(Appointment.status, func.count(Appointment.id)).filter(
         Appointment.business_id == business.id,
-    ).group_by(Appointment.status).all()
+    )
+    if start_from:
+        query = query.filter(Appointment.start_time >= start_from)
+    if start_to:
+        query = query.filter(Appointment.start_time <= start_to)
+    rows = query.group_by(Appointment.status).all()
     counts = {status: 0 for status in VALID_APPOINTMENT_STATUSES}
     counts.update({status: count for status, count in rows})
     return counts

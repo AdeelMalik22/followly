@@ -500,11 +500,47 @@ def test_appointment_summary_is_tenant_scoped():
     ])
     db.commit()
 
-    summary = appointments.appointment_summary(first, db)
+    summary = appointments.appointment_summary(None, None, first, db)
 
     assert summary == {
         "scheduled": 1,
         "completed": 1,
+        "no_show": 0,
+        "cancelled": 0,
+    }
+
+
+def test_appointment_summary_applies_date_range():
+    db = make_session()
+    first, _ = make_two_businesses(db)
+    lead = Lead(business_id=first.id, phone="111")
+    db.add(lead)
+    db.flush()
+    db.add_all([
+        Appointment(
+            business_id=first.id,
+            lead_id=lead.id,
+            start_time=datetime(2027, 1, 1, 10, 0),
+            end_time=datetime(2027, 1, 1, 11, 0),
+            status="scheduled",
+        ),
+        Appointment(
+            business_id=first.id,
+            lead_id=lead.id,
+            start_time=datetime(2027, 2, 1, 10, 0),
+            end_time=datetime(2027, 2, 1, 11, 0),
+            status="completed",
+        ),
+    ])
+    db.commit()
+
+    summary = appointments.appointment_summary(
+        datetime(2027, 1, 1), datetime(2027, 1, 31), first, db
+    )
+
+    assert summary == {
+        "scheduled": 1,
+        "completed": 0,
         "no_show": 0,
         "cancelled": 0,
     }
