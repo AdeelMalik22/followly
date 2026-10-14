@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from typing import List, Optional
+from datetime import datetime
 from app.models.models import KnowledgeBaseEntry
 from app.services.tenant_context import TenantContext, knowledge_cache_key
 
@@ -15,7 +16,9 @@ def create_knowledge_entry(
     answer: str,
     question: Optional[str] = None,
     extra_data: Optional[dict] = None,
-    db: Session = None
+    db: Session = None,
+    source_name: Optional[str] = None,
+    source_uri: Optional[str] = None,
 ) -> KnowledgeBaseEntry:
     """Create a new knowledge base entry"""
     try:
@@ -24,7 +27,9 @@ def create_knowledge_entry(
             category=category,
             question=question,
             answer=answer,
-            extra_data=extra_data or {}
+            extra_data=extra_data or {},
+            source_name=source_name,
+            source_uri=source_uri,
         )
         db.add(kb_entry)
         db.commit()
@@ -41,7 +46,10 @@ def get_knowledge_entries(
 ) -> List[KnowledgeBaseEntry]:
     """Get all knowledge base entries for a business"""
     try:
-        query = db.query(KnowledgeBaseEntry).filter(KnowledgeBaseEntry.business_id == business_id)
+        query = db.query(KnowledgeBaseEntry).filter(
+            KnowledgeBaseEntry.business_id == business_id,
+            KnowledgeBaseEntry.deleted_at.is_(None),
+        )
         if category:
             query = query.filter(KnowledgeBaseEntry.category == category)
         return query.all()
@@ -58,7 +66,8 @@ def get_knowledge_entry_by_id(
     try:
         return db.query(KnowledgeBaseEntry).filter(
             KnowledgeBaseEntry.id == entry_id,
-            KnowledgeBaseEntry.business_id == business_id
+            KnowledgeBaseEntry.business_id == business_id,
+            KnowledgeBaseEntry.deleted_at.is_(None),
         ).first()
     except SQLAlchemyError:
         db.rollback()
@@ -71,7 +80,9 @@ def update_knowledge_entry(
     question: Optional[str] = None,
     answer: Optional[str] = None,
     extra_data: Optional[dict] = None,
-    db: Session = None
+    db: Session = None,
+    source_name: Optional[str] = None,
+    source_uri: Optional[str] = None,
 ) -> Optional[KnowledgeBaseEntry]:
     """Update a knowledge base entry"""
     try:
@@ -87,6 +98,11 @@ def update_knowledge_entry(
             entry.answer = answer
         if extra_data is not None:
             entry.extra_data = extra_data
+        if source_name is not None:
+            entry.source_name = source_name
+        if source_uri is not None:
+            entry.source_uri = source_uri
+        entry.version += 1
 
         db.commit()
         db.refresh(entry)
@@ -106,7 +122,7 @@ def delete_knowledge_entry(
         if not entry:
             return False
 
-        db.delete(entry)
+        entry.deleted_at = datetime.utcnow()
         db.commit()
         return True
     except SQLAlchemyError:

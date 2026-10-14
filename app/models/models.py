@@ -192,6 +192,10 @@ class KnowledgeBaseEntry(Base):
     question = Column(String)
     answer = Column(Text, nullable=False)
     extra_data = Column(JSON, default={})
+    source_name = Column(String, nullable=True)
+    source_uri = Column(String, nullable=True)
+    version = Column(Integer, nullable=False, default=1)
+    deleted_at = Column(DateTime, nullable=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     business = relationship("Business", back_populates="knowledge_base")

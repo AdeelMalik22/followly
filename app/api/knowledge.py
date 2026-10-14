@@ -21,6 +21,8 @@ def create_entry(
         answer=entry.answer,
         question=entry.question,
         extra_data=entry.extra_data,
+        source_name=entry.source_name,
+        source_uri=entry.source_uri,
         db=db
     )
 
@@ -57,6 +59,8 @@ def update_entry(
         question=entry_data.question,
         answer=entry_data.answer,
         extra_data=entry_data.extra_data,
+        source_name=entry_data.source_name,
+        source_uri=entry_data.source_uri,
         db=db
     )
     if not entry:
