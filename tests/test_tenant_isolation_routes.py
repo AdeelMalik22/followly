@@ -6,6 +6,7 @@ from fastapi.security import HTTPAuthorizationCredentials
 from jose import jwt
 
 from app.api import analytics, appointments, billing, business, conversations, follow_up_rules, knowledge, leads
+from app.main import app
 from app.api.dependencies import get_current_user, require_business_roles
 from app.core.config import settings
 from app.models.models import Appointment, AppointmentStatusHistory, Business, Conversation, ConversationStatus, FollowUpRule, Lead, LeadStatus, KnowledgeBaseEntry, OAuthState
@@ -814,3 +815,41 @@ def test_appointment_list_supports_ascending_sort():
     )
 
     assert [item.start_time.month for item in results] == [1, 2]
+
+
+def test_business_owned_routes_require_tenant_context():
+    protected_prefixes = (
+        "/api/v1/knowledge",
+        "/api/v1/whatsapp/status",
+        "/api/v1/whatsapp/webhook-url",
+        "/api/v1/whatsapp/credentials",
+        "/api/v1/whatsapp/send",
+        "/api/v1/calendar/status",
+        "/api/v1/calendar/connect",
+        "/api/v1/calendar/disconnect",
+        "/api/v1/conversations",
+        "/api/v1/leads",
+        "/api/v1/appointments",
+        "/api/v1/analytics",
+        "/api/v1/follow-up-rules",
+        "/api/v1/business",
+        "/api/v1/billing",
+    )
+
+    def dependency_names(dependant):
+        names = {getattr(dependant.call, "__name__", None)}
+        for child in dependant.dependencies:
+            names.update(dependency_names(child))
+        return names
+
+    business_routes = [
+        route for route in app.routes
+        if getattr(route, "path", "").startswith(protected_prefixes)
+    ]
+    assert business_routes
+    missing = [
+        f"{sorted(route.methods)} {route.path}"
+        for route in business_routes
+        if "get_current_business" not in dependency_names(route.dependant)
+    ]
+    assert missing == []
