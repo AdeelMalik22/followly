@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 from typing import Literal, Optional, List
 from app.core.database import get_db
-from app.models.models import Appointment, Business, Lead
+from app.models.models import Appointment, AppointmentStatusHistory, Business, Lead
 from app.api.dependencies import get_current_business
 from app.schemas.dashboard import AppointmentResponse, AppointmentUpdate, LeadResponse
 
@@ -138,7 +138,14 @@ def update_appointment(
             detail=f"Cannot change appointment status from {appointment.status} to {payload.status}",
         )
 
+    previous_status = appointment.status
     appointment.status = payload.status
+    db.add(AppointmentStatusHistory(
+        business_id=business.id,
+        appointment_id=appointment.id,
+        previous_status=previous_status,
+        new_status=payload.status,
+    ))
     db.commit()
     db.refresh(appointment)
     return _appointment_response(appointment)

@@ -8,7 +8,7 @@ from jose import jwt
 from app.api import appointments, conversations, knowledge, leads
 from app.api.dependencies import get_current_user
 from app.core.config import settings
-from app.models.models import Appointment, Business, Conversation, ConversationStatus, Lead, LeadStatus, KnowledgeBaseEntry, OAuthState
+from app.models.models import Appointment, AppointmentStatusHistory, Business, Conversation, ConversationStatus, Lead, LeadStatus, KnowledgeBaseEntry, OAuthState
 from app.models.models import User
 from app.schemas.dashboard import AppointmentUpdate
 from app.services.oauth_state_service import consume_oauth_state, store_oauth_state
@@ -235,6 +235,12 @@ def test_appointment_status_update_is_tenant_scoped():
         db,
     )
     assert updated.status == "completed"
+    history = db.query(AppointmentStatusHistory).filter(
+        AppointmentStatusHistory.appointment_id == appointment.id
+    ).one()
+    assert history.business_id == first.id
+    assert history.previous_status == "scheduled"
+    assert history.new_status == "completed"
 
     fetched = appointments.get_appointment(appointment.id, first, db)
     assert fetched.id == appointment.id

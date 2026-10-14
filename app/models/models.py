@@ -158,6 +158,17 @@ class Appointment(Base):
     business = relationship("Business", back_populates="appointments")
     lead = relationship("Lead", back_populates="appointments")
 
+
+class AppointmentStatusHistory(Base):
+    __tablename__ = "appointment_status_history"
+
+    id = Column(Integer, primary_key=True, index=True)
+    business_id = Column(Integer, ForeignKey("businesses.id"), nullable=False, index=True)
+    appointment_id = Column(Integer, ForeignKey("appointments.id"), nullable=False, index=True)
+    previous_status = Column(String, nullable=False)
+    new_status = Column(String, nullable=False)
+    changed_at = Column(DateTime, default=datetime.utcnow, index=True)
+
 class KnowledgeBaseEntry(Base):
     __tablename__ = "knowledge_base"
 
