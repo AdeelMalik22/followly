@@ -2,7 +2,7 @@ from datetime import datetime
 
 from sqlalchemy.orm import Session
 
-from app.models.models import Business
+from app.models.models import Business, ConfigurationAudit
 from app.schemas.business_config import BusinessConfiguration
 
 
@@ -22,6 +22,11 @@ def save_business_configuration(
     business.configuration = configuration.model_dump()
     business.configuration_updated_at = datetime.utcnow()
     business.configuration_updated_by = updated_by
+    db.add(ConfigurationAudit(
+        business_id=business.id,
+        changed_by=updated_by,
+        configuration=configuration.model_dump(),
+    ))
     db.commit()
     db.refresh(business)
     return configuration

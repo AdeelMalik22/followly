@@ -58,6 +58,16 @@ class Business(Base):
     customers = relationship("Customer", back_populates="business")
 
 
+class ConfigurationAudit(Base):
+    __tablename__ = "configuration_audits"
+
+    id = Column(Integer, primary_key=True, index=True)
+    business_id = Column(Integer, ForeignKey("businesses.id"), nullable=False, index=True)
+    changed_by = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    configuration = Column(JSON, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+
 class OAuthState(Base):
     __tablename__ = "oauth_states"
 
