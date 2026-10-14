@@ -15,7 +15,7 @@ from app.models.models import User
 from app.schemas.dashboard import AppointmentUpdate, FollowUpRuleUpdate
 from app.services.oauth_state_service import consume_oauth_state, store_oauth_state
 from app.services.tenant_context import TenantContext, knowledge_cache_key, prompt_cache_key
-from app.services.webhook_event_service import claim_webhook_event, complete_webhook_event, recover_stale_webhook_events
+from app.services.webhook_event_service import claim_webhook_event, cleanup_webhook_events, complete_webhook_event, recover_stale_webhook_events
 from app.services.whatsapp_service import decrypt_access_token, encrypt_access_token
 from app.services.whatsapp_service import parse_whatsapp_message, verify_webhook_signature
 from app.core.secret_storage import decrypt_json, encrypt_json
@@ -972,3 +972,18 @@ def test_stale_webhook_processing_claims_are_recoverable():
     db.refresh(event)
     assert event.status == "failed"
     assert claim_webhook_event(first.id, "whatsapp", "stale-event", db) is True
+
+
+def test_webhook_retry_limit_and_retention_cleanup():
+    db = make_session()
+    first, _ = make_two_businesses(db)
+    assert claim_webhook_event(first.id, "whatsapp", "limited-event", db) is True
+    complete_webhook_event(first.id, "whatsapp", "limited-event", db, error="failure")
+    assert claim_webhook_event(first.id, "whatsapp", "limited-event", db, max_retries=1) is True
+    complete_webhook_event(first.id, "whatsapp", "limited-event", db, error="failure again")
+    assert claim_webhook_event(first.id, "whatsapp", "limited-event", db, max_retries=1) is False
+
+    event = db.query(WebhookEvent).filter(WebhookEvent.event_id == "limited-event").one()
+    event.processed_at = datetime.utcnow() - timedelta(days=31)
+    db.commit()
+    assert cleanup_webhook_events(db, retention_days=30) == 1

@@ -11,6 +11,7 @@ def claim_webhook_event(
     provider: str,
     event_id: str,
     db: Session,
+    max_retries: int = 3,
 ) -> bool:
     """Atomically claim a tenant-scoped webhook event for processing."""
     existing = db.query(WebhookEvent).filter(
@@ -21,6 +22,9 @@ def claim_webhook_event(
     if existing:
         if existing.status != "failed":
             return False
+        if existing.retry_count >= max_retries:
+            return False
+        existing.retry_count += 1
         existing.status = "processing"
         existing.error = None
         existing.processed_at = None
@@ -73,3 +77,13 @@ def recover_stale_webhook_events(db: Session, timeout_minutes: int = 15) -> int:
         event.processed_at = datetime.utcnow()
     db.commit()
     return len(events)
+
+
+def cleanup_webhook_events(db: Session, retention_days: int = 30) -> int:
+    cutoff = datetime.utcnow() - timedelta(days=retention_days)
+    deleted = db.query(WebhookEvent).filter(
+        WebhookEvent.status.in_(["processed", "failed"]),
+        WebhookEvent.processed_at < cutoff,
+    ).delete(synchronize_session=False)
+    db.commit()
+    return deleted

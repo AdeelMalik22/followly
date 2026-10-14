@@ -200,6 +200,10 @@ async def handle_webhook(
         claimed_business_id = business.id
         claimed_event_id = message_id
 
+        def acknowledge_event():
+            complete_webhook_event(business.id, "whatsapp", message_id, db)
+            return {"status": "ok"}
+
         # Get or create lead
         lead = conversation_service.get_or_create_lead(from_number, business.id, db)
 
@@ -222,11 +226,11 @@ async def handle_webhook(
             # Another concurrent webhook request claimed this message first.
             db.rollback()
             logger.info("Ignoring concurrently duplicated WhatsApp message: %s", message_id)
-            return {"status": "ok"}
+            return acknowledge_event()
 
         if conversation.status == "human_takeover":
             logger.info("AI paused for human takeover: conversation %s", conversation.id)
-            return {"status": "ok"}
+            return acknowledge_event()
 
         # Update lead status to CONTACTED if NEW
         if lead.status == LeadStatus.NEW:
@@ -238,7 +242,7 @@ async def handle_webhook(
         )):
             conversation_service.update_lead_status(lead.id, business.id, LeadStatus.NOT_INTERESTED, db)
             logger.info("Lead %s marked not interested", lead.id)
-            return {"status": "ok"}
+            return acknowledge_event()
 
         if lead.status == LeadStatus.CONTACTED and any(keyword in normalized_message for keyword in (
             "book", "appointment", "schedule", "cleaning", "whitening", "exam", "consultation"

@@ -79,6 +79,7 @@ class WebhookEvent(Base):
     received_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     processed_at = Column(DateTime, nullable=True)
     error = Column(Text, nullable=True)
+    retry_count = Column(Integer, nullable=False, default=0)
 
 
 class UsageEvent(Base):
