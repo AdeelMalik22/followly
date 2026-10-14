@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 from typing import Optional, List
 from app.core.database import get_db
-from app.models.models import Appointment, Business
+from app.models.models import Appointment, Business, Lead
 from app.api.dependencies import get_current_business
 from app.schemas.dashboard import AppointmentResponse, AppointmentUpdate, LeadResponse
 
@@ -36,6 +36,7 @@ def _appointment_response(appointment: Appointment) -> AppointmentResponse:
 def list_appointments(
     status: Optional[str] = Query(None, description="scheduled|completed|no_show|cancelled"),
     lead_id: Optional[int] = Query(None, ge=1),
+    search: Optional[str] = Query(None, min_length=1, max_length=100),
     start_from: Optional[datetime] = Query(None, description="Appointments starting at or after this time"),
     start_to: Optional[datetime] = Query(None, description="Appointments starting before or at this time"),
     skip: int = Query(0, ge=0),
@@ -53,6 +54,13 @@ def list_appointments(
         q = q.filter(Appointment.status == status)
     if lead_id:
         q = q.filter(Appointment.lead_id == lead_id)
+    if search:
+        search_pattern = f"%{search}%"
+        q = q.join(Lead).filter(
+            (Lead.name.ilike(search_pattern))
+            | (Lead.phone.ilike(search_pattern))
+            | (Lead.email.ilike(search_pattern))
+        )
     if start_from:
         q = q.filter(Appointment.start_time >= start_from)
     if start_to:

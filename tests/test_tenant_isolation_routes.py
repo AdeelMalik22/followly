@@ -286,6 +286,7 @@ def test_appointment_list_rejects_reversed_date_range():
         appointments.list_appointments(
             None,
             None,
+            None,
             datetime(2027, 2, 1, 10, 0),
             datetime(2027, 1, 1, 10, 0),
             0,
@@ -323,7 +324,7 @@ def test_appointment_list_scopes_lead_filter_to_business():
     db.commit()
 
     appointments_for_first = appointments.list_appointments(
-        None, first_lead.id, None, None, 0, 50, first, db
+        None, first_lead.id, None, None, None, 0, 50, first, db
     )
 
     assert len(appointments_for_first) == 1
@@ -356,6 +357,7 @@ def test_appointment_list_applies_date_range_filters():
     db.commit()
 
     filtered = appointments.list_appointments(
+        None,
         None,
         None,
         datetime(2027, 1, 15),
@@ -394,3 +396,37 @@ def test_appointment_status_cannot_reopen_terminal_appointment():
         )
 
     assert error.value.status_code == 409
+
+
+def test_appointment_list_search_is_tenant_scoped():
+    db = make_session()
+    first, second = make_two_businesses(db)
+    first_lead = Lead(business_id=first.id, phone="111", name="Alex First")
+    second_lead = Lead(business_id=second.id, phone="222", name="Alex Second")
+    db.add_all([first_lead, second_lead])
+    db.flush()
+    db.add_all([
+        Appointment(
+            business_id=first.id,
+            lead_id=first_lead.id,
+            start_time=datetime(2027, 1, 1, 10, 0),
+            end_time=datetime(2027, 1, 1, 11, 0),
+            status="scheduled",
+        ),
+        Appointment(
+            business_id=second.id,
+            lead_id=second_lead.id,
+            start_time=datetime(2027, 1, 1, 10, 0),
+            end_time=datetime(2027, 1, 1, 11, 0),
+            status="scheduled",
+        ),
+    ])
+    db.commit()
+
+    results = appointments.list_appointments(
+        None, None, "Alex", None, None, 0, 50, first, db
+    )
+
+    assert len(results) == 1
+    assert results[0].business_id == first.id
+    assert results[0].lead_id == first_lead.id
