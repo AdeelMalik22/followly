@@ -5,12 +5,12 @@ from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
 from jose import jwt
 
-from app.api import appointments, billing, business, conversations, knowledge, leads
+from app.api import analytics, appointments, billing, business, conversations, follow_up_rules, knowledge, leads
 from app.api.dependencies import get_current_user, require_business_roles
 from app.core.config import settings
-from app.models.models import Appointment, AppointmentStatusHistory, Business, Conversation, ConversationStatus, Lead, LeadStatus, KnowledgeBaseEntry, OAuthState
+from app.models.models import Appointment, AppointmentStatusHistory, Business, Conversation, ConversationStatus, FollowUpRule, Lead, LeadStatus, KnowledgeBaseEntry, OAuthState
 from app.models.models import User
-from app.schemas.dashboard import AppointmentUpdate
+from app.schemas.dashboard import AppointmentUpdate, FollowUpRuleUpdate
 from app.services.oauth_state_service import consume_oauth_state, store_oauth_state
 from app.services.whatsapp_service import decrypt_access_token, encrypt_access_token
 from app.core.secret_storage import decrypt_json, encrypt_json
@@ -272,6 +272,47 @@ def test_onboarding_completion_requires_sensitive_business_role():
         role_dependency(staff)
 
     assert error.value.status_code == 403
+
+
+def test_analytics_summary_is_tenant_scoped():
+    db = make_session()
+    first, second = make_two_businesses(db)
+    db.add_all([
+        Lead(business_id=first.id, phone="analytics-first", status=LeadStatus.NEW),
+        Lead(business_id=second.id, phone="analytics-second", status=LeadStatus.NEW),
+    ])
+    db.commit()
+
+    summary = analytics.get_analytics_summary(days=30, business=first, db=db)
+
+    assert summary.funnel.total_leads == 1
+
+
+def test_follow_up_rule_id_lookups_are_tenant_scoped():
+    db = make_session()
+    first, second = make_two_businesses(db)
+    rule = FollowUpRule(
+        business_id=first.id,
+        trigger_condition="new_lead",
+        delay_hours=24,
+        message_template="Follow up",
+        active=1,
+        created_at=datetime.utcnow(),
+    )
+    db.add(rule)
+    db.commit()
+
+    with pytest.raises(HTTPException) as error:
+        follow_up_rules.update_rule(
+            rule.id,
+            FollowUpRuleUpdate(message_template="Cross-tenant update"),
+            second,
+            db,
+        )
+
+    db.refresh(rule)
+    assert error.value.status_code == 404
+    assert rule.message_template == "Follow up"
 
 
 def test_oauth_state_is_single_use_and_business_scoped():
