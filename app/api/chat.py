@@ -36,6 +36,8 @@ async def chat_page(request: Request, db: Session = Depends(get_db)):
                 Customer.id == int(customer_id),
                 Customer.business_id == int(token_business_id),
             ).first()
+        if customer and payload.get("session_version", 0) != customer.session_version:
+            customer = None
         authenticated = bool(customer and str(customer.business_id) == str(payload.get("business_id")) and customer.business.widget_key == business_key)
         if authenticated:
             lead = db.query(Lead).filter(Lead.customer_id == customer.id, Lead.business_id == customer.business_id).first()
@@ -98,6 +100,8 @@ async def chat_message(
             Customer.id == int(customer_id),
             Customer.business_id == int(token_business_id),
         ).first()
+    if customer and payload.get("session_version", 0) != customer.session_version:
+        customer = None
     business_for_key = db.query(Business).filter(
         Business.widget_key == business_key
     ).first()

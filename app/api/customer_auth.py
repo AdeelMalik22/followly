@@ -1,7 +1,7 @@
 import secrets
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
@@ -107,7 +107,11 @@ def google_callback(code: str, state: str, db: Session = Depends(get_db)):
         db.commit()
         customer_token_lifetime = timedelta(minutes=settings.CUSTOMER_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
-            data={"customer_id": str(customer.id), "business_id": business.id},
+            data={
+                "customer_id": str(customer.id),
+                "business_id": business.id,
+                "session_version": customer.session_version,
+            },
             expires_delta=customer_token_lifetime,
         )
         chat_base = settings.FRONTEND_URL.rstrip("/") or settings.API_BASE_URL.rstrip("/") or "http://localhost:8000"
@@ -131,7 +135,22 @@ def google_callback(code: str, state: str, db: Session = Depends(get_db)):
 
 
 @router.post("/logout")
-def customer_logout():
+def customer_logout(request: Request, db: Session = Depends(get_db)):
+    token = request.cookies.get("followly_customer_token")
+    if token:
+        try:
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+            customer_id = int(payload["customer_id"])
+            business_id = int(payload["business_id"])
+            customer = db.query(Customer).filter(
+                Customer.id == customer_id,
+                Customer.business_id == business_id,
+            ).first()
+            if customer:
+                customer.session_version += 1
+                db.commit()
+        except (ValueError, KeyError, JWTError):
+            db.rollback()
     response = RedirectResponse(url="/", status_code=303)
     response.delete_cookie("followly_customer_token")
     response.delete_cookie("followly_visitor_id")

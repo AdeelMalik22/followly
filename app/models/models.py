@@ -74,6 +74,7 @@ class Customer(Base):
     email = Column(String, nullable=True, index=True)
     name = Column(String, nullable=True)
     google_id = Column(String, nullable=True, index=True)
+    session_version = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     business = relationship("Business", back_populates="customers")
