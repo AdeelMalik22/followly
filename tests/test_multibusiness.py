@@ -8,6 +8,7 @@ from app.models.models import Base, Appointment, Business, Conversation, Convers
 from app.services.conversation_engine import execute_tool, handle_book_appointment
 from app.services.conversation_service import update_conversation_timestamp, update_lead_status
 from app.services.knowledge_service import get_knowledge_entries
+from app.services.tenant_context import TenantContext
 
 
 def make_session():
@@ -32,6 +33,24 @@ def test_knowledge_base_isolated_between_businesses():
     second_entries = get_knowledge_entries(second.id, db=db)
     assert [entry.question for entry in first_entries] == ["Q1"]
     assert [entry.question for entry in second_entries] == ["Q2"]
+
+
+def test_deleted_knowledge_is_excluded_from_tenant_retrieval():
+    db = make_session()
+    business = Business(name="Lifecycle Clinic", industry="Dental Clinic")
+    db.add(business)
+    db.flush()
+    entry = KnowledgeBaseEntry(
+        business_id=business.id,
+        category="faqs",
+        question="Old question",
+        answer="Old answer",
+        deleted_at=datetime.utcnow(),
+    )
+    db.add(entry)
+    db.commit()
+
+    assert get_knowledge_entries(business.id, db=db) == []
 
 
 def test_double_booking_rejected_but_other_business_can_book_same_time():
@@ -125,3 +144,28 @@ def test_agent_tool_rejects_mismatched_business_context():
     assert result == {"error": "Conversation does not belong to business"}
     db.refresh(conversation)
     assert conversation.status == ConversationStatus.ACTIVE
+
+
+def test_agent_tool_rejects_explicit_mismatched_tenant_context():
+    db = make_session()
+    first = Business(name="First Clinic", industry="Dental Clinic")
+    second = Business(name="Second Clinic", industry="Dental Clinic")
+    db.add_all([first, second])
+    db.flush()
+    lead = Lead(business_id=first.id, phone="111")
+    db.add(lead)
+    db.flush()
+    conversation = Conversation(business_id=first.id, lead_id=lead.id, channel="web")
+    db.add(conversation)
+    db.commit()
+
+    result = asyncio.run(execute_tool(
+        "escalate_to_human",
+        {},
+        conversation,
+        first,
+        db,
+        TenantContext(second.id),
+    ))
+
+    assert result == {"error": "Business does not belong to tenant context"}
