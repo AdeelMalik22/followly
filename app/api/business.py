@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 import secrets
 
-from app.api.dependencies import get_current_business, get_current_user
+from app.api.dependencies import get_current_business, get_current_user, require_business_roles
 from app.core.database import get_db
 from app.models.models import Business, User, KnowledgeBaseEntry
 from app.schemas.dashboard import (
@@ -96,6 +96,7 @@ def update_profile(
     business: Business = Depends(get_current_business),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
+    _authorized_user=Depends(require_business_roles("owner", "admin")),
 ):
     business.name = profile.name.strip()
     business.industry = profile.industry.strip()

@@ -5,7 +5,7 @@ from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
 from jose import jwt
 
-from app.api import appointments, billing, conversations, knowledge, leads
+from app.api import appointments, billing, business, conversations, knowledge, leads
 from app.api.dependencies import get_current_user, require_business_roles
 from app.core.config import settings
 from app.models.models import Appointment, AppointmentStatusHistory, Business, Conversation, ConversationStatus, Lead, LeadStatus, KnowledgeBaseEntry, OAuthState
@@ -162,6 +162,31 @@ def test_billing_checkout_requires_sensitive_business_role():
         business_id=business.id,
         email="billing-staff@example.com",
         name="Billing Staff",
+        role="staff",
+        hashed_password="not-used",
+    )
+    db.add(staff)
+    db.commit()
+
+    with pytest.raises(HTTPException) as error:
+        role_dependency(staff)
+
+    assert error.value.status_code == 403
+
+
+def test_business_profile_update_requires_sensitive_business_role():
+    profile_route = next(route for route in business.router.routes if route.path.endswith("/profile") and "PUT" in route.methods)
+    role_dependency = next(
+        dependency.call
+        for dependency in profile_route.dependant.dependencies
+        if dependency.call.__name__ == "role_dependency"
+    )
+    db = make_session()
+    tenant, _ = make_two_businesses(db)
+    staff = User(
+        business_id=tenant.id,
+        email="profile-staff@example.com",
+        name="Profile Staff",
         role="staff",
         hashed_password="not-used",
     )
