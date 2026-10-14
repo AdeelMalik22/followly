@@ -14,7 +14,7 @@ from app.models.models import User
 from app.schemas.dashboard import AppointmentUpdate, FollowUpRuleUpdate
 from app.services.oauth_state_service import consume_oauth_state, store_oauth_state
 from app.services.tenant_context import TenantContext, knowledge_cache_key, prompt_cache_key
-from app.services.webhook_event_service import claim_webhook_event, complete_webhook_event
+from app.services.webhook_event_service import claim_webhook_event, complete_webhook_event, recover_stale_webhook_events
 from app.services.whatsapp_service import decrypt_access_token, encrypt_access_token
 from app.services.whatsapp_service import parse_whatsapp_message, verify_webhook_signature
 from app.core.secret_storage import decrypt_json, encrypt_json
@@ -914,3 +914,22 @@ def test_webhook_payload_preserves_tenant_routing_identifier():
 
     assert parsed["business_phone_id"] == "phone-tenant-a"
     assert parsed["message_id"] == "wamid-1"
+
+
+def test_stale_webhook_processing_claims_are_recoverable():
+    db = make_session()
+    first, _ = make_two_businesses(db)
+    event = WebhookEvent(
+        business_id=first.id,
+        provider="whatsapp",
+        event_id="stale-event",
+        status="processing",
+        received_at=datetime.utcnow() - timedelta(minutes=30),
+    )
+    db.add(event)
+    db.commit()
+
+    assert recover_stale_webhook_events(db, timeout_minutes=15) == 1
+    db.refresh(event)
+    assert event.status == "failed"
+    assert claim_webhook_event(first.id, "whatsapp", "stale-event", db) is True

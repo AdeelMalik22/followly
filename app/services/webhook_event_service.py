@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -58,3 +58,18 @@ def complete_webhook_event(
         event.error = error
         event.processed_at = datetime.utcnow()
         db.commit()
+
+
+def recover_stale_webhook_events(db: Session, timeout_minutes: int = 15) -> int:
+    """Mark abandoned processing claims failed so provider retries can recover them."""
+    cutoff = datetime.utcnow() - timedelta(minutes=timeout_minutes)
+    events = db.query(WebhookEvent).filter(
+        WebhookEvent.status == "processing",
+        WebhookEvent.received_at < cutoff,
+    ).all()
+    for event in events:
+        event.status = "failed"
+        event.error = "Processing timeout; eligible for retry"
+        event.processed_at = datetime.utcnow()
+    db.commit()
+    return len(events)
