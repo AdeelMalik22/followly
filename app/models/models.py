@@ -27,6 +27,7 @@ class Business(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     settings = Column(JSON, default={})
     configuration = Column(JSON, nullable=True)
+    integration_health = Column(JSON, nullable=True)
     configuration_updated_at = Column(DateTime, nullable=True)
     configuration_updated_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     lifecycle_status = Column(String, nullable=False, default="onboarding", index=True)

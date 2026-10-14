@@ -67,6 +67,9 @@ async def update_whatsapp_credentials(
             business.whatsapp_access_token = whatsapp_service.encrypt_access_token(
                 credentials.access_token
             )
+        health = business.integration_health or {}
+        health["whatsapp"] = {"status": "connected", "last_error": None}
+        business.integration_health = health
         db.commit()
         return {"status": "success", "message": "WhatsApp credentials updated"}
     except HTTPException:
@@ -90,6 +93,9 @@ async def remove_whatsapp_credentials(
         business.settings.pop("whatsapp_access_token", None)
         business.whatsapp_phone_id = None
         business.whatsapp_access_token = None
+        health = business.integration_health or {}
+        health["whatsapp"] = {"status": "disconnected", "last_error": None}
+        business.integration_health = health
         flag_modified(business, "settings")
         db.commit()
         return {"status": "success", "message": "WhatsApp credentials removed"}

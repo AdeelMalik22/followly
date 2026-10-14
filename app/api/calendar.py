@@ -130,6 +130,9 @@ async def calendar_callback(
         }
         business.google_calendar_credentials = credentials_data
         business.google_calendar_credentials_encrypted = encrypt_json(credentials_data)
+        health = business.integration_health or {}
+        health["calendar"] = {"status": "connected", "last_error": None}
+        business.integration_health = health
 
         db.commit()
 
@@ -181,6 +184,9 @@ async def disconnect_calendar(
     try:
         business.google_calendar_credentials = None
         business.google_calendar_credentials_encrypted = None
+        health = business.integration_health or {}
+        health["calendar"] = {"status": "disconnected", "last_error": None}
+        business.integration_health = health
         if business.settings and "google_calendar_credentials" in business.settings:
             del business.settings["google_calendar_credentials"]
             flag_modified(business, "settings")

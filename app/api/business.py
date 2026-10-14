@@ -14,6 +14,31 @@ from app.services.business_config_service import get_business_configuration, sav
 router = APIRouter(prefix="/api/v1/business", tags=["business"])
 
 
+@router.get("/integration-status")
+def integration_status(business: Business = Depends(get_current_business)):
+    health = business.integration_health or {}
+    whatsapp_connected = bool(
+        business.whatsapp_phone_id and business.whatsapp_access_token
+    )
+    calendar_connected = bool(
+        business.google_calendar_credentials_encrypted or business.google_calendar_credentials
+    )
+    return {
+        "whatsapp": {
+            "connected": whatsapp_connected,
+            "status": health.get("whatsapp", {}).get("status", "connected" if whatsapp_connected else "disconnected"),
+            "last_error": health.get("whatsapp", {}).get("last_error"),
+            "reconnect_required": not whatsapp_connected,
+        },
+        "calendar": {
+            "connected": calendar_connected,
+            "status": health.get("calendar", {}).get("status", "connected" if calendar_connected else "disconnected"),
+            "last_error": health.get("calendar", {}).get("last_error"),
+            "reconnect_required": not calendar_connected,
+        },
+    }
+
+
 @router.get("/widget-config", response_model=WidgetConfigResponse)
 def get_widget_config(business: Business = Depends(get_current_business), db: Session = Depends(get_db)):
     settings = business.settings or {}
