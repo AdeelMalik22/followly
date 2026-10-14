@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+import asyncio
 from sqlalchemy.orm import Session
 import secrets
 
@@ -11,6 +12,7 @@ from app.schemas.dashboard import (
 )
 from app.schemas.business_config import EscalationConfiguration
 from app.services.business_config_service import get_business_configuration, save_business_configuration
+from app.services.integration_health_service import check_calendar_health, check_whatsapp_health
 
 router = APIRouter(prefix="/api/v1/business", tags=["business"])
 
@@ -38,6 +40,20 @@ def integration_status(business: Business = Depends(get_current_business)):
             "reconnect_required": not calendar_connected,
         },
     }
+
+
+@router.get("/integration-health")
+async def integration_health(
+    business: Business = Depends(get_current_business),
+    db: Session = Depends(get_db),
+):
+    whatsapp, calendar = await asyncio.gather(
+        check_whatsapp_health(business),
+        check_calendar_health(business),
+    )
+    business.integration_health = {"whatsapp": whatsapp, "calendar": calendar}
+    db.commit()
+    return business.integration_health
 
 
 @router.get("/widget-config", response_model=WidgetConfigResponse)
