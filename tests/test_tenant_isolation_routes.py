@@ -6,7 +6,7 @@ from fastapi.security import HTTPAuthorizationCredentials
 from jose import jwt
 
 from app.api import appointments, conversations, knowledge, leads
-from app.api.dependencies import get_current_user
+from app.api.dependencies import get_current_user, require_business_roles
 from app.core.config import settings
 from app.models.models import Appointment, AppointmentStatusHistory, Business, Conversation, ConversationStatus, Lead, LeadStatus, KnowledgeBaseEntry, OAuthState
 from app.models.models import User
@@ -128,6 +128,25 @@ def test_business_user_rejects_mismatched_tenant_claim():
         get_current_user(HTTPAuthorizationCredentials(scheme="Bearer", credentials=token), db)
 
     assert error.value.status_code == 401
+
+
+def test_sensitive_business_dependency_requires_owner_or_admin():
+    db = make_session()
+    business, _ = make_two_businesses(db)
+    staff = User(
+        business_id=business.id,
+        email="staff@example.com",
+        name="Staff",
+        role="staff",
+        hashed_password="not-used",
+    )
+    db.add(staff)
+    db.commit()
+
+    with pytest.raises(HTTPException) as error:
+        require_business_roles("owner", "admin")(staff)
+
+    assert error.value.status_code == 403
 
 
 def test_oauth_state_is_single_use_and_business_scoped():

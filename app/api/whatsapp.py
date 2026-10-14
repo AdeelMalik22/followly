@@ -6,7 +6,7 @@ from app.core.database import get_db
 from app.services import whatsapp_service, conversation_service
 from app.services.conversation_engine import process_message_with_agent
 from app.schemas.whatsapp import WhatsAppWebhook, WhatsAppCredentialsUpdate, WhatsAppTestMessage
-from app.api.dependencies import get_current_business
+from app.api.dependencies import get_current_business, require_business_roles
 from app.models.models import Business, LeadStatus, Message
 import logging
 
@@ -51,6 +51,7 @@ async def whatsapp_webhook_url(
 async def update_whatsapp_credentials(
     credentials: WhatsAppCredentialsUpdate,
     business: Business = Depends(get_current_business),
+    _authorized_user=Depends(require_business_roles("owner", "admin")),
     db: Session = Depends(get_db)
 ):
     """Update WhatsApp credentials for the authenticated business."""
@@ -81,6 +82,7 @@ async def update_whatsapp_credentials(
 @router.delete("/credentials")
 async def remove_whatsapp_credentials(
     business: Business = Depends(get_current_business),
+    _authorized_user=Depends(require_business_roles("owner", "admin")),
     db: Session = Depends(get_db)
 ):
     """Remove WhatsApp credentials for the authenticated business."""
