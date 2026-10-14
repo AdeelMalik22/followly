@@ -241,7 +241,7 @@ def test_appointment_status_update_is_tenant_scoped():
     assert history.business_id == first.id
     assert history.previous_status == "scheduled"
     assert history.new_status == "completed"
-    history_response = appointments.get_appointment_history(appointment.id, first, db)
+    history_response = appointments.get_appointment_history(appointment.id, 0, 50, first, db)
     assert len(history_response) == 1
     assert history_response[0].new_status == "completed"
 
@@ -263,7 +263,7 @@ def test_appointment_status_update_is_tenant_scoped():
     assert error.value.status_code == 404
 
     with pytest.raises(HTTPException) as error:
-        appointments.get_appointment_history(appointment.id, second, db)
+        appointments.get_appointment_history(appointment.id, 0, 50, second, db)
     assert error.value.status_code == 404
 
 

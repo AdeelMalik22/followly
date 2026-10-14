@@ -119,6 +119,8 @@ def get_appointment(
 @router.get("/{appointment_id}/history", response_model=List[AppointmentStatusHistoryResponse])
 def get_appointment_history(
     appointment_id: int,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
     business: Business = Depends(get_current_business),
     db: Session = Depends(get_db),
 ):
@@ -132,7 +134,7 @@ def get_appointment_history(
     return db.query(AppointmentStatusHistory).filter(
         AppointmentStatusHistory.appointment_id == appointment_id,
         AppointmentStatusHistory.business_id == business.id,
-    ).order_by(AppointmentStatusHistory.changed_at.asc()).all()
+    ).order_by(AppointmentStatusHistory.changed_at.asc()).offset(skip).limit(limit).all()
 
 
 @router.patch("/{appointment_id}", response_model=AppointmentResponse)
