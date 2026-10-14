@@ -27,3 +27,7 @@ class TeamInvitationAccept(BaseModel):
 
 class TeamRoleUpdate(BaseModel):
     role: str = Field(pattern="^(admin|staff)$")
+
+
+class OwnerTransfer(BaseModel):
+    target_user_id: int

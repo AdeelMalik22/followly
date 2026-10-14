@@ -9,7 +9,7 @@ from app.api.dependencies import get_current_business, get_current_user, require
 from app.core.database import get_db
 from app.core.security import get_password_hash
 from app.models.models import Business, TeamInvitation, User
-from app.schemas.team import TeamInvitationAccept, TeamInvitationCreate, TeamInvitationResponse, TeamRoleUpdate
+from app.schemas.team import OwnerTransfer, TeamInvitationAccept, TeamInvitationCreate, TeamInvitationResponse, TeamRoleUpdate
 
 router = APIRouter(prefix="/api/v1/team", tags=["team"])
 
@@ -108,3 +108,24 @@ def remove_member(
         raise HTTPException(status_code=400, detail="You cannot remove yourself")
     db.delete(member)
     db.commit()
+
+
+@router.post("/transfer-ownership")
+def transfer_ownership(
+    payload: OwnerTransfer,
+    business: Business = Depends(get_current_business),
+    current_user: User = Depends(require_business_roles("owner")),
+    db: Session = Depends(get_db),
+):
+    target = db.query(User).filter(
+        User.id == payload.target_user_id,
+        User.business_id == business.id,
+    ).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="Target team member not found")
+    if target.id == current_user.id:
+        raise HTTPException(status_code=400, detail="Ownership is already assigned to this user")
+    current_user.role = "admin"
+    target.role = "owner"
+    db.commit()
+    return {"status": "transferred", "owner_user_id": target.id}
