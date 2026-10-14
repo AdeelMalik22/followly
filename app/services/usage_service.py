@@ -2,6 +2,20 @@ from sqlalchemy.orm import Session
 
 from app.models.models import Business, UsageEvent
 
+PLAN_LIMITS = {
+    "starter_trial": {"messages": 1000, "tool_calls": 2500},
+    "starter": {"messages": 5000, "tool_calls": 12500},
+}
+
+
+def enforce_usage_limit(business: Business, resource: str) -> None:
+    limits = PLAN_LIMITS.get(business.plan_code or "starter_trial")
+    if not limits:
+        return
+    current = business.usage_messages if resource == "messages" else business.usage_tool_calls
+    if current >= limits[resource]:
+        raise RuntimeError(f"Tenant {resource} usage limit reached")
+
 
 def record_agent_usage(
     business: Business,

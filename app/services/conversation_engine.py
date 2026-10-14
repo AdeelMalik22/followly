@@ -8,7 +8,7 @@ from app.services import conversation_service, whatsapp_service, agent_service, 
 from app.core.secret_storage import decrypt_json
 from app.llm.client import chat
 from app.services.tenant_context import TenantContext
-from app.services.usage_service import record_agent_usage
+from app.services.usage_service import enforce_usage_limit, record_agent_usage
 import logging
 import asyncio
 
@@ -32,6 +32,7 @@ async def process_message_with_agent(
 
     tenant_context = TenantContext.from_business(business)
     tenant_context.validate_conversation(conversation)
+    enforce_usage_limit(business, "messages")
 
     # Build system prompt with explicit tenant context.
     system_prompt = agent_service.build_system_prompt(business, db, tenant_context)
@@ -142,6 +143,7 @@ async def execute_tool(
     """Execute a tool function and return result"""
 
     tenant_context = tenant_context or TenantContext.from_business(business)
+    enforce_usage_limit(business, "tool_calls")
     if tenant_context.business_id != business.id:
         return {"error": "Business does not belong to tenant context"}
     try:
