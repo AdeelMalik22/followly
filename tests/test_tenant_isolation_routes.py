@@ -245,6 +245,16 @@ def test_appointment_status_update_is_tenant_scoped():
     assert len(history_response) == 1
     assert history_response[0].new_status == "completed"
 
+    appointments.update_appointment(
+        appointment.id,
+        AppointmentUpdate(status="completed"),
+        first,
+        db,
+    )
+    paged_history = appointments.get_appointment_history(appointment.id, 1, 1, first, db)
+    assert len(paged_history) == 1
+    assert paged_history[0].previous_status == "completed"
+
     fetched = appointments.get_appointment(appointment.id, first, db)
     assert fetched.id == appointment.id
     assert fetched.status == "completed"
