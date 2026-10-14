@@ -9,11 +9,12 @@ from app.api import analytics, appointments, billing, business, conversations, f
 from app.main import app
 from app.api.dependencies import get_current_user, require_business_roles
 from app.core.config import settings
-from app.models.models import Appointment, AppointmentStatusHistory, Business, Conversation, ConversationStatus, FollowUpRule, Lead, LeadStatus, KnowledgeBaseEntry, OAuthState
+from app.models.models import Appointment, AppointmentStatusHistory, Business, Conversation, ConversationStatus, FollowUpRule, Lead, LeadStatus, KnowledgeBaseEntry, OAuthState, WebhookEvent
 from app.models.models import User
 from app.schemas.dashboard import AppointmentUpdate, FollowUpRuleUpdate
 from app.services.oauth_state_service import consume_oauth_state, store_oauth_state
 from app.services.tenant_context import TenantContext, knowledge_cache_key, prompt_cache_key
+from app.services.webhook_event_service import claim_webhook_event, complete_webhook_event
 from app.services.whatsapp_service import decrypt_access_token, encrypt_access_token
 from app.core.secret_storage import decrypt_json, encrypt_json
 from app.schemas.dashboard import LeadUpdate
@@ -862,3 +863,17 @@ def test_agent_context_and_cache_keys_are_tenant_scoped():
 
     assert knowledge_cache_key(first_context) != knowledge_cache_key(second_context)
     assert prompt_cache_key(first_context) != prompt_cache_key(second_context)
+
+
+def test_failed_webhook_event_can_be_reclaimed_but_processed_event_cannot():
+    db = make_session()
+    first, _ = make_two_businesses(db)
+
+    assert claim_webhook_event(first.id, "whatsapp", "evt-1", db) is True
+    complete_webhook_event(first.id, "whatsapp", "evt-1", db, error="temporary failure")
+    assert claim_webhook_event(first.id, "whatsapp", "evt-1", db) is True
+    complete_webhook_event(first.id, "whatsapp", "evt-1", db)
+    assert claim_webhook_event(first.id, "whatsapp", "evt-1", db) is False
+
+    event = db.query(WebhookEvent).filter(WebhookEvent.event_id == "evt-1").one()
+    assert event.status == "processed"

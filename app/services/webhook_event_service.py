@@ -13,6 +13,19 @@ def claim_webhook_event(
     db: Session,
 ) -> bool:
     """Atomically claim a tenant-scoped webhook event for processing."""
+    existing = db.query(WebhookEvent).filter(
+        WebhookEvent.business_id == business_id,
+        WebhookEvent.provider == provider,
+        WebhookEvent.event_id == event_id,
+    ).first()
+    if existing:
+        if existing.status != "failed":
+            return False
+        existing.status = "processing"
+        existing.error = None
+        existing.processed_at = None
+        db.commit()
+        return True
     event = WebhookEvent(
         business_id=business_id,
         provider=provider,
