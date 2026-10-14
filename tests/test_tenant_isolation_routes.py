@@ -315,6 +315,35 @@ def test_follow_up_rule_id_lookups_are_tenant_scoped():
     assert rule.message_template == "Follow up"
 
 
+def test_follow_up_rule_mutations_require_sensitive_business_role():
+    mutation_routes = [
+        route for route in follow_up_rules.router.routes
+        if (route.path.endswith("/follow-up-rules") or route.path.endswith("/follow-up-rules/{rule_id}")) and route.methods & {"POST", "PUT", "DELETE"}
+    ]
+    assert len(mutation_routes) == 3
+    db = make_session()
+    tenant, _ = make_two_businesses(db)
+    staff = User(
+        business_id=tenant.id,
+        email="follow-up-staff@example.com",
+        name="Follow-up Staff",
+        role="staff",
+        hashed_password="not-used",
+    )
+    db.add(staff)
+    db.commit()
+
+    for route in mutation_routes:
+        role_dependency = next(
+            dependency.call
+            for dependency in route.dependant.dependencies
+            if dependency.call.__name__ == "role_dependency"
+        )
+        with pytest.raises(HTTPException) as error:
+            role_dependency(staff)
+        assert error.value.status_code == 403
+
+
 def test_oauth_state_is_single_use_and_business_scoped():
     db = make_session()
     first, second = make_two_businesses(db)

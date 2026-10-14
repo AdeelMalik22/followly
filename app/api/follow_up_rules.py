@@ -4,7 +4,7 @@ from typing import List
 from datetime import datetime
 from app.core.database import get_db
 from app.models.models import FollowUpRule, Business
-from app.api.dependencies import get_current_business
+from app.api.dependencies import get_current_business, require_business_roles
 from app.schemas.dashboard import FollowUpRuleCreate, FollowUpRuleUpdate, FollowUpRuleResponse
 
 router = APIRouter(prefix="/api/v1/follow-up-rules", tags=["follow-up-rules"])
@@ -26,6 +26,7 @@ def create_rule(
     data: FollowUpRuleCreate,
     business: Business = Depends(get_current_business),
     db: Session = Depends(get_db),
+    _authorized_user=Depends(require_business_roles("owner", "admin")),
 ):
     rule = FollowUpRule(
         business_id=business.id,
@@ -47,6 +48,7 @@ def update_rule(
     data: FollowUpRuleUpdate,
     business: Business = Depends(get_current_business),
     db: Session = Depends(get_db),
+    _authorized_user=Depends(require_business_roles("owner", "admin")),
 ):
     rule = db.query(FollowUpRule).filter(
         FollowUpRule.id == rule_id, FollowUpRule.business_id == business.id
@@ -71,6 +73,7 @@ def delete_rule(
     rule_id: int,
     business: Business = Depends(get_current_business),
     db: Session = Depends(get_db),
+    _authorized_user=Depends(require_business_roles("owner", "admin")),
 ):
     rule = db.query(FollowUpRule).filter(
         FollowUpRule.id == rule_id, FollowUpRule.business_id == business.id
