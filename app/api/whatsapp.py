@@ -194,7 +194,18 @@ async def handle_webhook(
             logger.info("Ignoring duplicate WhatsApp message: %s", message_id)
             return {"status": "ok"}
 
-        if not claim_webhook_event(business.id, "whatsapp", message_id, db):
+        if not claim_webhook_event(
+            business.id,
+            "whatsapp",
+            message_id,
+            db,
+            metadata={
+                "message_type": parsed.get("message_type"),
+                "has_text": bool(parsed.get("text")),
+                "timestamp": parsed.get("timestamp"),
+                "phone_id": business_phone_id,
+            },
+        ):
             logger.info("Ignoring persisted duplicate WhatsApp event: %s", message_id)
             return {"status": "ok"}
         claimed_business_id = business.id

@@ -80,6 +80,7 @@ class WebhookEvent(Base):
     processed_at = Column(DateTime, nullable=True)
     error = Column(Text, nullable=True)
     retry_count = Column(Integer, nullable=False, default=0)
+    event_metadata = Column("metadata", JSON, nullable=True)
 
 
 class UsageEvent(Base):

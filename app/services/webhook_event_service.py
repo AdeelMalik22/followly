@@ -12,6 +12,7 @@ def claim_webhook_event(
     event_id: str,
     db: Session,
     max_retries: int = 3,
+    metadata: dict | None = None,
 ) -> bool:
     """Atomically claim a tenant-scoped webhook event for processing."""
     existing = db.query(WebhookEvent).filter(
@@ -35,6 +36,7 @@ def claim_webhook_event(
         provider=provider,
         event_id=event_id,
         status="processing",
+        event_metadata=metadata,
     )
     db.add(event)
     try:
