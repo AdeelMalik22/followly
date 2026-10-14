@@ -16,6 +16,7 @@ from app.services.oauth_state_service import consume_oauth_state, store_oauth_st
 from app.services.tenant_context import TenantContext, knowledge_cache_key, prompt_cache_key
 from app.services.webhook_event_service import claim_webhook_event, complete_webhook_event
 from app.services.whatsapp_service import decrypt_access_token, encrypt_access_token
+from app.services.whatsapp_service import parse_whatsapp_message, verify_webhook_signature
 from app.core.secret_storage import decrypt_json, encrypt_json
 from app.schemas.dashboard import LeadUpdate
 from app.schemas.knowledge import KnowledgeBaseUpdate
@@ -878,3 +879,38 @@ def test_failed_webhook_event_can_be_reclaimed_but_processed_event_cannot():
 
     event = db.query(WebhookEvent).filter(WebhookEvent.event_id == "evt-1").one()
     assert event.status == "processed"
+
+
+def test_webhook_signature_rejects_missing_tampered_and_malformed_signatures():
+    import hashlib
+    import hmac
+
+    payload = b'{"object":"whatsapp_business_account"}'
+    secret = "app-secret"
+    digest = hmac.new(secret.encode(), payload, hashlib.sha256).hexdigest()
+
+    assert verify_webhook_signature(payload, f"sha256={digest}", secret) is True
+    assert verify_webhook_signature(payload + b"x", f"sha256={digest}", secret) is False
+    assert verify_webhook_signature(payload, digest, secret) is False
+    assert verify_webhook_signature(payload, None, secret) is False
+
+
+def test_webhook_payload_preserves_tenant_routing_identifier():
+    payload = {
+        "object": "whatsapp_business_account",
+        "entry": [{"changes": [{"value": {
+            "metadata": {"phone_number_id": "phone-tenant-a"},
+            "messages": [{
+                "id": "wamid-1",
+                "from": "15551234567",
+                "timestamp": "1700000000",
+                "type": "text",
+                "text": {"body": "Hello"},
+            }],
+        }}]}],
+    }
+
+    parsed = parse_whatsapp_message(payload)
+
+    assert parsed["business_phone_id"] == "phone-tenant-a"
+    assert parsed["message_id"] == "wamid-1"
