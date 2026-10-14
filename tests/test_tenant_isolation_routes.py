@@ -287,6 +287,7 @@ def test_appointment_list_rejects_reversed_date_range():
             None,
             None,
             None,
+            None,
             datetime(2027, 2, 1, 10, 0),
             datetime(2027, 1, 1, 10, 0),
             0,
@@ -324,7 +325,7 @@ def test_appointment_list_scopes_lead_filter_to_business():
     db.commit()
 
     appointments_for_first = appointments.list_appointments(
-        None, first_lead.id, None, None, None, 0, 50, first, db
+        None, first_lead.id, None, None, None, None, 0, 50, first, db
     )
 
     assert len(appointments_for_first) == 1
@@ -357,6 +358,7 @@ def test_appointment_list_applies_date_range_filters():
     db.commit()
 
     filtered = appointments.list_appointments(
+        None,
         None,
         None,
         None,
@@ -424,9 +426,43 @@ def test_appointment_list_search_is_tenant_scoped():
     db.commit()
 
     results = appointments.list_appointments(
-        None, None, "Alex", None, None, 0, 50, first, db
+        None, None, "Alex", None, None, None, 0, 50, first, db
     )
 
     assert len(results) == 1
     assert results[0].business_id == first.id
     assert results[0].lead_id == first_lead.id
+
+
+def test_appointment_list_filters_by_service_within_business():
+    db = make_session()
+    first, _ = make_two_businesses(db)
+    lead = Lead(business_id=first.id, phone="111")
+    db.add(lead)
+    db.flush()
+    db.add_all([
+        Appointment(
+            business_id=first.id,
+            lead_id=lead.id,
+            start_time=datetime(2027, 1, 1, 10, 0),
+            end_time=datetime(2027, 1, 1, 11, 0),
+            service="Teeth Cleaning",
+            status="scheduled",
+        ),
+        Appointment(
+            business_id=first.id,
+            lead_id=lead.id,
+            start_time=datetime(2027, 1, 2, 10, 0),
+            end_time=datetime(2027, 1, 2, 11, 0),
+            service="Whitening",
+            status="scheduled",
+        ),
+    ])
+    db.commit()
+
+    results = appointments.list_appointments(
+        None, None, None, "cleaning", None, None, 0, 50, first, db
+    )
+
+    assert len(results) == 1
+    assert results[0].service == "Teeth Cleaning"

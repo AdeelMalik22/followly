@@ -37,6 +37,7 @@ def list_appointments(
     status: Optional[str] = Query(None, description="scheduled|completed|no_show|cancelled"),
     lead_id: Optional[int] = Query(None, ge=1),
     search: Optional[str] = Query(None, min_length=1, max_length=100),
+    service: Optional[str] = Query(None, min_length=1, max_length=100),
     start_from: Optional[datetime] = Query(None, description="Appointments starting at or after this time"),
     start_to: Optional[datetime] = Query(None, description="Appointments starting before or at this time"),
     skip: int = Query(0, ge=0),
@@ -61,6 +62,8 @@ def list_appointments(
             | (Lead.phone.ilike(search_pattern))
             | (Lead.email.ilike(search_pattern))
         )
+    if service:
+        q = q.filter(Appointment.service.ilike(f"%{service}%"))
     if start_from:
         q = q.filter(Appointment.start_time >= start_from)
     if start_to:
