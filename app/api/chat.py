@@ -10,6 +10,7 @@ from app.models.models import Business, Customer, Lead, Conversation
 from app.core.security import decode_access_token
 from app.services import conversation_service
 from app.services.conversation_engine import process_message_with_agent
+from app.services.business_config_service import get_business_configuration
 
 router = APIRouter(tags=["chat"])
 templates = Jinja2Templates(directory="app/templates")
@@ -39,6 +40,8 @@ def widget_runtime():
 async def chat_page(request: Request, db: Session = Depends(get_db)):
     phone = request.cookies.get("followly_visitor_id") or f"web-{secrets.token_urlsafe(16)}"
     business_key = request.query_params.get("business_key", "")
+    public_business = db.query(Business).filter(Business.widget_key == business_key).first() if business_key else None
+    public_configuration = get_business_configuration(public_business) if public_business else None
     new_chat = request.query_params.get("new") == "1"
     selected_id = request.query_params.get("conversation_id")
     token = request.cookies.get("followly_customer_token")
@@ -78,7 +81,7 @@ async def chat_page(request: Request, db: Session = Depends(get_db)):
                         conversation = conversation.filter(Conversation.id == int(selected_id))
                     conversation = conversation.order_by(Conversation.last_message_at.desc()).first()
                     if conversation:
-                        history = conversation_service.get_conversation_history(conversation.id, business.id, limit=50, db=db)
+                        history = conversation_service.get_conversation_history(conversation.id, customer.business_id, limit=50, db=db)
                 chat_list = [{"id": c.id, "title": c.lead.name or "Conversation", "updated": c.last_message_at.strftime("%b %d, %Y") if c.last_message_at else ""} for c in db.query(Conversation).filter(
                     Conversation.lead_id == lead.id,
                     Conversation.business_id == customer.business_id,
@@ -87,7 +90,7 @@ async def chat_page(request: Request, db: Session = Depends(get_db)):
     response = templates.TemplateResponse(
         request=request,
         name="chat.html",
-        context={"messages": [{"role": "user" if item.role == "user" else "assistant", "content": item.content} for item in history], "chat_list": chat_list, "new_chat": new_chat, "phone": phone, "business_key": business_key, "business_name": "", "authenticated": authenticated, "quick_questions": QUICK_QUESTIONS},
+        context={"messages": [{"role": "user" if item.role == "user" else "assistant", "content": item.content} for item in history], "chat_list": chat_list, "new_chat": new_chat, "phone": phone, "business_key": business_key, "business_name": public_business.name if public_business else "", "branding": public_configuration.branding.model_dump() if public_configuration else {}, "channels": public_configuration.channels.enabled if public_configuration else {}, "authenticated": authenticated, "quick_questions": QUICK_QUESTIONS},
     )
     response.set_cookie(
         "followly_visitor_id",

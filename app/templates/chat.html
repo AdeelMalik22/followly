@@ -13,6 +13,8 @@
             --muted: #718096
         }
 
+        {% if branding and branding.primary_color %}:root { --blue: {{ branding.primary_color }}; }{% endif %}
+
         * {
             box-sizing: border-box
         }
@@ -137,6 +139,8 @@
             border-radius: 17px;
             line-height: 1.5;
             white-space: pre-wrap;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
             box-shadow: 0 2px 8px #17223808
         }
 
