@@ -6,6 +6,7 @@ from app.schemas.dashboard import UserMe
 from app.services import auth_service
 from app.api.dependencies import get_current_user
 from app.models.models import User, KnowledgeBaseEntry
+from app.services.business_config_service import get_business_configuration
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
@@ -71,5 +72,5 @@ def get_me(current_user: User = Depends(get_current_user)):
         business_name=business.name if business else "",
         industry=business.industry if business else "",
         knowledge_base_count=kb_count,
-        onboarding_completed=bool((business.settings or {}).get("onboarding_completed")) if business else False,
+        onboarding_completed=get_business_configuration(business).onboarding_completed if business else False,
     )

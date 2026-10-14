@@ -9,6 +9,7 @@ from app.core.secret_storage import decrypt_json
 from app.llm.client import chat
 from app.services.tenant_context import TenantContext
 from app.services.usage_service import enforce_usage_limit, record_agent_usage
+from app.services.business_config_service import get_business_configuration
 import logging
 import asyncio
 
@@ -18,9 +19,7 @@ logger = logging.getLogger(__name__)
 def _get_calendar_credentials(business: Business):
     if business.google_calendar_credentials_encrypted:
         return decrypt_json(business.google_calendar_credentials_encrypted)
-    return business.google_calendar_credentials or (
-        business.settings.get("google_calendar_credentials") if business.settings else None
-    )
+    return business.google_calendar_credentials
 
 async def process_message_with_agent(
     conversation: Conversation,
@@ -179,9 +178,9 @@ async def handle_check_availability(arguments: dict, business: Business, db: Ses
     """Check appointment availability using Google Calendar"""
     date_str = arguments.get("date")
     service = arguments.get("service", "general")
-    business_settings = business.settings or {}
-    working_hours = business_settings.get("working_hours", {})
-    duration_minutes = business_settings.get("appointment_duration_minutes", 60)
+    booking = get_business_configuration(business).booking
+    working_hours = booking.working_hours
+    duration_minutes = booking.appointment_duration_minutes
     try:
         date_obj = datetime.strptime(date_str, "%Y-%m-%d")
     except (TypeError, ValueError):
@@ -270,7 +269,7 @@ async def handle_book_appointment(
         # Parse datetime
         datetime_str = f"{date_str} {time_str}"
         start_time = datetime.strptime(datetime_str, "%Y-%m-%d %H:%M")
-        duration_minutes = (business.settings or {}).get("appointment_duration_minutes", 60)
+        duration_minutes = get_business_configuration(business).booking.appointment_duration_minutes
         if not isinstance(duration_minutes, int) or not 15 <= duration_minutes <= 480:
             return {"success": False, "error": "This business has an invalid appointment duration configured."}
         end_time = start_time + timedelta(minutes=duration_minutes)
@@ -285,7 +284,7 @@ async def handle_book_appointment(
 
         # A booking must fit completely inside the business's hours.
         day_name = start_time.strftime("%A").lower()
-        configured_hours = (business.settings or {}).get("working_hours", {})
+        configured_hours = get_business_configuration(business).booking.working_hours
         day_hours = configured_hours.get(day_name)
         if day_hours is None:
             day_hours = {"open": day_name != "sunday", "start": "09:00", "end": "17:00"}

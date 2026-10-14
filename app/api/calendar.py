@@ -182,9 +182,7 @@ async def calendar_status(
         if business.google_calendar_credentials_encrypted:
             credentials = decrypt_json(business.google_calendar_credentials_encrypted)
         else:
-            credentials = business.google_calendar_credentials or (
-                business.settings.get("google_calendar_credentials") if business.settings else None
-            )
+            credentials = business.google_calendar_credentials
 
         return {
             "connected": credentials is not None,
@@ -207,10 +205,7 @@ async def disconnect_calendar(
         health = business.integration_health or {}
         health["calendar"] = {"status": "disconnected", "last_error": None}
         business.integration_health = health
-        if business.settings and "google_calendar_credentials" in business.settings:
-            del business.settings["google_calendar_credentials"]
-            flag_modified(business, "settings")
-            db.commit()
+        db.commit()
 
         return {"status": "success", "message": "Calendar disconnected"}
     except Exception:

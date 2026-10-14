@@ -12,12 +12,11 @@ router = APIRouter(prefix="/api/v1/billing", tags=["billing"])
 
 @router.get("/status", response_model=BillingStatus)
 def billing_status(business: Business = Depends(get_current_business)):
-    billing = (business.settings or {}).get("billing", {})
     return BillingStatus(
-        plan=business.plan_code or billing.get("plan", "starter_trial"),
-        status=business.subscription_status or billing.get("status", "trialing"),
-        customer_id=business.stripe_customer_id or billing.get("customer_id"),
-        subscription_id=business.stripe_subscription_id or billing.get("subscription_id"),
+        plan=business.plan_code or "starter_trial",
+        status=business.subscription_status or "trialing",
+        customer_id=business.stripe_customer_id,
+        subscription_id=business.stripe_subscription_id,
     )
 
 

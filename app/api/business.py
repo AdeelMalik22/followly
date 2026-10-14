@@ -5,6 +5,7 @@ import secrets
 
 from app.api.dependencies import get_current_business, get_current_user, require_business_roles
 from app.core.database import get_db
+from app.core.config import settings as app_settings
 from app.core.config import settings
 from app.models.models import Business, User, KnowledgeBaseEntry
 from app.schemas.dashboard import (
@@ -63,14 +64,11 @@ async def integration_health(
 
 @router.get("/widget-config", response_model=WidgetConfigResponse)
 def get_widget_config(business: Business = Depends(get_current_business), db: Session = Depends(get_db)):
-    settings = business.settings or {}
     if not business.widget_key:
-        business.widget_key = settings.get("widget_key") or secrets.token_urlsafe(24)
-        settings["widget_key"] = business.widget_key
-        business.settings = settings
+        business.widget_key = secrets.token_urlsafe(24)
         db.commit()
     branding = get_business_configuration(business).branding
-    embed_code = f'<script src="{settings.FRONTEND_URL.rstrip("/")}/widget.js" data-business-key="{business.widget_key}" defer></script>'
+    embed_code = f'<script src="{app_settings.FRONTEND_URL.rstrip("/")}/widget.js" data-business-key="{business.widget_key}" defer></script>'
     return WidgetConfigResponse(
         widget_key=business.widget_key,
         business_name=business.name,
@@ -142,8 +140,8 @@ def complete_onboarding(
         missing = ", ".join(sorted(required_categories - categories))
         raise HTTPException(status_code=400, detail=f"Complete knowledge-base categories: {missing}")
 
-    booking = business.settings or {}
-    hours = booking.get("working_hours", {})
+    configuration = get_business_configuration(business)
+    hours = configuration.booking.working_hours
     valid_open_day = False
     for day in hours.values():
         if day.get("open"):
@@ -157,15 +155,12 @@ def complete_onboarding(
     if not valid_open_day:
         raise HTTPException(status_code=400, detail="Configure at least one valid open business day")
 
-    escalation = booking.get("escalation", {})
-    if not any((escalation.get(key) or "").strip() for key in ("contact_name", "contact_phone", "contact_email", "instructions")):
+    escalation = configuration.escalation
+    if not any((getattr(escalation, key) or "").strip() for key in ("contact_name", "contact_phone", "contact_email", "instructions")):
         raise HTTPException(status_code=400, detail="Configure a human escalation contact or instruction")
 
-    business.settings = business.settings or {}
-    business.settings["onboarding_completed"] = True
-    from sqlalchemy.orm.attributes import flag_modified
-    flag_modified(business, "settings")
-    db.commit()
+    configuration.onboarding_completed = True
+    save_business_configuration(business, configuration, db, updated_by=_authorized_user.id)
     return {"status": "completed"}
 
 
