@@ -61,14 +61,11 @@ async def update_whatsapp_credentials(
 
         business.settings = business.settings or {}
         if credentials.phone_number_id is not None:
-            business.settings["whatsapp_phone_id"] = credentials.phone_number_id
             business.whatsapp_phone_id = credentials.phone_number_id
         if credentials.access_token is not None:
             business.whatsapp_access_token = whatsapp_service.encrypt_access_token(
                 credentials.access_token
             )
-            business.settings["whatsapp_access_token"] = business.whatsapp_access_token
-        flag_modified(business, "settings")
         db.commit()
         return {"status": "success", "message": "WhatsApp credentials updated"}
     except HTTPException:
@@ -247,7 +244,6 @@ async def handle_webhook(
             whatsapp_token = whatsapp_service.decrypt_access_token(whatsapp_token)
             if legacy_plaintext:
                 business.whatsapp_access_token = whatsapp_service.encrypt_access_token(whatsapp_token)
-                business.settings["whatsapp_access_token"] = business.whatsapp_access_token
                 flag_modified(business, "settings")
                 db.commit()
 
@@ -296,7 +292,6 @@ async def send_message_endpoint(
         access_token = whatsapp_service.decrypt_access_token(access_token)
         if legacy_plaintext:
             business.whatsapp_access_token = whatsapp_service.encrypt_access_token(access_token)
-            business.settings["whatsapp_access_token"] = business.whatsapp_access_token
             flag_modified(business, "settings")
             db.commit()
     if not phone_number_id or not access_token:

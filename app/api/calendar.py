@@ -3,7 +3,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
-from sqlalchemy.orm.attributes import flag_modified
 from app.core.database import get_db
 from app.core.config import settings
 from app.models.models import Business
@@ -131,9 +130,6 @@ async def calendar_callback(
         }
         business.google_calendar_credentials = credentials_data
         business.google_calendar_credentials_encrypted = encrypt_json(credentials_data)
-        business.settings = business.settings or {}
-        business.settings["google_calendar_credentials"] = credentials_data
-        flag_modified(business, "settings")
 
         db.commit()
 
