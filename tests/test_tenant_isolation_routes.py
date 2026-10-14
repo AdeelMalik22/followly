@@ -367,3 +367,30 @@ def test_appointment_list_applies_date_range_filters():
     )
 
     assert filtered == []
+
+
+def test_appointment_status_cannot_reopen_terminal_appointment():
+    db = make_session()
+    first, _ = make_two_businesses(db)
+    lead = Lead(business_id=first.id, phone="111")
+    db.add(lead)
+    db.flush()
+    appointment = Appointment(
+        business_id=first.id,
+        lead_id=lead.id,
+        start_time=datetime(2027, 1, 1, 10, 0),
+        end_time=datetime(2027, 1, 1, 11, 0),
+        status="completed",
+    )
+    db.add(appointment)
+    db.commit()
+
+    with pytest.raises(HTTPException) as error:
+        appointments.update_appointment(
+            appointment.id,
+            AppointmentUpdate(status="scheduled"),
+            first,
+            db,
+        )
+
+    assert error.value.status_code == 409

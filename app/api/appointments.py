@@ -9,6 +9,12 @@ from app.schemas.dashboard import AppointmentResponse, AppointmentUpdate, LeadRe
 
 router = APIRouter(prefix="/api/v1/appointments", tags=["appointments"])
 VALID_APPOINTMENT_STATUSES = {"scheduled", "completed", "no_show", "cancelled"}
+ALLOWED_STATUS_TRANSITIONS = {
+    "scheduled": {"scheduled", "completed", "no_show", "cancelled"},
+    "completed": {"completed"},
+    "no_show": {"no_show"},
+    "cancelled": {"cancelled"},
+}
 
 
 def _appointment_response(appointment: Appointment) -> AppointmentResponse:
@@ -89,6 +95,11 @@ def update_appointment(
     ).first()
     if not appointment:
         raise HTTPException(status_code=404, detail="Appointment not found")
+    if payload.status not in ALLOWED_STATUS_TRANSITIONS.get(appointment.status, set()):
+        raise HTTPException(
+            status_code=409,
+            detail=f"Cannot change appointment status from {appointment.status} to {payload.status}",
+        )
 
     appointment.status = payload.status
     db.commit()
