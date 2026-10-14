@@ -80,6 +80,18 @@ class WebhookEvent(Base):
     processed_at = Column(DateTime, nullable=True)
     error = Column(Text, nullable=True)
 
+
+class UsageEvent(Base):
+    __tablename__ = "usage_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    business_id = Column(Integer, ForeignKey("businesses.id"), nullable=False, index=True)
+    event_type = Column(String, nullable=False, index=True)
+    llm_tokens = Column(Integer, nullable=False, default=0)
+    tool_calls = Column(Integer, nullable=False, default=0)
+    event_metadata = Column("metadata", JSON, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+
 class User(Base):
     __tablename__ = "users"
 
