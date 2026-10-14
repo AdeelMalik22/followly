@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.api.dependencies import get_current_business
+from app.api.dependencies import get_current_business, require_business_roles
 from app.core.config import settings
 from app.core.database import get_db
 from app.models.models import Business
@@ -22,7 +22,10 @@ def billing_status(business: Business = Depends(get_current_business)):
 
 
 @router.post("/checkout")
-def create_checkout_session(business: Business = Depends(get_current_business)):
+def create_checkout_session(
+    business: Business = Depends(get_current_business),
+    _authorized_user=Depends(require_business_roles("owner", "admin")),
+):
     if not settings.STRIPE_SECRET_KEY or not settings.STRIPE_PRICE_ID:
         raise HTTPException(status_code=503, detail="Stripe billing is not configured")
     try:
