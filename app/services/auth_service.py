@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from app.models.models import User, Business
 from app.core.security import get_password_hash, verify_password, create_access_token
+from app.schemas.business_config import BusinessConfiguration
 import secrets
 
 def create_user_with_business(email: str, password: str, business_name: str, owner_name: str, industry: str, db: Session):
@@ -12,6 +13,10 @@ def create_user_with_business(email: str, password: str, business_name: str, own
         industry=industry,
         widget_key=widget_key,
         settings={"widget_key": widget_key},
+        configuration=BusinessConfiguration().model_dump(),
+        lifecycle_status="onboarding",
+        plan_code="starter_trial",
+        subscription_status="trialing",
     )
     db.add(business)
     db.commit()

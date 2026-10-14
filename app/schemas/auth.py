@@ -6,7 +6,7 @@ class UserCreate(BaseModel):
     password: str = Field(min_length=8)
     confirm_password: str = Field(min_length=8)
     business_name: str = Field(min_length=2, max_length=200)
-    industry: str = "Dental Clinic"
+    industry: str = Field(default="Dental Clinic", min_length=2, max_length=120)
     terms_accepted: bool
 
     @model_validator(mode="after")
