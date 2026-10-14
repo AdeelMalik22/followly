@@ -6,7 +6,7 @@ from typing import Literal, Optional, List
 from app.core.database import get_db
 from app.models.models import Appointment, AppointmentStatusHistory, Business, Lead
 from app.api.dependencies import get_current_business
-from app.schemas.dashboard import AppointmentResponse, AppointmentUpdate, LeadResponse
+from app.schemas.dashboard import AppointmentResponse, AppointmentStatusHistoryResponse, AppointmentUpdate, LeadResponse
 
 router = APIRouter(prefix="/api/v1/appointments", tags=["appointments"])
 VALID_APPOINTMENT_STATUSES = {"scheduled", "completed", "no_show", "cancelled"}
@@ -114,6 +114,25 @@ def get_appointment(
     if not appointment:
         raise HTTPException(status_code=404, detail="Appointment not found")
     return _appointment_response(appointment)
+
+
+@router.get("/{appointment_id}/history", response_model=List[AppointmentStatusHistoryResponse])
+def get_appointment_history(
+    appointment_id: int,
+    business: Business = Depends(get_current_business),
+    db: Session = Depends(get_db),
+):
+    appointment = db.query(Appointment.id).filter(
+        Appointment.id == appointment_id,
+        Appointment.business_id == business.id,
+    ).first()
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+
+    return db.query(AppointmentStatusHistory).filter(
+        AppointmentStatusHistory.appointment_id == appointment_id,
+        AppointmentStatusHistory.business_id == business.id,
+    ).order_by(AppointmentStatusHistory.changed_at.asc()).all()
 
 
 @router.patch("/{appointment_id}", response_model=AppointmentResponse)

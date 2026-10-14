@@ -108,6 +108,18 @@ class AppointmentUpdate(BaseModel):
     status: str
 
 
+class AppointmentStatusHistoryResponse(BaseModel):
+    id: int
+    business_id: int
+    appointment_id: int
+    previous_status: str
+    new_status: str
+    changed_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 # ── Follow-up rule schemas ────────────────────────────────────────────────────
 
 class FollowUpRuleCreate(BaseModel):
