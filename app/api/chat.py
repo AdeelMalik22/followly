@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse
 import secrets
 from fastapi.templating import Jinja2Templates
@@ -14,6 +14,25 @@ from app.services.conversation_engine import process_message_with_agent
 router = APIRouter(tags=["chat"])
 templates = Jinja2Templates(directory="app/templates")
 QUICK_QUESTIONS = ["What services do you offer?", "How much does teeth whitening cost?", "I want to book a dental cleaning.", "What are your clinic hours?"]
+
+
+@router.get("/widget.js", response_class=Response)
+def widget_runtime():
+    return Response(
+        content="""(() => {
+  const script = document.currentScript;
+  const key = script && script.dataset.businessKey;
+  if (!key) return;
+  const origin = new URL(script.src).origin;
+  const frame = document.createElement('iframe');
+  frame.title = 'Followly chat';
+  frame.src = origin + '/chat?business_key=' + encodeURIComponent(key);
+  Object.assign(frame.style, {position:'fixed', right:'20px', bottom:'20px', width:'380px', height:'640px', border:'0', borderRadius:'18px', boxShadow:'0 12px 40px rgba(0,0,0,.25)', zIndex:'2147483647', background:'#fff'});
+  document.body.appendChild(frame);
+})();""",
+        media_type="application/javascript",
+        headers={"Cache-Control": "public, max-age=300"},
+    )
 
 
 @router.get("/chat", response_class=HTMLResponse)
