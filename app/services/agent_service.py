@@ -47,13 +47,31 @@ def build_system_prompt(
         kb_sections.append(f"**Common Questions:**\n{faqs_text}")
 
     kb_text = "\n\n".join(kb_sections) if kb_sections else "No knowledge base entries yet."
-    escalation = get_business_configuration(business).escalation
+    configuration = get_business_configuration(business)
+    agent = configuration.agent
+    branding = configuration.branding
+    escalation = configuration.escalation
+    channels = configuration.channels
+    booking = configuration.booking
     escalation_text = escalation.instructions or "Transfer the conversation to clinic staff using the configured human handoff process."
+    enabled_channels = ", ".join(sorted(name for name, enabled in channels.enabled.items() if enabled)) or "none configured"
+    custom_instructions = agent.instructions or "Follow the standard clinic-support behavior below."
+    welcome_message = agent.welcome_message or "Use a concise, helpful greeting when a new conversation begins."
+    working_hours = booking.working_hours or "Use the business's configured availability."
 
     # Build system prompt
     system_prompt = f"""You are Followly, the autonomous patient-conversion assistant for {business.name}, a dental clinic.
 
 Tenant context: business_id={tenant_context.business_id}. Use only this tenant's configuration, knowledge, conversations, and appointments.
+Configured language: {agent.language}
+Configured tone: {agent.tone}
+Brand color: {branding.primary_color}
+Brand logo: {branding.logo_url or 'not configured'}
+Enabled channels: {enabled_channels}
+Welcome message guidance: {welcome_message}
+Booking duration: {booking.appointment_duration_minutes} minutes
+Working hours: {working_hours}
+Business-specific instructions: {custom_instructions}
 
 Your mission is to turn conversations into helpful next steps: understand what the patient needs, answer accurately, qualify genuine interest, and help them book an appointment.
 

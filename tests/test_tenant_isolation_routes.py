@@ -6,6 +6,7 @@ from fastapi.security import HTTPAuthorizationCredentials
 from jose import jwt
 
 from app.api import analytics, appointments, billing, business, conversations, follow_up_rules, knowledge, leads
+from app.services import agent_service, tenant_cache_service
 from app.main import app
 from app.api.dependencies import get_current_user, require_business_roles
 from app.core.config import settings
@@ -865,6 +866,44 @@ def test_agent_context_and_cache_keys_are_tenant_scoped():
 
     assert knowledge_cache_key(first_context) != knowledge_cache_key(second_context)
     assert prompt_cache_key(first_context) != prompt_cache_key(second_context)
+
+
+def test_prompt_configuration_isolation():
+    db = make_session()
+    first, second = make_two_businesses(db)
+    first.configuration = {"agent": {"tone": "formal", "language": "fr", "instructions": "First tenant instruction"}}
+    second.configuration = {"agent": {"tone": "casual", "language": "es", "instructions": "Second tenant instruction"}}
+    db.commit()
+
+    first_prompt = agent_service.build_system_prompt(first, db)
+    second_prompt = agent_service.build_system_prompt(second, db)
+
+    assert "First tenant instruction" in first_prompt
+    assert "Second tenant instruction" not in first_prompt
+    assert "Second tenant instruction" in second_prompt
+    assert "First tenant instruction" not in second_prompt
+
+
+def test_tenant_cache_hits_cannot_cross_businesses(monkeypatch):
+    values = {}
+
+    class FakeRedis:
+        def get(self, key):
+            return values.get(key)
+
+        def setex(self, key, ttl, value):
+            values[key] = value
+
+        def delete(self, key):
+            values.pop(key, None)
+
+    monkeypatch.setattr(tenant_cache_service, "_client", FakeRedis())
+    first_context = TenantContext(101)
+    second_context = TenantContext(202)
+
+    assert tenant_cache_service.set_cached(first_context, "prompt", {"value": "first"}) is True
+    assert tenant_cache_service.get_cached(first_context, "prompt") == {"value": "first"}
+    assert tenant_cache_service.get_cached(second_context, "prompt") is None
 
 
 def test_failed_webhook_event_can_be_reclaimed_but_processed_event_cannot():
