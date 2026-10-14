@@ -126,6 +126,7 @@ def update_booking_settings(
     payload: BookingSettingsUpdate,
     business: Business = Depends(get_current_business),
     db: Session = Depends(get_db),
+    _authorized_user=Depends(require_business_roles("owner", "admin")),
 ):
     if not 15 <= payload.appointment_duration_minutes <= 480:
         from fastapi import HTTPException
