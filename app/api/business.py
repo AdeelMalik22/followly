@@ -11,11 +11,26 @@ from app.models.models import Business, User, KnowledgeBaseEntry
 from app.schemas.dashboard import (
     BusinessProfileResponse, BusinessProfileUpdate, BookingSettings, BookingSettingsUpdate, WidgetConfigResponse, EscalationSettings,
 )
-from app.schemas.business_config import EscalationConfiguration
+from app.schemas.business_config import BusinessConfiguration, EscalationConfiguration
 from app.services.business_config_service import get_business_configuration, save_business_configuration
 from app.services.integration_health_service import check_calendar_health, check_whatsapp_health
 
 router = APIRouter(prefix="/api/v1/business", tags=["business"])
+
+
+@router.get("/configuration", response_model=BusinessConfiguration)
+def get_configuration(business: Business = Depends(get_current_business)):
+    return get_business_configuration(business)
+
+
+@router.put("/configuration", response_model=BusinessConfiguration)
+def update_configuration(
+    payload: BusinessConfiguration,
+    business: Business = Depends(get_current_business),
+    db: Session = Depends(get_db),
+    _authorized_user=Depends(require_business_roles("owner", "admin")),
+):
+    return save_business_configuration(business, payload, db, updated_by=_authorized_user.id)
 
 
 @router.get("/integration-status")
