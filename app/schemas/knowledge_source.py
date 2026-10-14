@@ -25,3 +25,7 @@ class KnowledgeSourceResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class KnowledgeSourceVisibilityUpdate(BaseModel):
+    visibility: str

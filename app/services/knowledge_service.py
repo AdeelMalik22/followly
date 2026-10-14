@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from typing import List, Optional
 from datetime import datetime
-from app.models.models import KnowledgeBaseEntry
+from app.models.models import KnowledgeBaseEntry, KnowledgeSource, KnowledgeVersion
 from app.services.tenant_context import TenantContext, knowledge_cache_key
 
 
@@ -46,9 +46,11 @@ def get_knowledge_entries(
 ) -> List[KnowledgeBaseEntry]:
     """Get all knowledge base entries for a business"""
     try:
-        query = db.query(KnowledgeBaseEntry).filter(
+        query = db.query(KnowledgeBaseEntry).outerjoin(KnowledgeSource).filter(
             KnowledgeBaseEntry.business_id == business_id,
             KnowledgeBaseEntry.deleted_at.is_(None),
+            KnowledgeBaseEntry.visibility == "active",
+            (KnowledgeSource.visibility == "active") | (KnowledgeSource.id.is_(None)),
         )
         if category:
             query = query.filter(KnowledgeBaseEntry.category == category)
@@ -89,6 +91,16 @@ def update_knowledge_entry(
         entry = get_knowledge_entry_by_id(entry_id, business_id, db)
         if not entry:
             return None
+
+        db.add(KnowledgeVersion(
+            business_id=entry.business_id,
+            entry_id=entry.id,
+            version=entry.version,
+            category=entry.category,
+            question=entry.question,
+            answer=entry.answer,
+            extra_data=entry.extra_data,
+        ))
 
         if category is not None:
             entry.category = category

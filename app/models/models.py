@@ -253,6 +253,20 @@ class KnowledgeSource(Base):
 
     entries = relationship("KnowledgeBaseEntry", back_populates="source")
 
+
+class KnowledgeVersion(Base):
+    __tablename__ = "knowledge_versions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    business_id = Column(Integer, ForeignKey("businesses.id"), nullable=False, index=True)
+    entry_id = Column(Integer, ForeignKey("knowledge_base.id"), nullable=False, index=True)
+    version = Column(Integer, nullable=False)
+    category = Column(String, nullable=False)
+    question = Column(String, nullable=True)
+    answer = Column(Text, nullable=False)
+    extra_data = Column(JSON, default={})
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
 class FollowUpRule(Base):
     __tablename__ = "follow_up_rules"
 
