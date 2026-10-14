@@ -7,7 +7,7 @@ from app.services import whatsapp_service, conversation_service
 from app.services.conversation_engine import process_message_with_agent
 from app.schemas.whatsapp import WhatsAppWebhook, WhatsAppCredentialsUpdate, WhatsAppTestMessage
 from app.api.dependencies import get_current_business, require_business_roles
-from app.models.models import Business, LeadStatus, Message
+from app.models.models import Business, Conversation, LeadStatus, Message
 import logging
 
 router = APIRouter(prefix="/api/v1/whatsapp", tags=["whatsapp"])
@@ -167,12 +167,6 @@ async def handle_webhook(
             logger.warning("WhatsApp webhook message has no message ID")
             return {"status": "ok"}
 
-        # Meta may retry webhook deliveries. Check before doing any work so a
-        # duplicate cannot trigger another AI response or outbound message.
-        if db.query(Message.id).filter(Message.whatsapp_message_id == message_id).first():
-            logger.info("Ignoring duplicate WhatsApp message: %s", message_id)
-            return {"status": "ok"}
-
         logger.info(f"Received message from {from_number}: {message_text}")
 
         # Find business by phone number ID
@@ -182,6 +176,16 @@ async def handle_webhook(
 
         if not business:
             logger.warning(f"No business found for phone ID: {business_phone_id}")
+            return {"status": "ok"}
+
+        # Meta may retry webhook deliveries. Scope the lookup through the
+        # resolved business so a message ID can never be treated as a duplicate
+        # based on another tenant's conversation.
+        if db.query(Message.id).join(Conversation).filter(
+            Message.whatsapp_message_id == message_id,
+            Conversation.business_id == business.id,
+        ).first():
+            logger.info("Ignoring duplicate WhatsApp message: %s", message_id)
             return {"status": "ok"}
 
         # Get or create lead
