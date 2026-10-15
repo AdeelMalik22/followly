@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import toast from "react-hot-toast";
 import { apiFetch } from "@/lib/api";
-import { MessageSquare, Calendar, Code, Copy, Check, ExternalLink } from "lucide-react";
+import { MessageSquare, Calendar, Code, Copy, Check } from "lucide-react";
 
 export default function ChannelsPage() {
   const [copied, setCopied] = useState(false);
@@ -40,7 +40,7 @@ export default function ChannelsPage() {
       setWhatsappConnected(true);
       setAccessToken("");
       toast.success("WhatsApp connected successfully.");
-    } catch (err: any) { toast.error(err.message || "Unable to connect WhatsApp."); }
+    } catch (err) { toast.error(err instanceof Error ? err.message : "Unable to connect WhatsApp."); }
     finally { setWhatsappLoading(false); }
   };
 
@@ -50,7 +50,7 @@ export default function ChannelsPage() {
       setWhatsappConnected(false);
       setPhoneNumberId("");
       toast.success("WhatsApp disconnected.");
-    } catch (err: any) { toast.error(err.message || "Unable to disconnect WhatsApp."); }
+    } catch (err) { toast.error(err instanceof Error ? err.message : "Unable to disconnect WhatsApp."); }
   };
 
   const [widgetEmbedCode, setWidgetEmbedCode] = useState("");
@@ -172,8 +172,8 @@ export default function ChannelsPage() {
                     const data = await apiFetch<{ authorization_url: string }>("/api/v1/calendar/connect");
                     window.location.href = data.authorization_url;
                   }
-                } catch (err: any) {
-                  toast.error(err.message || "Unable to update calendar connection.");
+                } catch (err) {
+                  toast.error(err instanceof Error ? err.message : "Unable to update calendar connection.");
                 }
               }}
               className={`w-full py-2.5 rounded-xl font-semibold text-xs transition-all ${
