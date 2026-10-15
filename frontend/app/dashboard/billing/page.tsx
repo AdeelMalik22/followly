@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowRight, Check, CreditCard, Crown, History, X } from "lucide-react";
+import { ArrowRight, Check, CreditCard, Crown, History } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { BillingStatus, ConfigurationAudit } from "@/types";
 import toast from "react-hot-toast";
