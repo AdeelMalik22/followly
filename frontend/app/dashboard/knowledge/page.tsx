@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
 import { KnowledgeEntry } from "@/types";
 import toast from "react-hot-toast";
@@ -26,21 +26,22 @@ export default function KnowledgeBasePage() {
   const [category, setCategory] = useState("services");
   const [submitLoading, setSubmitLoading] = useState(false);
 
-  const fetchEntries = async () => {
+  const fetchEntries = useCallback(async () => {
     setLoading(true);
     try {
       const data = await apiFetch<KnowledgeEntry[]>("/api/v1/knowledge");
       setEntries(data);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to load knowledge base.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to load knowledge base.");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchEntries();
-  }, []);
+    const timer = window.setTimeout(() => { void fetchEntries(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchEntries]);
 
   const openAddModal = () => {
     setEditingId(null);
@@ -85,8 +86,8 @@ export default function KnowledgeBasePage() {
         toast.success("Knowledge base entry created!");
       }
       setIsModalOpen(false);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to save entry.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to save entry.");
     } finally {
       setSubmitLoading(false);
     }
@@ -99,8 +100,8 @@ export default function KnowledgeBasePage() {
       await apiFetch(`/api/v1/knowledge/${id}`, { method: "DELETE" });
       setEntries(entries.filter((e) => e.id !== id));
       toast.success("Entry deleted successfully.");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to delete entry.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete entry.");
     }
   };
 
