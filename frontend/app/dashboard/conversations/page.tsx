@@ -162,7 +162,7 @@ export default function ConversationsPage() {
         <div className="flex-1 overflow-y-auto divide-y divide-[#eef1f6]">
           {loadingList ? (
             <div className="py-20 flex justify-center">
-              <div className="w-6 h-6 border-2 border-t-[#5d7ef0] border-white/[0.08] rounded-full animate-spin" />
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#e7ecf4] border-t-[#3678f6]" />
             </div>
           ) : conversations.length === 0 ? (
             <p className="text-xs text-[#7b8aa8] text-center py-10">No conversations found.</p>
@@ -176,7 +176,7 @@ export default function ConversationsPage() {
                 <button
                   key={conv.id}
                   onClick={() => setSelectedId(conv.id)}
-                  className={`w-full text-left p-4 transition-all hover:bg-white/[0.02] flex flex-col gap-2 ${
+                  className={`w-full text-left p-4 transition-all hover:bg-[#fbfcfe] flex flex-col gap-2 ${
                     isSelected ? "bg-[#f1f6ff]" : "hover:bg-[#fbfcfe]"
                   }`}
                 >
@@ -192,16 +192,16 @@ export default function ConversationsPage() {
                   </p>
 
                   <div className="flex justify-between items-center">
-                    <span className="text-[9px] text-[#7b8aa8] bg-white/[0.06] px-2 py-0.5 rounded uppercase">
+                    <span className="rounded bg-[#f1f4f9] px-2 py-0.5 text-[9px] uppercase text-[#7e8aa1]">
                       {conv.channel}
                     </span>
                     <span
                       className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
                         conv.status === "human_takeover"
-                          ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                          ? "border border-amber-100 bg-amber-50 text-amber-700"
                           : conv.status === "active"
-                          ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                          : "bg-white/[0.06] text-[#aab4cb]"
+                          ? "border border-emerald-100 bg-emerald-50 text-emerald-700"
+                          : "bg-[#f1f4f9] text-[#7e8aa1]"
                       }`}
                     >
                       {conv.status === "human_takeover" ? "takeover" : conv.status === "active" ? "AI active" : conv.status}
@@ -225,7 +225,7 @@ export default function ConversationsPage() {
                 <span className="text-xs font-bold text-[#34415d]">
                   {selectedConv.lead?.name || selectedConv.lead?.phone || "Lead Details"}
                 </span>
-                <span className="h-3 w-px bg-white/[0.12]" />
+                <span className="h-3 w-px bg-[#dfe6f1]" />
                 <span className="text-[10px] font-medium uppercase tracking-wider text-[#8b97ab]">{selectedConv.channel}</span>
               </div>
 
@@ -254,7 +254,7 @@ export default function ConversationsPage() {
             <div className="flex-1 space-y-4 overflow-y-auto bg-[#fbfcfe] p-6">
               {loadingMessages ? (
                 <div className="py-20 flex justify-center">
-                  <div className="w-8 h-8 border-2 border-t-[#5d7ef0] border-white/[0.08] rounded-full animate-spin" />
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#e7ecf4] border-t-[#3678f6]" />
                 </div>
               ) : messages.length === 0 ? (
                 <p className="text-xs text-[#7b8aa8] text-center">No messages yet.</p>
@@ -267,7 +267,7 @@ export default function ConversationsPage() {
                         className={`max-w-[70%] rounded-2xl px-4 py-2.5 text-xs leading-relaxed whitespace-pre-wrap ${
                           isUser
                             ? "bg-[#5d7ef0] text-white rounded-tr-none shadow-md shadow-[#5d7ef0]/10"
-                            : "bg-white/[0.04] border border-white/[0.08] text-[#e8edf7] rounded-tl-none"
+                            : "rounded-tl-none border border-[#e7ecf4] bg-white text-[#53617a] shadow-sm"
                         }`}
                       >
                         {msg.content}
@@ -280,7 +280,7 @@ export default function ConversationsPage() {
             </div>
 
             {/* Compose Message Box */}
-            <form onSubmit={handleSendMessage} className="p-4 border-t border-white/[0.08] bg-[#0c1326]/20 flex-shrink-0">
+            <form onSubmit={handleSendMessage} className="flex-shrink-0 border-t border-[#eef1f6] bg-white p-4">
               <div className="relative flex gap-3">
                 <textarea
                   value={messageInput}
@@ -292,7 +292,7 @@ export default function ConversationsPage() {
                   }
                   disabled={selectedConv.status !== "human_takeover"}
                   rows={2}
-                  className="flex-1 bg-white/[0.05] border border-white/[0.08] rounded-xl py-3 px-4 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#5d7ef0] resize-none disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 resize-none rounded-xl border border-[#dfe6f1] bg-[#fbfcfe] px-4 py-3 text-xs text-[#17213b] placeholder-[#a5afbf] outline-none focus:border-[#3678f6] disabled:cursor-not-allowed disabled:opacity-50"
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
@@ -312,38 +312,38 @@ export default function ConversationsPage() {
           </div>
 
           {/* Right Lead Details Strip */}
-          <div className="w-64 border-l border-white/[0.08] bg-[#0a0f1d]/50 p-6 space-y-6 flex-shrink-0">
+          <div className="w-64 flex-shrink-0 space-y-6 border-l border-[#eef1f6] bg-[#fbfcfe] p-6">
             <div>
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-4">Lead Information</h3>
+              <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-[#53617a]">Lead Information</h3>
               <div className="space-y-4">
                 <div>
                   <span className="block text-[10px] text-[#7b8aa8] uppercase font-bold">Name</span>
-                  <span className="text-xs font-semibold text-white">{selectedConv.lead?.name || "Not provided"}</span>
+                  <span className="text-xs font-semibold text-[#34415d]">{selectedConv.lead?.name || "Not provided"}</span>
                 </div>
                 <div>
                   <span className="block text-[10px] text-[#7b8aa8] uppercase font-bold">Phone Number</span>
-                  <span className="text-xs font-semibold text-white">{selectedConv.lead?.phone || "Not provided"}</span>
+                  <span className="text-xs font-semibold text-[#34415d]">{selectedConv.lead?.phone || "Not provided"}</span>
                 </div>
                 <div>
                   <span className="block text-[10px] text-[#7b8aa8] uppercase font-bold">Email Address</span>
-                  <span className="text-xs font-semibold text-white">{selectedConv.lead?.email || "Not provided"}</span>
+                  <span className="text-xs font-semibold text-[#34415d]">{selectedConv.lead?.email || "Not provided"}</span>
                 </div>
                 <div>
                   <span className="block text-[10px] text-[#7b8aa8] uppercase font-bold">Lead Status</span>
-                  <span className="text-xs font-semibold text-white capitalize">{selectedConv.lead?.status || "New"}</span>
+                  <span className="text-xs font-semibold capitalize text-[#34415d]">{selectedConv.lead?.status || "New"}</span>
                 </div>
                 <div>
                   <span className="block text-[10px] text-[#7b8aa8] uppercase font-bold">Attribution Source</span>
-                  <span className="text-xs font-semibold text-white capitalize">{selectedConv.lead?.source || "unknown"}</span>
+                  <span className="text-xs font-semibold capitalize text-[#34415d]">{selectedConv.lead?.source || "unknown"}</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
       ) : (
-        <div className="flex-1 flex flex-col items-center justify-center p-8 bg-[#070b14]/10">
+        <div className="flex flex-1 flex-col items-center justify-center bg-[#fbfcfe] p-8">
           <MessageSquare className="w-12 h-12 text-[#7b8aa8] opacity-35 mb-3" />
-          <h3 className="text-sm font-bold text-white mb-1">Select a Conversation</h3>
+          <h3 className="mb-1 text-sm font-bold text-[#34415d]">Select a Conversation</h3>
           <p className="text-xs text-[#7b8aa8]">Choose a conversation from the sidebar list to view the full thread and take manual control.</p>
         </div>
       )}
