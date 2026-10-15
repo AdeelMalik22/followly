@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useCallback, useState, useEffect, useRef } from "react";
 import { apiFetch } from "@/lib/api";
 import { ConversationListItem, Message } from "@/types";
 import toast from "react-hot-toast";
@@ -33,7 +33,7 @@ export default function ConversationsPage() {
   // Selected conversation object
   const selectedConv = conversations.find((c) => c.id === selectedId);
 
-  const fetchConversations = async (silent = false) => {
+  const fetchConversations = useCallback(async (silent = false) => {
     if (!silent) setLoadingList(true);
     try {
       const data = await apiFetch<ConversationListItem[]>("/api/v1/conversations", {
@@ -43,28 +43,29 @@ export default function ConversationsPage() {
         },
       });
       setConversations(data);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to load conversations.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to load conversations.");
     } finally {
       if (!silent) setLoadingList(false);
     }
-  };
+  }, [searchQuery, statusFilter]);
 
-  const fetchMessages = async (convId: number, silent = false) => {
+  const fetchMessages = useCallback(async (convId: number, silent = false) => {
     if (!silent) setLoadingMessages(true);
     try {
       const data = await apiFetch<Message[]>(`/api/v1/conversations/${convId}/messages`);
       setMessages(data);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to load messages.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to load messages.");
     } finally {
       if (!silent) setLoadingMessages(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchConversations();
-  }, [statusFilter, searchQuery]);
+    const timer = window.setTimeout(() => { void fetchConversations(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchConversations]);
 
   // Periodic polling for new messages & updates
   useEffect(() => {
@@ -78,15 +79,17 @@ export default function ConversationsPage() {
     return () => {
       if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
     };
-  }, [selectedId, statusFilter, searchQuery]);
+  }, [fetchConversations, fetchMessages, selectedId]);
 
   useEffect(() => {
     if (selectedId) {
-      fetchMessages(selectedId);
+      const timer = window.setTimeout(() => { void fetchMessages(selectedId); }, 0);
+      return () => window.clearTimeout(timer);
     } else {
-      setMessages([]);
+      const timer = window.setTimeout(() => setMessages([]), 0);
+      return () => window.clearTimeout(timer);
     }
-  }, [selectedId]);
+  }, [fetchMessages, selectedId]);
 
   // Scroll to bottom when messages list updates
   useEffect(() => {
@@ -102,8 +105,8 @@ export default function ConversationsPage() {
       });
       setConversations(conversations.map((c) => (c.id === selectedId ? { ...c, status: updated.status } : c)));
       toast.success(status === "human_takeover" ? "Takeover active. AI paused." : "AI resumes control.");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to update status.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update status.");
     }
   };
 
@@ -119,8 +122,8 @@ export default function ConversationsPage() {
       });
       setMessages((prev) => [...prev, newMsg]);
       setMessageInput("");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to send message.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to send message.");
     } finally {
       setSendLoading(false);
     }
