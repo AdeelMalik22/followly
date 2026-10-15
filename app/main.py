@@ -23,6 +23,7 @@ from app.api.knowledge_sources import router as knowledge_sources_router
 from app.core.config import settings
 from app.core.logging import configure_logging, correlation_id_var, tenant_id_var
 from app.core.security import decode_access_token
+from app.services.health_service import readiness_report
 
 configure_logging()
 logger = logging.getLogger("followly.request")
@@ -88,3 +89,8 @@ def read_root():
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
+
+
+@app.get("/health/ready")
+def readiness_check():
+    return readiness_report()
