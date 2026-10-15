@@ -42,13 +42,13 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="w-64 bg-[#0a0f1d] border-r border-white/[0.08] flex flex-col h-screen sticky top-0 flex-shrink-0 z-10">
+    <aside className="w-64 bg-white border-r border-[#e8edf5] flex flex-col h-screen sticky top-0 flex-shrink-0 z-10">
       {/* Brand logo */}
-      <div className="p-6 border-b border-white/[0.08] flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#5d7ef0] to-[#8b5cf6] flex items-center justify-center font-extrabold text-sm shadow-[0_0_15px_rgba(93,126,240,0.35)]">
-          F
+      <div className="p-6 border-b border-[#eef1f6] flex items-center gap-3">
+        <div className="w-9 h-9 rounded-xl bg-[#3678f6] flex items-center justify-center font-extrabold text-sm text-white shadow-lg shadow-blue-200">
+          ↗
         </div>
-        <span className="text-lg font-bold tracking-tight text-white">Followly</span>
+        <div><span className="text-xl font-bold tracking-tight text-[#17213b]">Followly</span><span className="block text-[10px] text-[#95a0b5]">Your AI teammate</span></div>
       </div>
 
       {/* Nav items */}
@@ -62,8 +62,8 @@ export default function Sidebar() {
               href={item.href}
               className={`flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all ${
                 isActive
-                  ? "bg-[#5d7ef0] text-white shadow-lg shadow-[#5d7ef0]/15"
-                  : "text-[#7b8aa8] hover:text-white hover:bg-white/[0.03]"
+                  ? "bg-[#eaf2ff] text-[#1764db] shadow-sm"
+                  : "text-[#66738d] hover:text-[#17213b] hover:bg-[#f5f8fc]"
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -74,16 +74,16 @@ export default function Sidebar() {
       </nav>
 
       {/* Business info & Logout */}
-      <div className="p-4 border-t border-white/[0.08] bg-[#0c1326]/40">
+      <div className="p-4 border-t border-[#eef1f6] bg-[#fbfcfe]">
         {user && (
           <div className="mb-4 px-2">
-            <span className="block text-xs font-bold text-[#7b8aa8] truncate">{user.business_name}</span>
-            <span className="block text-[10px] text-[#5d7ef0] truncate mt-0.5">{user.name} ({user.role})</span>
+            <span className="block text-xs font-bold text-[#17213b] truncate">{user.business_name}</span>
+            <span className="block text-[10px] text-[#5e88df] truncate mt-0.5">{user.name} · {user.role}</span>
           </div>
         )}
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-500/5 rounded-xl transition-all"
+          className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#8d99ad] hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
         >
           <LogOut className="w-4 h-4" />
           Logout

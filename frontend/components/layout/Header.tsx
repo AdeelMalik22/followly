@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useAuth } from "@/components/auth-provider";
+import { Bell, Search, ChevronDown } from "lucide-react";
 
 export default function Header() {
   const { user } = useAuth();
@@ -9,24 +10,26 @@ export default function Header() {
   if (!user) return null;
 
   return (
-    <header className="h-16 border-b border-white/[0.08] bg-[#070b14]/50 backdrop-blur-md px-8 flex items-center justify-between sticky top-0 z-10 flex-shrink-0">
-      <div className="flex items-center gap-4">
-        <span className="font-bold text-base text-white">{user.business_name}</span>
-        <span className="h-4 w-px bg-white/[0.12]" />
-        <span className="text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full flex items-center gap-1.5 font-medium">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          AI Assistant Online
+    <header className="h-[72px] border-b border-[#e8edf5] bg-white px-8 flex items-center justify-between sticky top-0 z-10 flex-shrink-0">
+      <div className="flex items-center gap-6">
+        <div className="hidden md:flex items-center gap-2 rounded-xl border border-[#e5eaf2] bg-[#fafbfe] px-3 py-2 w-80">
+          <Search className="w-4 h-4 text-[#97a3b8]" /><span className="text-xs text-[#9aa5b8]">Search leads, conversations, appointments...</span>
+        </div>
+        <span className="hidden lg:flex text-xs text-emerald-600 bg-emerald-50 border border-emerald-100 px-2.5 py-1.5 rounded-full items-center gap-1.5 font-semibold">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> AI assistant live
         </span>
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="text-right">
-          <span className="block text-xs font-bold text-white">{user.name}</span>
-          <span className="block text-[10px] text-[#7b8aa8]">{user.email}</span>
+        <Bell className="w-5 h-5 text-[#66738d]" />
+        <div className="text-right hidden sm:block">
+          <span className="block text-xs font-bold text-[#17213b]">{user.name}</span>
+          <span className="block text-[10px] text-[#8d99ad]">{user.role}</span>
         </div>
-        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#5d7ef0] to-[#8b5cf6] flex items-center justify-center font-extrabold text-sm text-white shadow-md shadow-[#5d7ef0]/10">
+        <div className="w-9 h-9 rounded-full bg-[#f5c7b7] flex items-center justify-center font-extrabold text-sm text-[#6f3d37]">
           {user.name.charAt(0).toUpperCase()}
         </div>
+        <ChevronDown className="w-4 h-4 text-[#66738d]" />
       </div>
     </header>
   );
