@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { UserPlus, User, Trash2, Mail } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
@@ -26,16 +26,19 @@ export default function TeamPage() {
   const [inviteRole, setInviteRole] = useState("Staff");
   const [inviteLoading, setInviteLoading] = useState(false);
 
-  const loadMembers = async () => {
+  const loadMembers = useCallback(async () => {
     try {
       const data = await apiFetch<{ members: Member[]; invitations: Member[] }>("/api/v1/team/members");
       setMembers([...data.members, ...data.invitations]);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Unable to load team members.");
     } finally { setLoading(false); }
-  };
+  }, []);
 
-  useEffect(() => { loadMembers(); }, []);
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void loadMembers(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [loadMembers]);
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
