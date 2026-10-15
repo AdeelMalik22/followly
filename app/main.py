@@ -24,6 +24,8 @@ from app.core.config import settings
 from app.core.logging import configure_logging, correlation_id_var, tenant_id_var
 from app.core.security import decode_access_token
 from app.services.health_service import readiness_report
+from app.services.metrics_service import metrics_report, record_request
+from time import monotonic
 
 configure_logging()
 logger = logging.getLogger("followly.request")
@@ -31,6 +33,7 @@ logger = logging.getLogger("followly.request")
 
 class CorrelationMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
+        started_at = monotonic()
         correlation_id = request.headers.get("x-correlation-id") or str(uuid4())
         token = correlation_id_var.set(correlation_id)
         tenant_token = tenant_id_var.set("-")
@@ -41,9 +44,13 @@ class CorrelationMiddleware(BaseHTTPMiddleware):
                 tenant_token = tenant_id_var.set(str(payload["business_id"]))
         try:
             response = await call_next(request)
+            record_request(request.url.path, response.status_code, started_at)
             response.headers["X-Correlation-ID"] = correlation_id
             logger.info("request_completed method=%s path=%s status=%s", request.method, request.url.path, response.status_code)
             return response
+        except Exception:
+            record_request(request.url.path, 500, started_at)
+            raise
         finally:
             correlation_id_var.reset(token)
             tenant_id_var.reset(tenant_token)
@@ -109,3 +116,8 @@ def health_check():
 @app.get("/health/ready")
 def readiness_check():
     return readiness_report()
+
+
+@app.get("/health/metrics")
+def metrics_check():
+    return metrics_report()
