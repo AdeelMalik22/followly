@@ -31,7 +31,7 @@ export default function SettingsPage() {
 
   const startCheckout = async () => {
     try { const data = await apiFetch<{ checkout_url: string }>("/api/v1/billing/checkout", { method: "POST" }); window.location.href = data.checkout_url; }
-    catch (err: any) { toast.error(err.message || "Billing is not configured yet."); }
+    catch (err) { toast.error(err instanceof Error ? err.message : "Billing is not configured yet."); }
   };
   const days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
   const [hours, setHours] = useState<Record<string, { open: boolean; start: string; end: string }>>(
@@ -46,14 +46,14 @@ export default function SettingsPage() {
         method: "PUT", body: JSON.stringify({ working_hours: hours, appointment_duration_minutes: duration }),
       });
       toast.success("Working hours saved!");
-    } catch (err: any) {
-      toast.error(err.message || "Unable to save working hours.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Unable to save working hours.");
     } finally { setHoursLoading(false); }
   };
   const handleSaveEscalation = async (e: React.FormEvent) => {
     e.preventDefault(); setEscalationLoading(true);
     try { await apiFetch("/api/v1/business/escalation-settings", { method: "PUT", body: JSON.stringify(escalation) }); toast.success("Human escalation settings saved!"); }
-    catch (err: any) { toast.error(err.message || "Unable to save escalation settings."); }
+    catch (err) { toast.error(err instanceof Error ? err.message : "Unable to save escalation settings."); }
     finally { setEscalationLoading(false); }
   };
 
@@ -72,8 +72,8 @@ export default function SettingsPage() {
       });
       toast.success("Business profile settings updated!");
       refetchUser();
-    } catch (err: any) {
-      toast.error(err.message || "Unable to update business profile.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Unable to update business profile.");
     } finally {
       setSaveLoading(false);
     }
