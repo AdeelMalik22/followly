@@ -56,6 +56,44 @@ class Business(Base):
     appointments = relationship("Appointment", back_populates="business")
     knowledge_base = relationship("KnowledgeBaseEntry", back_populates="business")
     customers = relationship("Customer", back_populates="business")
+    inventory_items = relationship("InventoryItem", back_populates="business")
+
+
+class InventoryItem(Base):
+    __tablename__ = "inventory_items"
+    __table_args__ = (UniqueConstraint("business_id", "sku", name="uq_inventory_items_business_sku"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    business_id = Column(Integer, ForeignKey("businesses.id"), nullable=False, index=True)
+    name = Column(String, nullable=False)
+    sku = Column(String, nullable=False)
+    category = Column(String, nullable=True)
+    unit = Column(String, nullable=False, default="unit")
+    quantity = Column(Integer, nullable=False, default=0)
+    reorder_level = Column(Integer, nullable=False, default=0)
+    cost_per_unit = Column(Integer, nullable=True)
+    supplier = Column(String, nullable=True)
+    is_active = Column(Integer, nullable=False, default=1)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    business = relationship("Business", back_populates="inventory_items")
+    movements = relationship("InventoryMovement", back_populates="item", cascade="all, delete-orphan")
+
+
+class InventoryMovement(Base):
+    __tablename__ = "inventory_movements"
+
+    id = Column(Integer, primary_key=True, index=True)
+    business_id = Column(Integer, ForeignKey("businesses.id"), nullable=False, index=True)
+    item_id = Column(Integer, ForeignKey("inventory_items.id"), nullable=False, index=True)
+    movement_type = Column(String, nullable=False)
+    quantity = Column(Integer, nullable=False)
+    note = Column(String, nullable=True)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+    item = relationship("InventoryItem", back_populates="movements")
 
 
 class ConfigurationAudit(Base):
