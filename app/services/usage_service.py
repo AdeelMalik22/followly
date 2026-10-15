@@ -81,6 +81,16 @@ def record_agent_usage(
 ) -> None:
     """Attribute one agent turn to its tenant."""
     ensure_usage_period(business, db)
+    limits = plan_limits(business)
+    projected = {
+        "messages": (business.usage_messages or 0) + 1,
+        "llm_tokens": (business.usage_llm_tokens or 0) + max(llm_tokens, 0),
+        "tool_calls": (business.usage_tool_calls or 0) + max(tool_calls, 0),
+    }
+    for resource, value in projected.items():
+        limit = limits.get(resource)
+        if limit is not None and value > limit:
+            raise RuntimeError(f"Tenant {resource} usage limit reached")
     business.usage_messages = (business.usage_messages or 0) + 1
     business.usage_llm_tokens = (business.usage_llm_tokens or 0) + max(llm_tokens, 0)
     business.usage_tool_calls = (business.usage_tool_calls or 0) + max(tool_calls, 0)
