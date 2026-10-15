@@ -108,6 +108,22 @@ class StripeWebhookEvent(Base):
     error = Column(Text, nullable=True)
 
 
+class BackgroundJob(Base):
+    __tablename__ = "background_jobs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    business_id = Column(Integer, ForeignKey("businesses.id"), nullable=True, index=True)
+    job_type = Column(String, nullable=False, index=True)
+    payload = Column(JSON, nullable=False)
+    status = Column(String, nullable=False, default="pending", index=True)
+    attempts = Column(Integer, nullable=False, default=0)
+    max_attempts = Column(Integer, nullable=False, default=3)
+    available_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    last_error = Column(Text, nullable=True)
+    completed_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
 class UsageEvent(Base):
     __tablename__ = "usage_events"
 
