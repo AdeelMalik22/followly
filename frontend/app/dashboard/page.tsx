@@ -68,7 +68,7 @@ export default function DashboardOverviewPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-extrabold text-white">Dashboard Overview</h1>
-          <p className="text-sm text-[#7b8aa8]">Proof of value analytics and conversion metrics for your clinic.</p>
+          <p className="text-sm text-[#7b8aa8]">Track customer engagement and conversion metrics for your business.</p>
         </div>
 
         <select

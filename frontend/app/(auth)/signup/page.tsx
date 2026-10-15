@@ -11,7 +11,7 @@ export default function SignupPage() {
   const [ownerName, setOwnerName] = useState("");
   const [email, setEmail] = useState("");
   const [businessName, setBusinessName] = useState("");
-  const [industry, setIndustry] = useState("Dental Clinic");
+  const [industry, setIndustry] = useState("Other");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -143,7 +143,7 @@ export default function SignupPage() {
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">🏢</span>
               <input
                 type="text"
-                placeholder="Bright Smiles Dental"
+                placeholder="Your business name"
                 value={businessName}
                 onChange={(e) => setBusinessName(e.target.value)}
                 className="w-full bg-white/[0.06] border border-white/[0.08] rounded-xl py-2.5 pl-10 pr-4 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#5d7ef0] focus:ring-2 focus:ring-[#5d7ef0]/20 transition-all"
@@ -163,13 +163,12 @@ export default function SignupPage() {
                 onChange={(e) => setIndustry(e.target.value)}
                 className="w-full bg-white/[0.06] border border-white/[0.08] rounded-xl py-2.5 pl-10 pr-4 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#5d7ef0] focus:ring-2 focus:ring-[#5d7ef0]/20 transition-all appearance-none cursor-pointer"
               >
-                <option value="Dental Clinic" className="bg-[#131929]">Dental Clinic</option>
+                <option value="Other" className="bg-[#131929]">Other</option>
                 <option value="Medical Clinic" className="bg-[#131929]">Medical Clinic</option>
                 <option value="Salon & Spa" className="bg-[#131929]">Salon &amp; Spa</option>
                 <option value="Law Firm" className="bg-[#131929]">Law Firm</option>
                 <option value="Real Estate" className="bg-[#131929]">Real Estate</option>
                 <option value="Fitness & Gym" className="bg-[#131929]">Fitness &amp; Gym</option>
-                <option value="Other" className="bg-[#131929]">Other</option>
               </select>
             </div>
           </div>

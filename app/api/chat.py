@@ -16,7 +16,7 @@ from app.services.tenant_context import TenantContext
 
 router = APIRouter(tags=["chat"])
 templates = Jinja2Templates(directory="app/templates")
-QUICK_QUESTIONS = ["What services do you offer?", "How much does teeth whitening cost?", "I want to book a dental cleaning.", "What are your clinic hours?"]
+QUICK_QUESTIONS = ["What services do you offer?", "How does your pricing work?", "I would like to book an appointment.", "What are your business hours?"]
 
 
 @router.get("/widget.js", response_class=Response)
