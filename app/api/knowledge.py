@@ -6,6 +6,7 @@ from app.models.models import Business
 from app.api.dependencies import get_current_business
 from app.schemas.knowledge import KnowledgeBaseCreate, KnowledgeBaseUpdate, KnowledgeBaseResponse
 from app.services import knowledge_service
+from app.services.usage_service import enforce_plan_limit
 
 router = APIRouter(prefix="/api/v1/knowledge", tags=["knowledge"])
 
@@ -15,6 +16,11 @@ def create_entry(
     business: Business = Depends(get_current_business),
     db: Session = Depends(get_db)
 ):
+    try:
+        enforce_plan_limit(business, "knowledge_documents", db)
+        enforce_plan_limit(business, "storage_bytes", db, len(entry.answer) + len(entry.question or ""))
+    except RuntimeError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
     return knowledge_service.create_knowledge_entry(
         business_id=business.id,
         category=entry.category,

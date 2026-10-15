@@ -17,6 +17,7 @@ from app.services import conversation_service
 from app.services.conversation_engine import process_message_with_agent
 from app.services.business_config_service import get_business_configuration, save_business_configuration
 from app.services.integration_health_service import check_calendar_health, check_whatsapp_health
+from app.services.usage_service import enforce_plan_limit, plan_limits
 
 router = APIRouter(prefix="/api/v1/business", tags=["business"])
 
@@ -69,6 +70,9 @@ def update_configuration(
     db: Session = Depends(get_db),
     _authorized_user=Depends(require_business_roles("owner", "admin")),
 ):
+    enabled_channels = sum(1 for enabled in payload.channels.enabled.values() if enabled)
+    if enabled_channels > plan_limits(business).get("channels", enabled_channels):
+        raise HTTPException(status_code=403, detail="Tenant channels limit reached")
     return save_business_configuration(business, payload, db, updated_by=_authorized_user.id)
 
 

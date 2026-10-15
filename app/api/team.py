@@ -9,6 +9,7 @@ from app.api.dependencies import get_current_business, get_current_user, require
 from app.core.database import get_db
 from app.core.security import get_password_hash
 from app.models.models import Business, TeamInvitation, User
+from app.services.usage_service import enforce_plan_limit
 from app.schemas.team import OwnerTransfer, TeamInvitationAccept, TeamInvitationCreate, TeamInvitationResponse, TeamRoleUpdate
 
 router = APIRouter(prefix="/api/v1/team", tags=["team"])
@@ -35,6 +36,10 @@ def create_invitation(
     ).first()
     if existing:
         raise HTTPException(status_code=409, detail="Invitation already pending")
+    try:
+        enforce_plan_limit(business, "users", db)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
     raw_token = secrets.token_urlsafe(32)
     invitation = TeamInvitation(
         business_id=business.id,
@@ -60,6 +65,12 @@ def accept_invitation(payload: TeamInvitationAccept, db: Session = Depends(get_d
         raise HTTPException(status_code=400, detail="Invitation is invalid or expired")
     if db.query(User).filter(User.email == invitation.email).first():
         raise HTTPException(status_code=409, detail="User already exists")
+    business = db.query(Business).filter(Business.id == invitation.business_id).first()
+    if business:
+        try:
+            enforce_plan_limit(business, "users", db)
+        except RuntimeError as exc:
+            raise HTTPException(status_code=403, detail=str(exc)) from exc
     user = User(
         business_id=invitation.business_id,
         email=invitation.email,

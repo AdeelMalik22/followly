@@ -8,6 +8,7 @@ from app.schemas.knowledge_source import KnowledgeSourceCreate, KnowledgeSourceR
 from app.schemas.knowledge_version import KnowledgeVersionResponse
 from app.models.models import KnowledgeVersion
 from app.services.knowledge_ingestion_service import process_knowledge_source
+from app.services.usage_service import enforce_plan_limit
 
 router = APIRouter(prefix="/api/v1/knowledge-sources", tags=["knowledge-sources"])
 
@@ -19,6 +20,11 @@ def create_source(
     business: Business = Depends(get_current_business),
     db: Session = Depends(get_db),
 ):
+    try:
+        enforce_plan_limit(business, "knowledge_documents", db)
+        enforce_plan_limit(business, "storage_bytes", db, len(payload.name) + len(payload.uri or ""))
+    except RuntimeError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
     source = KnowledgeSource(
         business_id=business.id,
         name=payload.name.strip(),
