@@ -33,9 +33,12 @@ export default function OnboardingPage() {
   // first authenticated render instead of validating stale empty state.
   useEffect(() => {
     if (!user) return;
-    setBusinessName(user.business_name || "");
-    setIndustry(user.industry || "");
-    setOwnerName(user.name || "");
+    const timer = window.setTimeout(() => {
+      setBusinessName(user.business_name || "");
+      setIndustry(user.industry || "");
+      setOwnerName(user.name || "");
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [user]);
 
   useEffect(() => {
@@ -90,8 +93,8 @@ export default function OnboardingPage() {
           method: "PUT",
           body: JSON.stringify({ name: businessName, industry, owner_name: ownerName }),
         });
-      } catch (err: any) {
-        toast.error(err.message || "Unable to save your business profile.");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Unable to save your business profile.");
         return;
       } finally {
         setLoading(false);
@@ -134,8 +137,8 @@ export default function OnboardingPage() {
       toast.success("Knowledge Base successfully configured!");
       
       setStep(3);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to create knowledge base entries.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to create knowledge base entries.");
     } finally {
       setLoading(false);
     }
@@ -147,8 +150,8 @@ export default function OnboardingPage() {
       await apiFetch("/api/v1/business/onboarding/complete", { method: "POST" });
       await refetchUser();
       router.replace("/dashboard");
-    } catch (err: any) {
-      toast.error(err.message || "Unable to complete onboarding.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Unable to complete onboarding.");
     } finally { setLoading(false); }
   };
 
@@ -234,7 +237,7 @@ export default function OnboardingPage() {
         {step === 2 && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-xl font-bold mb-2">Build Your AI's Brain</h2>
+              <h2 className="mb-2 text-xl font-bold">Build Your AI&apos;s Brain</h2>
               <p className="text-sm text-[#7b8aa8]">Add the information your AI should use when answering customers. You can add more entries or manage them later from Knowledge Base.</p>
             </div>
 
@@ -302,7 +305,7 @@ export default function OnboardingPage() {
             <input placeholder="Staff name" value={escalation.contact_name} onChange={(e) => setEscalation({ ...escalation, contact_name: e.target.value })} className="w-full rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] p-3 text-sm text-[#17213b]" />
             <input placeholder="Staff phone or email" value={escalation.contact_phone} onChange={(e) => setEscalation({ ...escalation, contact_phone: e.target.value })} className="w-full rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] p-3 text-sm text-[#17213b]" />
             <textarea placeholder="Instructions for human handoff" value={escalation.instructions} onChange={(e) => setEscalation({ ...escalation, instructions: e.target.value })} className="w-full rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] p-3 text-sm text-[#17213b]" rows={2} />
-            <button onClick={async () => { setLoading(true); try { await saveHoursAndEscalation(); } catch (err: any) { toast.error(err.message || "Unable to save settings."); } finally { setLoading(false); } }} disabled={loading} className="w-full py-3 rounded-xl bg-[#5d7ef0] text-white font-semibold text-sm">{loading ? "Saving..." : "Save & Continue →"}</button>
+            <button onClick={async () => { setLoading(true); try { await saveHoursAndEscalation(); } catch (err) { toast.error(err instanceof Error ? err.message : "Unable to save settings."); } finally { setLoading(false); } }} disabled={loading} className="w-full py-3 rounded-xl bg-[#5d7ef0] text-white font-semibold text-sm">{loading ? "Saving..." : "Save & Continue →"}</button>
           </div>
         )}
 
@@ -312,7 +315,7 @@ export default function OnboardingPage() {
             <h2 className="text-xl font-bold">Connect Google Calendar</h2>
             <p className="text-sm text-[#7b8aa8]">The agent needs your calendar to check availability and book appointments.</p>
             <div className="text-sm font-semibold text-[#34415d]">{calendarConnected ? "✓ Calendar connected" : "Calendar not connected"}</div>
-            {!calendarConnected && <button onClick={async () => { try { const data = await apiFetch<{ authorization_url: string }>("/api/v1/calendar/connect"); window.location.href = data.authorization_url; } catch (err: any) { toast.error(err.message || "Unable to connect calendar."); } }} className="w-full py-3 rounded-xl bg-[#5d7ef0] text-white font-semibold text-sm">Connect Google Calendar</button>}
+            {!calendarConnected && <button onClick={async () => { try { const data = await apiFetch<{ authorization_url: string }>("/api/v1/calendar/connect"); window.location.href = data.authorization_url; } catch (err) { toast.error(err instanceof Error ? err.message : "Unable to connect calendar."); } }} className="w-full py-3 rounded-xl bg-[#5d7ef0] text-white font-semibold text-sm">Connect Google Calendar</button>}
             <button onClick={() => setStep(5)} className="w-full rounded-xl border border-[#dfe6f1] bg-white py-3 text-sm font-semibold text-[#53617a] hover:bg-[#f7f9fc]">{calendarConnected ? "Continue" : "Skip for now"} →</button>
           </div>
         )}
@@ -325,7 +328,7 @@ export default function OnboardingPage() {
             {whatsappConnected ? <div className="text-sm font-semibold text-emerald-400">✓ WhatsApp connected</div> : <>
               <input value={phoneNumberId} onChange={(e) => setPhoneNumberId(e.target.value)} placeholder="Meta Phone Number ID" className="w-full rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] p-3 text-sm text-[#17213b]" />
               <input type="password" value={accessToken} onChange={(e) => setAccessToken(e.target.value)} placeholder="Meta access token" className="w-full rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] p-3 text-sm text-[#17213b]" />
-              <button onClick={async () => { if (!phoneNumberId || !accessToken) { toast.error("Enter both WhatsApp values."); return; } try { await apiFetch("/api/v1/whatsapp/credentials", { method: "PUT", body: JSON.stringify({ phone_number_id: phoneNumberId, access_token: accessToken }) }); setWhatsappConnected(true); setAccessToken(""); toast.success("WhatsApp connected."); } catch (err: any) { toast.error(err.message || "Unable to connect WhatsApp."); } }} className="w-full py-3 rounded-xl bg-[#5d7ef0] text-white font-semibold text-sm">Connect WhatsApp</button>
+              <button onClick={async () => { if (!phoneNumberId || !accessToken) { toast.error("Enter both WhatsApp values."); return; } try { await apiFetch("/api/v1/whatsapp/credentials", { method: "PUT", body: JSON.stringify({ phone_number_id: phoneNumberId, access_token: accessToken }) }); setWhatsappConnected(true); setAccessToken(""); toast.success("WhatsApp connected."); } catch (err) { toast.error(err instanceof Error ? err.message : "Unable to connect WhatsApp."); } }} className="w-full py-3 rounded-xl bg-[#5d7ef0] text-white font-semibold text-sm">Connect WhatsApp</button>
             </>}
             <button onClick={() => setStep(6)} className="w-full rounded-xl border border-[#dfe6f1] bg-white py-3 text-sm font-semibold text-[#53617a] hover:bg-[#f7f9fc]">{whatsappConnected ? "Continue" : "Skip for now"} →</button>
           </div>
