@@ -40,3 +40,11 @@ def test_stripe_payment_failure_and_success_update_subscription_status():
     assert business.subscription_status == "past_due"
     process_stripe_event(succeeded, db)
     assert business.subscription_status == "active"
+
+
+def test_processing_event_is_not_applied_twice():
+    db = make_session()
+    event = {"id": "evt_processing", "type": "invoice.payment_succeeded", "data": {"object": {}}}
+    db.add(StripeWebhookEvent(event_id=event["id"], event_type=event["type"], status="processing"))
+    db.commit()
+    assert process_stripe_event(event, db) is False

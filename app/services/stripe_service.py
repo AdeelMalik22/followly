@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 from app.models.models import Business, StripeWebhookEvent
 from app.services.usage_service import PLAN_LIMITS
@@ -37,15 +38,11 @@ def _plan_from_subscription(subscription) -> str:
     return "starter"
 
 
-def process_stripe_event(event: dict, db: Session) -> bool:
+def _apply_stripe_event(event: dict, db: Session, record: StripeWebhookEvent) -> None:
     event_id = event["id"]
     event_type = event["type"]
-    existing = db.query(StripeWebhookEvent).filter(StripeWebhookEvent.event_id == event_id).first()
-    if existing and existing.status == "processed":
-        return False
     event_object = event.get("data", {}).get("object", {})
     business = _business_for_event(event_object, db)
-    record = existing or StripeWebhookEvent(event_id=event_id, event_type=event_type)
     record.business_id = business.id if business else None
     record.status = "processed"
     record.processed_at = datetime.utcnow()
@@ -74,4 +71,33 @@ def process_stripe_event(event: dict, db: Session) -> bool:
         elif event_type == "invoice.payment_succeeded":
             business.subscription_status = "active"
     db.commit()
+
+
+def process_stripe_event(event: dict, db: Session) -> bool:
+    """Apply one Stripe event exactly once; failed events remain retryable."""
+    event_id = event["id"]
+    event_type = event["type"]
+    existing = db.query(StripeWebhookEvent).filter(StripeWebhookEvent.event_id == event_id).first()
+    if existing and existing.status == "processed":
+        return False
+    if existing and existing.status == "processing":
+        return False
+    record = existing or StripeWebhookEvent(event_id=event_id, event_type=event_type)
+    record.status = "processing"
+    db.add(record)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        return False
+    try:
+        _apply_stripe_event(event, db, record)
+    except Exception as exc:
+        db.rollback()
+        record = db.query(StripeWebhookEvent).filter(StripeWebhookEvent.event_id == event_id).first()
+        if record:
+            record.status = "failed"
+            record.error = str(exc)[:1000]
+            db.commit()
+        raise
     return True
