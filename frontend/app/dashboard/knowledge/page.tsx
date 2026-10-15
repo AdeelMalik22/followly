@@ -199,31 +199,31 @@ export default function KnowledgeBasePage() {
 
       {/* Add / Edit Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-[#070b14]/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-[#0c1326] border border-white/[0.08] rounded-2xl p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
-            <h2 className="text-lg font-bold text-white mb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#17213b]/20 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-2xl border border-[#e7ecf4] bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+            <h2 className="mb-4 text-lg font-bold text-[#17213b]">
               {editingId !== null ? "Edit Knowledge Entry" : "Add Knowledge Entry"}
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label className="block text-xs font-semibold text-[#aab4cb] mb-2 uppercase tracking-wider">
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[#7e8aa1]">
                   Category
                 </label>
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full bg-white/[0.06] border border-white/[0.08] rounded-xl py-2.5 px-3 text-sm text-white focus:outline-none focus:border-[#5d7ef0]"
+                  className="w-full rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] px-3 py-2.5 text-sm text-[#17213b] outline-none focus:border-[#8eb3ff] focus:ring-4 focus:ring-[#eaf2ff]"
                 >
-                  <option value="services" className="bg-[#131929]">Services</option>
-                  <option value="pricing" className="bg-[#131929]">Pricing</option>
-                  <option value="policies" className="bg-[#131929]">Policies</option>
-                  <option value="faqs" className="bg-[#131929]">FAQs</option>
+                  <option value="services">Services</option>
+                  <option value="pricing">Pricing</option>
+                  <option value="policies">Policies</option>
+                  <option value="faqs">FAQs</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#aab4cb] mb-2 uppercase tracking-wider">
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[#7e8aa1]">
                   Question / Lead Inquiry
                 </label>
                 <input
@@ -231,13 +231,13 @@ export default function KnowledgeBasePage() {
                   placeholder="e.g., What is the price of teeth cleaning?"
                   value={question}
                   onChange={(e) => setQuestion(e.target.value)}
-                  className="w-full bg-white/[0.06] border border-white/[0.08] rounded-xl py-2.5 px-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#5d7ef0]"
+                  className="w-full rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] px-3 py-2.5 text-sm text-[#17213b] placeholder-[#a0aabd] outline-none focus:border-[#8eb3ff] focus:ring-4 focus:ring-[#eaf2ff]"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#aab4cb] mb-2 uppercase tracking-wider">
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[#7e8aa1]">
                   Answer / Truth
                 </label>
                 <textarea
@@ -245,7 +245,7 @@ export default function KnowledgeBasePage() {
                   value={answer}
                   onChange={(e) => setAnswer(e.target.value)}
                   rows={4}
-                  className="w-full bg-white/[0.06] border border-white/[0.08] rounded-xl py-2.5 px-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#5d7ef0] resize-none"
+                  className="w-full resize-none rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] px-3 py-2.5 text-sm text-[#17213b] placeholder-[#a0aabd] outline-none focus:border-[#8eb3ff] focus:ring-4 focus:ring-[#eaf2ff]"
                   required
                 />
               </div>
@@ -254,7 +254,7 @@ export default function KnowledgeBasePage() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-white/[0.08] text-xs font-semibold text-[#aab4cb] hover:bg-white/[0.03] transition-all"
+                  className="rounded-xl border border-[#e7ecf4] px-4 py-2 text-xs font-semibold text-[#71809a] transition-all hover:bg-[#f7f9fc]"
                 >
                   Cancel
                 </button>
