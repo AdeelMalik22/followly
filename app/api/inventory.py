@@ -59,6 +59,15 @@ def create_item(
     return _response(item)
 
 
+@router.get("/summary/low-stock", response_model=list[InventoryItemResponse])
+def low_stock_summary(business: Business = Depends(get_current_business), db: Session = Depends(get_db)):
+    items = db.query(InventoryItem).filter(
+        InventoryItem.business_id == business.id,
+        InventoryItem.is_active == 1,
+    ).order_by(InventoryItem.quantity.asc()).all()
+    return [_response(item) for item in items if item.quantity <= item.reorder_level]
+
+
 @router.get("/{item_id}", response_model=InventoryItemResponse)
 def get_item(item_id: int, business: Business = Depends(get_current_business), db: Session = Depends(get_db)):
     item = db.query(InventoryItem).filter(InventoryItem.id == item_id, InventoryItem.business_id == business.id).first()
@@ -117,3 +126,18 @@ def list_movements(item_id: int, business: Business = Depends(get_current_busine
     return db.query(InventoryMovement).filter(
         InventoryMovement.item_id == item_id, InventoryMovement.business_id == business.id
     ).order_by(InventoryMovement.created_at.desc()).all()
+
+
+@router.delete("/{item_id}")
+def deactivate_item(
+    item_id: int,
+    business: Business = Depends(get_current_business),
+    db: Session = Depends(get_db),
+    _user: User = Depends(require_business_roles("owner", "admin")),
+):
+    item = db.query(InventoryItem).filter(InventoryItem.id == item_id, InventoryItem.business_id == business.id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Inventory item not found")
+    item.is_active = 0
+    db.commit()
+    return {"status": "deactivated"}
