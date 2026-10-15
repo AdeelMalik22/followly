@@ -1,5 +1,6 @@
 from app.core.config import settings
 from app.main import app
+from app.models.models import UsageEvent
 
 from tests.test_http_auth_flows import http_context
 
@@ -32,3 +33,13 @@ def test_subscription_cancel_updates_local_state_after_stripe_accepts(http_conte
     assert response.status_code == 200
     db.refresh(first)
     assert first.subscription_status == "cancelling"
+
+
+def test_usage_report_is_available_over_http_for_current_business(http_context):
+    client, db, first, *_ = http_context
+    db.add(UsageEvent(business_id=first.id, event_type="agent_turn", llm_tokens=10, tool_calls=1))
+    db.commit()
+    response = client.get("/api/v1/billing/usage-report")
+    assert response.status_code == 200
+    assert response.json()["business_id"] == first.id
+    assert response.json()["totals"]["llm_tokens"] == 10

@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from app.models.models import Business, UsageEvent, User, KnowledgeBaseEntry, KnowledgeSource
 
@@ -91,3 +92,39 @@ def record_agent_usage(
         event_metadata=metadata,
     ))
     db.flush()
+
+
+def usage_report(
+    business: Business,
+    db: Session,
+    start: datetime | None = None,
+    end: datetime | None = None,
+) -> dict:
+    """Aggregate usage events for a tenant and reporting period."""
+    end = end or datetime.utcnow()
+    start = start or business.usage_period_start or (end - timedelta(days=30))
+    rows = db.query(
+        UsageEvent.event_type,
+        func.coalesce(func.sum(UsageEvent.llm_tokens), 0),
+        func.coalesce(func.sum(UsageEvent.tool_calls), 0),
+        func.count(UsageEvent.id),
+    ).filter(
+        UsageEvent.business_id == business.id,
+        UsageEvent.created_at >= start,
+        UsageEvent.created_at < end,
+    ).group_by(UsageEvent.event_type).all()
+    by_type = {
+        event_type: {"events": int(events), "llm_tokens": int(tokens), "tool_calls": int(tools)}
+        for event_type, tokens, tools, events in rows
+    }
+    return {
+        "business_id": business.id,
+        "period_start": start,
+        "period_end": end,
+        "totals": {
+            "events": sum(item["events"] for item in by_type.values()),
+            "llm_tokens": sum(item["llm_tokens"] for item in by_type.values()),
+            "tool_calls": sum(item["tool_calls"] for item in by_type.values()),
+        },
+        "by_event_type": by_type,
+    }

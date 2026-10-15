@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from datetime import datetime
+from fastapi import APIRouter, Depends, HTTPException, Request, Query
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_current_business, require_business_roles
@@ -6,7 +7,7 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.models.models import Business
 from app.schemas.dashboard import BillingStatus
-from app.services.usage_service import PLAN_LIMITS
+from app.services.usage_service import PLAN_LIMITS, usage_report
 from app.services.stripe_service import process_stripe_event
 
 router = APIRouter(prefix="/api/v1/billing", tags=["billing"])
@@ -46,6 +47,18 @@ def billing_status(business: Business = Depends(get_current_business)):
             "tool_calls": business.usage_tool_calls or 0,
         },
     )
+
+
+@router.get("/usage-report")
+def billing_usage_report(
+    start: datetime | None = Query(None),
+    end: datetime | None = Query(None),
+    business: Business = Depends(get_current_business),
+    db: Session = Depends(get_db),
+):
+    if start and end and start >= end:
+        raise HTTPException(status_code=422, detail="start must precede end")
+    return usage_report(business, db, start, end)
 
 
 @router.post("/checkout")
