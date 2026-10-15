@@ -34,3 +34,13 @@ The smoke test covers application readiness (PostgreSQL, Redis, queue, and LLM
 configuration), billing status, WhatsApp and Google Calendar health, and an
 optional real LLM request. Set `STAGING_RUN_LLM=1` only when the configured
 provider should be called.
+
+For tenant-by-tenant checks, create a local file with one `tenant_id|bearer_token`
+pair per line and run:
+
+```bash
+export STAGING_TENANTS_FILE=/secure/path/staging-tenants.txt
+./scripts/staging_tenant_smoke_test.sh
+```
+
+The file is intentionally local and is not committed with staging configuration.
