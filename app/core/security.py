@@ -23,8 +23,12 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 def decode_access_token(token: str):
-    try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        return payload
-    except JWTError:
-        return None
+    keys = [settings.SECRET_KEY]
+    if settings.JWT_PREVIOUS_SECRET_KEY:
+        keys.append(settings.JWT_PREVIOUS_SECRET_KEY)
+    for key in keys:
+        try:
+            return jwt.decode(token, key, algorithms=[settings.ALGORITHM])
+        except JWTError:
+            continue
+    return None

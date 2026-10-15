@@ -48,14 +48,29 @@ class CorrelationMiddleware(BaseHTTPMiddleware):
             correlation_id_var.reset(token)
             tenant_id_var.reset(tenant_token)
 
+
+class OriginProtectionMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        origin = request.headers.get("origin")
+        if origin and request.method in {"POST", "PUT", "PATCH", "DELETE"}:
+            public_webhooks = {"/api/v1/whatsapp/webhook", "/api/v1/billing/webhook"}
+            allowed = set(cors_origins)
+            if request.url.path not in public_webhooks and origin not in allowed:
+                from fastapi.responses import JSONResponse
+                return JSONResponse({"detail": "Origin is not trusted"}, status_code=403)
+        return await call_next(request)
+
 app = FastAPI(title="Followly API", version="1.0.0")
 app.add_middleware(CorrelationMiddleware)
+app.add_middleware(OriginProtectionMiddleware)
 
 cors_origins = [
     origin.strip()
     for origin in (settings.CORS_ORIGINS or settings.FRONTEND_URL).split(",")
     if origin.strip()
 ]
+if "*" in cors_origins:
+    raise RuntimeError("CORS_ORIGINS cannot contain '*' when credentials are enabled")
 
 app.add_middleware(
     CORSMiddleware,

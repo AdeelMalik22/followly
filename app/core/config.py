@@ -4,6 +4,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     REDIS_URL: str
     SECRET_KEY: str
+    JWT_PREVIOUS_SECRET_KEY: str = ""
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 10080
     CUSTOMER_TOKEN_EXPIRE_MINUTES: int = 43200
@@ -26,7 +27,7 @@ class Settings(BaseSettings):
     API_BASE_URL: str = ""
     FRONTEND_URL: str = "http://localhost:3000"
     CORS_ORIGINS: str = ""
-    COOKIE_SECURE: bool = False
+    COOKIE_SECURE: bool = True
     BUSINESS_TIMEZONE: str = "Asia/Karachi"
     STRIPE_SECRET_KEY: str = ""
     STRIPE_PRICE_ID: str = ""
