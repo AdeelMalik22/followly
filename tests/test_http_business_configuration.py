@@ -1,4 +1,4 @@
-from app.api.dependencies import get_current_user
+from app.api.dependencies import get_current_business, get_current_user
 from app.main import app
 
 from tests.test_http_auth_flows import http_context
@@ -49,3 +49,15 @@ def test_business_configuration_api_requires_admin_or_owner_for_writes(http_cont
     app.dependency_overrides[get_current_user] = lambda: http_context[6]
     response = client.put("/api/v1/business/configuration", json={})
     assert response.status_code == 403
+
+
+def test_configuration_audit_history_is_tenant_scoped_and_role_protected(http_context):
+    client, db, first, second, *_ = http_context
+    assert client.put("/api/v1/business/configuration", json={}).status_code == 200
+    history = client.get("/api/v1/business/configuration/audit")
+    assert history.status_code == 200
+    assert len(history.json()) == 1
+    assert history.json()[0]["business_id"] == first.id
+
+    app.dependency_overrides[get_current_business] = lambda: second
+    assert client.get("/api/v1/business/configuration/audit").json() == []

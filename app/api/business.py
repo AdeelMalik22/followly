@@ -7,7 +7,7 @@ from app.api.dependencies import get_current_business, get_current_user, require
 from app.core.database import get_db
 from app.core.config import settings as app_settings
 from app.core.config import settings
-from app.models.models import Business, User, KnowledgeBaseEntry
+from app.models.models import Business, User, KnowledgeBaseEntry, ConfigurationAudit
 from app.schemas.dashboard import (
     BusinessProfileResponse, BusinessProfileUpdate, BookingSettings, BookingSettingsUpdate, WidgetConfigResponse, EscalationSettings,
 )
@@ -31,6 +31,30 @@ def update_configuration(
     _authorized_user=Depends(require_business_roles("owner", "admin")),
 ):
     return save_business_configuration(business, payload, db, updated_by=_authorized_user.id)
+
+
+@router.get("/configuration/audit")
+def configuration_audit_history(
+    business: Business = Depends(get_current_business),
+    db: Session = Depends(get_db),
+    _authorized_user=Depends(require_business_roles("owner", "admin")),
+):
+    audits = (
+        db.query(ConfigurationAudit)
+        .filter(ConfigurationAudit.business_id == business.id)
+        .order_by(ConfigurationAudit.created_at.desc(), ConfigurationAudit.id.desc())
+        .all()
+    )
+    return [
+        {
+            "id": audit.id,
+            "business_id": audit.business_id,
+            "changed_by": audit.changed_by,
+            "configuration": audit.configuration,
+            "created_at": audit.created_at,
+        }
+        for audit in audits
+    ]
 
 
 @router.get("/integration-status")
