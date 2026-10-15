@@ -20,9 +20,11 @@ export default function DashboardOverviewPage() {
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     let active = true;
-    setLoading(true);
-    apiFetch<AnalyticsSummary>("/api/v1/analytics/summary", { params: { days } }).then((data) => active && setSummary(data)).catch((error) => active && toast.error(error.message || "Unable to load your overview.")).finally(() => active && setLoading(false));
-    return () => { active = false; };
+    const timer = window.setTimeout(() => {
+      setLoading(true);
+      apiFetch<AnalyticsSummary>("/api/v1/analytics/summary", { params: { days } }).then((data) => active && setSummary(data)).catch((error) => active && toast.error(error instanceof Error ? error.message : "Unable to load your overview.")).finally(() => active && setLoading(false));
+    }, 0);
+    return () => { active = false; window.clearTimeout(timer); };
   }, [days]);
   if (loading || !summary) return <LoadingState label="Preparing your business overview..." />;
   const contacted = summary.funnel.contacted + summary.funnel.qualified + summary.funnel.booked;
