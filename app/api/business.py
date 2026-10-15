@@ -7,15 +7,54 @@ from app.api.dependencies import get_current_business, get_current_user, require
 from app.core.database import get_db
 from app.core.config import settings as app_settings
 from app.core.config import settings
-from app.models.models import Business, User, KnowledgeBaseEntry, ConfigurationAudit
+from app.models.models import Business, User, KnowledgeBaseEntry, ConfigurationAudit, Conversation
 from app.schemas.dashboard import (
     BusinessProfileResponse, BusinessProfileUpdate, BookingSettings, BookingSettingsUpdate, WidgetConfigResponse, EscalationSettings,
 )
 from app.schemas.business_config import BusinessConfiguration, EscalationConfiguration
+from app.schemas.test_chat import TestChatRequest, TestChatResponse
+from app.services import conversation_service
+from app.services.conversation_engine import process_message_with_agent
 from app.services.business_config_service import get_business_configuration, save_business_configuration
 from app.services.integration_health_service import check_calendar_health, check_whatsapp_health
 
 router = APIRouter(prefix="/api/v1/business", tags=["business"])
+
+
+@router.post("/test-chat", response_model=TestChatResponse)
+async def test_chat(
+    payload: TestChatRequest,
+    business: Business = Depends(get_current_business),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if payload.conversation_id is not None:
+        conversation = db.query(Conversation).filter(
+            Conversation.id == payload.conversation_id,
+            Conversation.business_id == business.id,
+            Conversation.channel == "dashboard_test",
+        ).first()
+        if not conversation:
+            raise HTTPException(status_code=404, detail="Test conversation not found")
+    else:
+        lead = conversation_service.get_or_create_lead(
+            f"dashboard-test-{user.id}", business.id, db
+        )
+        lead.source = "dashboard_test"
+        db.commit()
+        conversation = Conversation(
+            lead_id=lead.id,
+            business_id=business.id,
+            channel="dashboard_test",
+        )
+        db.add(conversation)
+        db.commit()
+        db.refresh(conversation)
+
+    conversation_service.save_message(conversation.id, business.id, "user", payload.message, db)
+    response = await process_message_with_agent(conversation, business, payload.message, db)
+    conversation_service.save_message(conversation.id, business.id, "assistant", response, db)
+    return TestChatResponse(conversation_id=conversation.id, response=response)
 
 
 @router.get("/configuration", response_model=BusinessConfiguration)
