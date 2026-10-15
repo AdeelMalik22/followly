@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import JSONResponse
 import asyncio
 from sqlalchemy.orm import Session
 import secrets
@@ -18,8 +19,32 @@ from app.services.conversation_engine import process_message_with_agent
 from app.services.business_config_service import get_business_configuration, save_business_configuration
 from app.services.integration_health_service import check_calendar_health, check_whatsapp_health
 from app.services.usage_service import enforce_plan_limit, plan_limits
+from app.services.tenant_data_service import delete_tenant_data, export_tenant_data
+from app.schemas.tenant_data import TenantDeletionRequest
 
 router = APIRouter(prefix="/api/v1/business", tags=["business"])
+
+
+@router.get("/data-export")
+def data_export(
+    business: Business = Depends(get_current_business),
+    _authorized_user=Depends(require_business_roles("owner")),
+    db: Session = Depends(get_db),
+):
+    return JSONResponse(content=export_tenant_data(business.id, db))
+
+
+@router.delete("/account")
+def delete_account(
+    payload: TenantDeletionRequest,
+    business: Business = Depends(get_current_business),
+    _authorized_user=Depends(require_business_roles("owner")),
+    db: Session = Depends(get_db),
+):
+    if payload.confirmation != business.name:
+        raise HTTPException(status_code=400, detail="Confirmation must match the business name")
+    delete_tenant_data(business.id, db)
+    return {"status": "deleted"}
 
 
 @router.post("/test-chat", response_model=TestChatResponse)
