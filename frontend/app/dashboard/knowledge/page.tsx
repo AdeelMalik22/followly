@@ -107,15 +107,15 @@ export default function KnowledgeBasePage() {
   const filteredEntries = entries.filter((e) => e.category === activeCategory);
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-[1500px] space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-extrabold text-white">Knowledge Base</h1>
-          <p className="text-sm text-[#7b8aa8]">Manage the answers, policies, and FAQs the AI agent uses to consult clients.</p>
+          <h1 className="text-2xl font-bold tracking-[-0.02em] text-[#17213b]">Knowledge Base</h1>
+          <p className="text-sm text-[#7e8aa1]">Add your FAQs, product information, and business details for accurate AI answers.</p>
         </div>
         <button
           onClick={openAddModal}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#5d7ef0] text-white font-semibold text-sm hover:bg-[#4169e1] transition-all"
+          className="flex items-center gap-2 rounded-xl bg-[#3678f6] px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-blue-200 hover:bg-[#2568e4]"
         >
           <Plus className="w-4 h-4" />
           Add Entry
@@ -132,17 +132,17 @@ export default function KnowledgeBasePage() {
               onClick={() => setActiveCategory(cat.id)}
               className={`p-4 rounded-xl border text-left transition-all relative overflow-hidden ${
                 activeCategory === cat.id
-                  ? "bg-white/[0.04] border-[#5d7ef0] shadow-lg shadow-[#5d7ef0]/5"
-                  : "bg-white/[0.01] border-white/[0.08] hover:border-white/[0.15] hover:bg-white/[0.02]"
+                  ? "border-[#9fc0ff] bg-[#f1f6ff] shadow-sm"
+                  : "border-[#e7ecf4] bg-white hover:border-[#b9c9e3] hover:bg-[#fbfcfe]"
               }`}
             >
               <div className="flex justify-between items-start mb-2">
-                <span className="text-xs font-bold text-[#7b8aa8] uppercase tracking-wider">{cat.name}</span>
-                <span className="text-xs font-semibold px-2 py-0.5 rounded bg-white/[0.06] text-[#aab4cb]">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#53617a]">{cat.name}</span>
+                <span className="rounded bg-white px-2 py-0.5 text-xs font-semibold text-[#7e8aa1]">
                   {count}
                 </span>
               </div>
-              <p className="text-[10px] text-[#7b8aa8] leading-normal">{cat.desc}</p>
+              <p className="text-[10px] leading-normal text-[#8b97ab]">{cat.desc}</p>
             </button>
           );
         })}
@@ -154,15 +154,15 @@ export default function KnowledgeBasePage() {
           <div className="w-8 h-8 border-4 border-t-[#5d7ef0] border-white/[0.08] rounded-full animate-spin" />
         </div>
       ) : filteredEntries.length === 0 ? (
-        <div className="text-center py-20 bg-white/[0.01] border border-white/[0.08] rounded-2xl">
-          <BookOpen className="w-12 h-12 text-[#7b8aa8] mx-auto mb-4 opacity-50" />
-          <h3 className="text-base font-bold text-white mb-1">No Entries in {categories.find((c) => c.id === activeCategory)?.name}</h3>
-          <p className="text-xs text-[#7b8aa8] max-w-sm mx-auto mb-6">
+        <div className="rounded-2xl border border-[#e7ecf4] bg-white py-20 text-center shadow-[0_5px_20px_rgba(35,55,90,0.04)]">
+          <BookOpen className="mx-auto mb-4 h-12 w-12 text-[#9aa5b8] opacity-50" />
+          <h3 className="mb-1 text-base font-bold text-[#17213b]">No entries in {categories.find((c) => c.id === activeCategory)?.name}</h3>
+          <p className="mx-auto mb-6 max-w-sm text-xs text-[#7e8aa1]">
             Configure answers for this category to ensure your AI agent replies accurately.
           </p>
           <button
             onClick={openAddModal}
-            className="px-4 py-2 rounded-xl bg-white/[0.06] border border-white/[0.08] text-white text-xs font-semibold hover:bg-white/[0.1] transition-all"
+            className="rounded-xl border border-[#dfe6f1] bg-white px-4 py-2 text-xs font-semibold text-[#3678f6] hover:bg-[#f4f7fc]"
           >
             Create first entry
           </button>
@@ -172,26 +172,26 @@ export default function KnowledgeBasePage() {
           {filteredEntries.map((entry) => (
             <div
               key={entry.id}
-              className="bg-white/[0.02] border border-white/[0.08] p-6 rounded-2xl relative group transition-all hover:bg-white/[0.03] hover:border-white/[0.12]"
+              className="group relative rounded-2xl border border-[#e7ecf4] bg-white p-6 shadow-[0_5px_20px_rgba(35,55,90,0.04)] transition hover:border-[#b9c9e3]"
             >
               <div className="flex justify-between items-start gap-4 mb-3">
-                <h3 className="font-bold text-sm text-white leading-relaxed">{entry.question}</h3>
+                <h3 className="text-sm font-bold leading-relaxed text-[#34415d]">{entry.question}</h3>
                 <div className="flex gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={() => openEditModal(entry)}
-                    className="p-1.5 rounded-lg bg-white/[0.05] border border-white/[0.08] text-[#aab4cb] hover:text-[#5d7ef0] hover:bg-white/[0.1]"
+                    className="rounded-lg border border-[#e7ecf4] bg-white p-1.5 text-[#8b97ab] hover:bg-[#f1f6ff] hover:text-[#3678f6]"
                   >
                     <Edit2 className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => handleDelete(entry.id)}
-                    className="p-1.5 rounded-lg bg-white/[0.05] border border-white/[0.08] text-[#aab4cb] hover:text-red-400 hover:bg-white/[0.1]"
+                    className="rounded-lg border border-[#e7ecf4] bg-white p-1.5 text-[#8b97ab] hover:bg-red-50 hover:text-red-500"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
-              <p className="text-xs text-[#7b8aa8] leading-relaxed whitespace-pre-wrap">{entry.answer}</p>
+              <p className="whitespace-pre-wrap text-xs leading-relaxed text-[#7e8aa1]">{entry.answer}</p>
             </div>
           ))}
         </div>
