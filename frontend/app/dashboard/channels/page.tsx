@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import toast from "react-hot-toast";
 import { apiFetch } from "@/lib/api";
-import { MessageSquare, Calendar, Code, Copy, Check } from "lucide-react";
+import { MessageSquare, Calendar, Code, Copy, Check, ShieldCheck, ArrowRight, CircleAlert } from "lucide-react";
 
 export default function ChannelsPage() {
   const [copied, setCopied] = useState(false);
@@ -13,8 +13,18 @@ export default function ChannelsPage() {
   const [accessToken, setAccessToken] = useState("");
   const [whatsappLoading, setWhatsappLoading] = useState(false);
   const [showAdvancedWhatsapp, setShowAdvancedWhatsapp] = useState(false);
+  const [calendarLoading, setCalendarLoading] = useState(false);
+  const [calendarSetupError, setCalendarSetupError] = useState(() => (
+    typeof window !== "undefined" && new URLSearchParams(window.location.search).get("calendar") === "error"
+      ? "Google could not complete the connection. Please try again or contact your workspace administrator."
+      : ""
+  ));
 
   React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("calendar") === "connected") {
+      toast.success("Google Calendar connected successfully.");
+    }
     apiFetch<{ connected: boolean }>("/api/v1/calendar/status")
       .then((data) => setCalendarConnected(data.connected))
       .catch((err) => toast.error(err.message || "Unable to load calendar status."));
@@ -162,6 +172,26 @@ export default function ChannelsPage() {
           </div>
 
           <div className="space-y-4">
+            {!calendarConnected && (
+              <div className="space-y-3 rounded-xl border border-blue-100 bg-blue-50 p-4">
+                <div className="flex items-start gap-3">
+                  <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
+                  <div>
+                    <p className="text-xs font-bold text-blue-900">Followly handles the setup</p>
+                    <p className="mt-1 text-[11px] leading-5 text-blue-800">
+                      You will be taken to Google for a secure permission check. You do not need to create a Google Cloud project or copy any technical settings.
+                    </p>
+                  </div>
+                </div>
+                {calendarSetupError && (
+                  <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-[11px] leading-5 text-amber-900">
+                    <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>{calendarSetupError}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
             {calendarConnected && (
               <div className="space-y-1 rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] p-3">
                 <span className="block text-[9px] font-bold uppercase text-[#8b97ab]">Connected Calendar</span>
@@ -172,7 +202,10 @@ export default function ChannelsPage() {
             )}
 
             <button
+              disabled={calendarLoading}
               onClick={async () => {
+                setCalendarLoading(true);
+                setCalendarSetupError("");
                 try {
                   if (calendarConnected) {
                     await apiFetch("/api/v1/calendar/disconnect", { method: "DELETE" });
@@ -183,16 +216,22 @@ export default function ChannelsPage() {
                     window.location.href = data.authorization_url;
                   }
                 } catch (err) {
-                  toast.error(err instanceof Error ? err.message : "Unable to update calendar connection.");
+                  const message = err instanceof Error ? err.message : "Unable to update calendar connection.";
+                  setCalendarSetupError(message.includes("not configured") || message.includes("403")
+                    ? "Google Calendar is being prepared by Followly. Please contact support to finish enabling this connection."
+                    : message);
+                  toast.error("Unable to connect Google Calendar.");
+                } finally {
+                  setCalendarLoading(false);
                 }
               }}
-              className={`w-full py-2.5 rounded-xl font-semibold text-xs transition-all ${
+              className={`flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-semibold transition-all disabled:cursor-wait disabled:opacity-60 ${
                 calendarConnected
                   ? "border border-red-100 bg-red-50 text-red-600 hover:bg-red-100"
                   : "bg-[#3678f6] text-white hover:bg-[#2568e4]"
               }`}
             >
-                  {calendarConnected ? "Disconnect Calendar" : "Link Google Calendar"}
+                  {calendarLoading ? "Opening Google..." : calendarConnected ? "Disconnect Calendar" : <>Connect Google Calendar <ArrowRight className="h-3.5 w-3.5" /></>}
             </button>
           </div>
         </div>
