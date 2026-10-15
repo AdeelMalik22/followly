@@ -1,141 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
+import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { ArrowRight, Bot, CalendarCheck, CheckCircle2, Eye, EyeOff, MessageCircle } from "lucide-react";
 import { setAuthToken } from "@/lib/auth";
 import { apiFetch } from "@/lib/api";
 import toast from "react-hot-toast";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [remember, setRemember] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const router = useRouter();
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !password) {
-      toast.error("Please enter both email and password.");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const data = await apiFetch<{ access_token: string }>("/api/v1/auth/login", {
-        method: "POST",
-        body: JSON.stringify({ email, password }),
-      });
-
-      setAuthToken(data.access_token, remember);
-      toast.success("Successfully logged in!");
-      
-      // Let AuthProvider refresh status and handle redirect to dashboard or onboarding
-      router.push("/dashboard");
-    } catch (err: any) {
-      toast.error(err.message || "Invalid credentials.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="relative min-h-screen flex items-center justify-center p-4 bg-[#070b14] overflow-hidden">
-      {/* Background orbs */}
-      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-[rgba(65,105,225,0.15)] blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-[rgba(93,126,240,0.1)] blur-[120px] pointer-events-none" />
-
-      <div className="w-full max-w-md bg-white/[0.03] border border-white/[0.08] rounded-2xl p-8 backdrop-blur-md shadow-2xl">
-        <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#5d7ef0] to-[#8b5cf6] flex items-center justify-center font-extrabold text-lg shadow-[0_0_20px_rgba(93,126,240,0.3)]">
-            F
-          </div>
-          <span className="text-xl font-bold tracking-tight">Followly</span>
-        </div>
-
-        <h1 className="text-2xl font-extrabold text-center mb-1">Welcome back</h1>
-        <p className="text-[#7b8aa8] text-sm text-center mb-8">Sign in to your account to continue</p>
-
-        <form onSubmit={handleLogin} className="space-y-6">
-          <div>
-            <label className="block text-xs font-semibold text-[#aab4cb] mb-2 uppercase tracking-wider">
-              Email Address
-            </label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">✉</span>
-              <input
-                type="email"
-                placeholder="you@business.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-white/[0.06] border border-white/[0.08] rounded-xl py-3 pl-10 pr-4 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#5d7ef0] focus:ring-2 focus:ring-[#5d7ef0]/20 transition-all"
-                required
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-[#aab4cb] mb-2 uppercase tracking-wider">
-              Password
-            </label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">🔒</span>
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder="Your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-white/[0.06] border border-white/[0.08] rounded-xl py-3 pl-10 pr-12 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#5d7ef0] focus:ring-2 focus:ring-[#5d7ef0]/20 transition-all"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
-              >
-                {showPassword ? "🙈" : "👁"}
-              </button>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <label className="flex items-center gap-2 text-sm text-[#7b8aa8] cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={remember}
-                onChange={(e) => setRemember(e.target.checked)}
-                className="rounded border-white/[0.08] bg-white/[0.06] text-[#5d7ef0] focus:ring-[#5d7ef0]/20 cursor-pointer"
-              />
-              Remember me
-            </label>
-            <a href="#" className="text-sm font-semibold text-[#5d7ef0] hover:text-[#7c9cf8] transition-colors">
-              Forgot password?
-            </a>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#5d7ef0] to-[#7c5cf6] text-white font-semibold text-sm hover:opacity-90 active:scale-[0.98] shadow-lg shadow-[#5d7ef0]/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-          >
-            {loading ? "Signing in..." : "Sign in"}
-          </button>
-        </form>
-
-        <div className="flex items-center my-6">
-          <div className="flex-1 h-px bg-white/[0.08]" />
-          <span className="text-xs text-[#7b8aa8] px-3">Don't have an account?</span>
-          <div className="flex-1 h-px bg-white/[0.08]" />
-        </div>
-
-        <p className="text-center text-sm text-[#7b8aa8]">
-          <Link href="/signup" className="font-semibold text-[#5d7ef0] hover:text-[#7c9cf8] transition-colors">
-            Create a free account →
-          </Link>
-        </p>
-      </div>
-    </div>
-  );
+  const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [remember, setRemember] = useState(false); const [loading, setLoading] = useState(false); const [visible, setVisible] = useState(false); const router = useRouter();
+  const submit = async (event: FormEvent) => { event.preventDefault(); setLoading(true); try { const data = await apiFetch<{ access_token: string }>("/api/v1/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }); setAuthToken(data.access_token, remember); router.push("/dashboard"); } catch (error) { toast.error(error instanceof Error ? error.message : "Invalid credentials."); } finally { setLoading(false); } };
+  return <main className="min-h-screen bg-[#f7f9fc] p-4 lg:p-8"><div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-6xl overflow-hidden rounded-[28px] border border-[#e5eaf2] bg-white shadow-[0_20px_60px_rgba(35,55,90,0.08)] lg:grid-cols-2"><section className="hidden bg-gradient-to-br from-[#edf4ff] via-white to-[#f2efff] p-12 lg:flex lg:flex-col lg:justify-between"><div><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#3678f6] text-xl font-black text-white">↗</div><span className="text-2xl font-bold text-[#17213b]">Followly</span></div><div className="mt-20 max-w-md"><p className="mb-4 text-sm font-semibold text-[#3678f6]">Your AI teammate for every conversation</p><h2 className="text-4xl font-bold leading-tight tracking-[-0.04em] text-[#17213b]">Turn every customer question into an opportunity.</h2><p className="mt-5 text-sm leading-6 text-[#71809a]">Capture leads, answer questions, and book appointments while your team focuses on the work that matters.</p><div className="mt-8 space-y-4">{[[MessageCircle, "Capture and qualify leads"], [CalendarCheck, "Book appointments automatically"], [Bot, "Answer customers 24/7"]].map(([Icon, label]) => <div key={label as string} className="flex items-center gap-3 text-sm font-semibold text-[#34415d]"><span className="rounded-full bg-white p-2 text-[#3678f6] shadow-sm"><Icon className="h-4 w-4" /></span>{label as string}</div>)}</div></div></div><p className="text-xs text-[#8b97ab]">Small conversations create big opportunities.</p></section><section className="flex items-center justify-center p-7 sm:p-12"><div className="w-full max-w-md"><div className="mb-10 lg:hidden"><span className="text-2xl font-bold text-[#17213b]">Followly</span></div><p className="mb-2 text-sm font-semibold text-[#3678f6]">Welcome back</p><h1 className="text-3xl font-bold tracking-[-0.03em] text-[#17213b]">Sign in to your workspace</h1><p className="mt-2 text-sm text-[#8b97ab]">Pick up where you left off with your AI teammate.</p><form onSubmit={submit} className="mt-8 space-y-5"><label className="block"><span className="mb-2 block text-xs font-bold text-[#53617a]">Email address</span><input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" className="w-full rounded-xl border border-[#dfe6f1] bg-[#fbfcfe] px-4 py-3 text-sm text-[#17213b] outline-none placeholder:text-[#a5afbf] focus:border-[#3678f6] focus:ring-4 focus:ring-blue-50" /></label><label className="block"><span className="mb-2 block text-xs font-bold text-[#53617a]">Password</span><span className="relative block"><input type={visible ? "text" : "password"} required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter your password" className="w-full rounded-xl border border-[#dfe6f1] bg-[#fbfcfe] px-4 py-3 pr-12 text-sm text-[#17213b] outline-none placeholder:text-[#a5afbf] focus:border-[#3678f6] focus:ring-4 focus:ring-blue-50" /><button type="button" onClick={() => setVisible(!visible)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8b97ab]">{visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></span></label><div className="flex items-center justify-between text-xs"><label className="flex items-center gap-2 text-[#71809a]"><input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="rounded border-[#dfe6f1] text-[#3678f6]" />Remember me</label><Link href="/recover" className="font-semibold text-[#3678f6]">Forgot password?</Link></div><button disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#3678f6] py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-200 transition hover:bg-[#2568e4] disabled:opacity-50">{loading ? "Signing in..." : "Sign in"}<ArrowRight className="h-4 w-4" /></button></form><div className="mt-8 flex items-center gap-3 text-xs text-[#a0aabd]"><span className="h-px flex-1 bg-[#edf0f5]" />or<span className="h-px flex-1 bg-[#edf0f5]" /></div><p className="mt-8 text-center text-sm text-[#71809a]">Don&apos;t have an account? <Link href="/signup" className="font-bold text-[#3678f6]">Create a free account</Link></p><div className="mt-8 flex items-center justify-center gap-2 text-[11px] text-[#8b97ab]"><CheckCircle2 className="h-4 w-4 text-emerald-500" />No credit card required to start</div></div></section></div></main>;
 }
