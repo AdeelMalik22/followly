@@ -41,22 +41,22 @@ export default function AppointmentsPage() {
   }, [statusFilter]);
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-[1500px] space-y-6">
       <div>
-        <h1 className="text-2xl font-extrabold text-white">Appointments</h1>
-        <p className="text-sm text-[#7b8aa8]">Day-to-day operational view of bookings and appointments scheduled by the AI.</p>
+        <h1 className="text-2xl font-bold tracking-[-0.02em] text-[#17213b]">Appointments</h1>
+        <p className="text-sm text-[#7e8aa1]">Manage, schedule, and track your customer meetings.</p>
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex gap-2 border-b border-white/[0.08] pb-px overflow-x-auto scrollbar-none">
+      <div className="flex gap-2 overflow-x-auto border-b border-[#e7ecf4] pb-px scrollbar-none">
         {statusTabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setStatusFilter(tab.id)}
             className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-b-2 whitespace-nowrap transition-all ${
               statusFilter === tab.id
-                ? "border-[#5d7ef0] text-white"
-                : "border-transparent text-[#7b8aa8] hover:text-white"
+                ? "border-[#3678f6] text-[#1764db]"
+                : "border-transparent text-[#8b97ab] hover:text-[#34415d]"
             }`}
           >
             {tab.name}
@@ -70,27 +70,27 @@ export default function AppointmentsPage() {
           <div className="w-8 h-8 border-4 border-t-[#5d7ef0] border-white/[0.08] rounded-full animate-spin" />
         </div>
       ) : appointments.length === 0 ? (
-        <div className="text-center py-20 bg-white/[0.01] border border-white/[0.08] rounded-2xl">
-          <Calendar className="w-12 h-12 text-[#7b8aa8] mx-auto mb-4 opacity-50" />
-          <h3 className="text-base font-bold text-white mb-1">No Appointments Found</h3>
-          <p className="text-xs text-[#7b8aa8] max-w-sm mx-auto">
+        <div className="rounded-2xl border border-[#e7ecf4] bg-white py-20 text-center shadow-[0_5px_20px_rgba(35,55,90,0.04)]">
+          <Calendar className="mx-auto mb-4 h-12 w-12 text-[#9aa5b8] opacity-50" />
+          <h3 className="mb-1 text-base font-bold text-[#17213b]">No appointments found</h3>
+          <p className="mx-auto max-w-sm text-xs text-[#7e8aa1]">
             When the AI scheduling agent qualifies a lead, upcoming bookings will appear here.
           </p>
         </div>
       ) : (
-        <div className="bg-white/[0.01] border border-white/[0.08] rounded-2xl overflow-hidden shadow-xl">
+        <div className="overflow-hidden rounded-2xl border border-[#e7ecf4] bg-white shadow-[0_5px_20px_rgba(35,55,90,0.04)]">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-white/[0.08] bg-white/[0.02]">
-                  <th className="p-4 text-[10px] font-bold text-[#7b8aa8] uppercase tracking-wider">Lead / Client</th>
-                  <th className="p-4 text-[10px] font-bold text-[#7b8aa8] uppercase tracking-wider">Service</th>
-                  <th className="p-4 text-[10px] font-bold text-[#7b8aa8] uppercase tracking-wider">Date &amp; Time</th>
-                  <th className="p-4 text-[10px] font-bold text-[#7b8aa8] uppercase tracking-wider">Status</th>
-                  <th className="p-4 text-[10px] font-bold text-[#7b8aa8] uppercase tracking-wider">Created</th>
+                <tr className="border-b border-[#eef1f6] bg-[#fbfcfe]">
+                  <th className="p-4 text-[10px] font-bold uppercase tracking-wider text-[#8b97ab]">Lead / Client</th>
+                  <th className="p-4 text-[10px] font-bold uppercase tracking-wider text-[#8b97ab]">Service</th>
+                  <th className="p-4 text-[10px] font-bold uppercase tracking-wider text-[#8b97ab]">Date &amp; Time</th>
+                  <th className="p-4 text-[10px] font-bold uppercase tracking-wider text-[#8b97ab]">Status</th>
+                  <th className="p-4 text-[10px] font-bold uppercase tracking-wider text-[#8b97ab]">Created</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/[0.04]">
+              <tbody className="divide-y divide-[#eef1f6]">
                 {appointments.map((appt) => {
                   let formattedDate = "";
                   let formattedTime = "";
@@ -104,24 +104,24 @@ export default function AppointmentsPage() {
                   }
 
                   return (
-                    <tr key={appt.id} className="hover:bg-white/[0.01] transition-colors">
+                    <tr key={appt.id} className="hover:bg-[#fbfcfe]">
                       <td className="p-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-[#7b8aa8]">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full border border-[#dfe6f1] bg-[#f4f7fc] text-[#7e8aa1]">
                             <User className="w-4 h-4" />
                           </div>
                           <div>
-                            <span className="block text-xs font-bold text-white">
+                            <span className="block text-xs font-bold text-[#34415d]">
                               {appt.lead?.name || "Unknown"}
                             </span>
-                            <span className="block text-[10px] text-[#7b8aa8]">
+                            <span className="block text-[10px] text-[#8b97ab]">
                               {appt.lead?.phone || appt.lead?.email || "No contact"}
                             </span>
                           </div>
                         </div>
                       </td>
                       <td className="p-4">
-                        <span className="text-xs font-semibold text-white capitalize">
+                        <span className="text-xs font-semibold capitalize text-[#53617a]">
                           {appt.service || "General Consultation"}
                         </span>
                       </td>
@@ -129,8 +129,8 @@ export default function AppointmentsPage() {
                         <div className="flex items-center gap-2">
                           <Clock className="w-3.5 h-3.5 text-[#5d7ef0]" />
                           <div>
-                            <span className="block text-xs font-semibold text-white">{formattedDate}</span>
-                            <span className="block text-[10px] text-[#7b8aa8]">{formattedTime}</span>
+                            <span className="block text-xs font-semibold text-[#34415d]">{formattedDate}</span>
+                            <span className="block text-[10px] text-[#8b97ab]">{formattedTime}</span>
                           </div>
                         </div>
                       </td>
@@ -138,19 +138,19 @@ export default function AppointmentsPage() {
                         <span
                           className={`text-[9px] font-bold px-2.5 py-1 rounded-full border uppercase tracking-wider ${
                             appt.status === "scheduled"
-                              ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                              ? "border-blue-100 bg-blue-50 text-blue-700"
                               : appt.status === "completed"
-                              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                              ? "border-emerald-100 bg-emerald-50 text-emerald-700"
                               : appt.status === "cancelled"
-                              ? "bg-red-500/10 text-red-400 border-red-500/20"
-                              : "bg-white/[0.06] text-[#aab4cb] border-white/[0.08]"
+                              ? "border-red-100 bg-red-50 text-red-700"
+                              : "border-[#e7ecf4] bg-[#f7f9fc] text-[#7e8aa1]"
                           }`}
                         >
                           {appt.status}
                         </span>
                       </td>
                       <td className="p-4">
-                        <span className="text-[10px] text-[#7b8aa8]">
+                        <span className="text-[10px] text-[#8b97ab]">
                           {new Date(appt.created_at).toLocaleDateString()}
                         </span>
                       </td>
