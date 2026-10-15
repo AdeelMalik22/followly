@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth-provider";
 import { clearAuthToken } from "@/lib/auth";
 import {
@@ -38,6 +38,7 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -49,7 +50,7 @@ export default function Sidebar() {
 
   const handleLogout = () => {
     clearAuthToken();
-    window.location.href = "/login";
+    router.push("/login");
   };
 
   return (
