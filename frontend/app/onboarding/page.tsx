@@ -155,26 +155,26 @@ export default function OnboardingPage() {
   if (!user) return null;
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center p-4 bg-[#070b14] overflow-hidden">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#f7f9fc] p-4">
       {/* Background orbs */}
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-[rgba(65,105,225,0.15)] blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-[rgba(93,126,240,0.1)] blur-[120px] pointer-events-none" />
 
-      <div className="w-full max-w-2xl bg-white/[0.03] border border-white/[0.08] rounded-2xl p-8 backdrop-blur-md shadow-2xl">
+      <div className="w-full max-w-4xl rounded-[28px] border border-[#e5eaf2] bg-white p-8 shadow-[0_20px_60px_rgba(35,55,90,0.08)]">
         {/* Step Indicator */}
-        <div className="flex items-center justify-between mb-8 pb-4 border-b border-white/[0.08]">
+        <div className="mb-8 flex items-center justify-between border-b border-[#eef1f6] pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#5d7ef0] to-[#8b5cf6] flex items-center justify-center font-extrabold text-sm shadow-[0_0_15px_rgba(93,126,240,0.3)]">
-              F
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#3678f6] text-sm font-extrabold text-white shadow-lg shadow-blue-200">
+              ↗
             </div>
-            <span className="font-bold text-sm text-[#7b8aa8]">Followly Onboarding</span>
+            <span className="text-sm font-bold text-[#34415d]">Set up your AI teammate</span>
           </div>
           <div className="flex gap-2">
             {[1, 2, 3, 4, 5, 6].map((s) => (
               <div
                 key={s}
                 className={`h-1.5 w-10 rounded-full transition-all ${
-                  step >= s ? "bg-[#5d7ef0]" : "bg-white/[0.08]"
+                  step >= s ? "bg-[#3678f6]" : "bg-[#e7ecf4]"
                 }`}
               />
             ))}
@@ -186,29 +186,29 @@ export default function OnboardingPage() {
           <div className="space-y-6">
             <div>
               <h2 className="text-xl font-bold mb-2">Welcome to Followly!</h2>
-              <p className="text-sm text-[#7b8aa8]">Let's confirm your business details before getting started.</p>
+              <p className="text-sm text-[#7e8aa1]">Let&apos;s confirm your business details before getting started.</p>
             </div>
 
-            <div className="space-y-4 bg-white/[0.02] p-5 rounded-xl border border-white/[0.05]">
+            <div className="space-y-4 rounded-2xl border border-[#e7ecf4] bg-[#fbfcfe] p-5">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <span className="block text-[11px] font-bold text-[#7b8aa8] uppercase">Account Owner</span>
-                  <input value={ownerName} onChange={(e) => setOwnerName(e.target.value)} className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg py-2 px-3 text-sm text-white" />
+                  <span className="block text-[11px] font-bold uppercase text-[#8b97ab]">Account Owner</span>
+                  <input value={ownerName} onChange={(e) => setOwnerName(e.target.value)} className="w-full rounded-lg border border-[#dfe6f1] bg-white px-3 py-2 text-sm text-[#34415d]" />
                 </div>
                 <div>
-                  <span className="block text-[11px] font-bold text-[#7b8aa8] uppercase">Email Address</span>
-                  <span className="text-sm font-semibold">{user.email}</span>
+                  <span className="block text-[11px] font-bold uppercase text-[#8b97ab]">Email Address</span>
+                  <span className="text-sm font-semibold text-[#53617a]">{user.email}</span>
                 </div>
               </div>
               <hr className="border-white/[0.05]" />
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <span className="block text-[11px] font-bold text-[#7b8aa8] uppercase">Business Name</span>
-                  <input value={businessName} onChange={(e) => setBusinessName(e.target.value)} className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg py-2 px-3 text-sm text-white" />
+                  <span className="block text-[11px] font-bold uppercase text-[#8b97ab]">Business Name</span>
+                  <input value={businessName} onChange={(e) => setBusinessName(e.target.value)} className="w-full rounded-lg border border-[#dfe6f1] bg-white px-3 py-2 text-sm text-[#34415d]" />
                 </div>
                 <div>
-                  <span className="block text-[11px] font-bold text-[#7b8aa8] uppercase">Industry</span>
-                  <select value={industry} onChange={(e) => setIndustry(e.target.value)} className="w-full bg-[#131929] border border-white/[0.08] rounded-lg py-2 px-3 text-sm text-white">
+                  <span className="block text-[11px] font-bold uppercase text-[#8b97ab]">Industry</span>
+                  <select value={industry} onChange={(e) => setIndustry(e.target.value)} className="w-full rounded-lg border border-[#dfe6f1] bg-white px-3 py-2 text-sm text-[#34415d]">
                     <option>Dental Clinic</option><option>Medical Clinic</option><option>Salon &amp; Spa</option><option>Law Firm</option><option>Real Estate</option><option>Fitness &amp; Gym</option><option>Other</option>
                   </select>
                 </div>
