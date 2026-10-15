@@ -20,6 +20,7 @@ from app.api.billing import router as billing_router
 from app.api.customer_auth import router as customer_auth_router
 from app.api.team import router as team_router
 from app.api.knowledge_sources import router as knowledge_sources_router
+from app.api.inventory import router as inventory_router
 from app.core.config import settings
 from app.core.logging import configure_logging, correlation_id_var, tenant_id_var
 from app.core.security import decode_access_token
@@ -103,6 +104,7 @@ app.include_router(billing_router)
 app.include_router(customer_auth_router)
 app.include_router(team_router)
 app.include_router(knowledge_sources_router)
+app.include_router(inventory_router)
 
 @app.get("/")
 def read_root():
