@@ -10,7 +10,7 @@ export default function Header() {
   if (!user) return null;
 
   return (
-    <header className="sticky top-0 z-20 flex h-[72px] flex-shrink-0 items-center justify-between border-b border-[#dce4ef] bg-white px-4 shadow-[0_2px_12px_rgba(35,55,90,0.04)] sm:px-8">
+    <header className="sticky top-0 z-20 flex h-[72px] flex-shrink-0 items-center justify-between border-b border-[#cbd6e5] bg-white px-4 shadow-[0_3px_14px_rgba(35,55,90,0.07)] sm:px-8">
       <div className="flex items-center gap-3 sm:gap-6">
         <button aria-label="Open navigation" onClick={() => window.dispatchEvent(new Event("followly:open-menu"))} className="rounded-xl p-2 text-[#66738d] hover:bg-[#f4f7fc] md:hidden"><Menu className="h-5 w-5" /></button>
         <div className="hidden md:flex items-center gap-2 rounded-xl border border-[#d5deeb] bg-[#f7f9fc] px-3 py-2 w-80">
