@@ -53,13 +53,13 @@ export default function ChannelsPage() {
     } catch (err: any) { toast.error(err.message || "Unable to disconnect WhatsApp."); }
   };
 
-  const [widgetKey, setWidgetKey] = useState("");
+  const [widgetEmbedCode, setWidgetEmbedCode] = useState("");
   React.useEffect(() => {
-    apiFetch<{ widget_key: string }>("/api/v1/business/widget-config")
-      .then((data) => setWidgetKey(data.widget_key))
+    apiFetch<{ widget_key: string; embed_code: string }>("/api/v1/business/widget-config")
+      .then((data) => setWidgetEmbedCode(data.embed_code))
       .catch((err) => toast.error(err.message || "Unable to load widget configuration."));
   }, []);
-  const embedCode = widgetKey ? `<script src="https://cdn.followly.ai/widget.js" data-business-key="${widgetKey}" defer></script>` : "Loading your business widget key...";
+  const embedCode = widgetEmbedCode || "Loading your business widget configuration...";
 
   const handleCopy = () => {
     navigator.clipboard.writeText(embedCode);
