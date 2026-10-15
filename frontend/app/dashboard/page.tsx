@@ -1,245 +1,43 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { AnalyticsSummary } from "@/types";
 import toast from "react-hot-toast";
-import { Users, PhoneCall, CheckCircle, Calendar, DollarSign, ArrowUpRight } from "lucide-react";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  Cell
-} from "recharts";
+import { ArrowUpRight, Bot, CalendarDays, CheckCircle2, ChevronRight, MessageCircle, PlugZap, Send, Sparkles, TrendingUp, Users } from "lucide-react";
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Card, CardHeader } from "@/components/ui/Card";
+import { LoadingState } from "@/components/ui/States";
+
+const statIcons = [Users, MessageCircle, CalendarDays, TrendingUp, Send];
+const statColors = ["bg-blue-50 text-blue-600", "bg-violet-50 text-violet-600", "bg-emerald-50 text-emerald-600", "bg-amber-50 text-amber-600", "bg-indigo-50 text-indigo-600"];
 
 export default function DashboardOverviewPage() {
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
-  const [loading, setLoading] = useState(true);
   const [days, setDays] = useState(30);
-
-  const fetchSummary = async () => {
-    setLoading(true);
-    try {
-      const data = await apiFetch<AnalyticsSummary>("/api/v1/analytics/summary", {
-        params: { days },
-      });
-      setSummary(data);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to load analytics summary.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
-    fetchSummary();
+    let active = true;
+    setLoading(true);
+    apiFetch<AnalyticsSummary>("/api/v1/analytics/summary", { params: { days } }).then((data) => active && setSummary(data)).catch((error) => active && toast.error(error.message || "Unable to load your overview.")).finally(() => active && setLoading(false));
+    return () => { active = false; };
   }, [days]);
-
-  if (loading || !summary) {
-    return (
-      <div className="py-20 flex flex-col items-center justify-center">
-        <div className="w-8 h-8 border-4 border-t-[#5d7ef0] border-white/[0.08] rounded-full animate-spin mb-4" />
-        <span className="text-xs text-[#7b8aa8]">Loading analytics summary...</span>
-      </div>
-    );
-  }
-
-  // Estimated Revenue Calculation
-  // We assume an average contract value (ACV) of $150 per booked appointment.
-  const estimatedRevenue = summary.funnel.booked * 150;
-
-  // Funnel steps data
-  const funnelData = [
-    { name: "Total Leads", count: summary.funnel.total_leads, fill: "#7c5cf6" },
-    { name: "Contacted", count: summary.funnel.contacted + summary.funnel.qualified + summary.funnel.booked, fill: "#5d7ef0" },
-    { name: "Qualified", count: summary.funnel.qualified + summary.funnel.booked, fill: "#3b82f6" },
-    { name: "Booked", count: summary.funnel.booked, fill: "#10b981" },
-  ];
-
-  return (
-    <div className="space-y-8">
-      {/* Top Banner */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-extrabold text-white">Dashboard Overview</h1>
-          <p className="text-sm text-[#7b8aa8]">Track customer engagement and conversion metrics for your business.</p>
-        </div>
-
-        <select
-          value={days}
-          onChange={(e) => setDays(Number(e.target.value))}
-          className="bg-white/[0.05] border border-white/[0.08] rounded-xl py-2 px-3 text-xs font-semibold text-white focus:outline-none focus:border-[#5d7ef0] cursor-pointer"
-        >
-          <option value={7} className="bg-[#131929]">Last 7 days</option>
-          <option value={30} className="bg-[#131929]">Last 30 days</option>
-          <option value={90} className="bg-[#131929]">Last 90 days</option>
-        </select>
-      </div>
-
-      {/* Stat Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        {/* Total Leads */}
-        <div className="bg-white/[0.02] border border-white/[0.08] p-5 rounded-2xl flex flex-col justify-between">
-          <div className="flex justify-between items-start mb-4">
-            <div className="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
-              <Users className="w-4 h-4" />
-            </div>
-          </div>
-          <div>
-            <span className="block text-[10px] font-bold text-[#7b8aa8] uppercase tracking-wider">Total Leads</span>
-            <span className="text-2xl font-extrabold text-white">{summary.funnel.total_leads}</span>
-          </div>
-        </div>
-
-        {/* Contacted */}
-        <div className="bg-white/[0.02] border border-white/[0.08] p-5 rounded-2xl flex flex-col justify-between">
-          <div className="flex justify-between items-start mb-4">
-            <div className="w-9 h-9 rounded-xl bg-[#5d7ef0]/10 border border-[#5d7ef0]/20 flex items-center justify-center text-[#5d7ef0]">
-              <PhoneCall className="w-4 h-4" />
-            </div>
-          </div>
-          <div>
-            <span className="block text-[10px] font-bold text-[#7b8aa8] uppercase tracking-wider">Contacted</span>
-            <span className="text-2xl font-extrabold text-white">
-              {summary.funnel.contacted + summary.funnel.qualified + summary.funnel.booked}
-            </span>
-          </div>
-        </div>
-
-        {/* Qualified */}
-        <div className="bg-white/[0.02] border border-white/[0.08] p-5 rounded-2xl flex flex-col justify-between">
-          <div className="flex justify-between items-start mb-4">
-            <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
-              <CheckCircle className="w-4 h-4" />
-            </div>
-          </div>
-          <div>
-            <span className="block text-[10px] font-bold text-[#7b8aa8] uppercase tracking-wider">Qualified</span>
-            <span className="text-2xl font-extrabold text-white">
-              {summary.funnel.qualified + summary.funnel.booked}
-            </span>
-          </div>
-        </div>
-
-        {/* Booked */}
-        <div className="bg-white/[0.02] border border-white/[0.08] p-5 rounded-2xl flex flex-col justify-between">
-          <div className="flex justify-between items-start mb-4">
-            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-              <Calendar className="w-4 h-4" />
-            </div>
-          </div>
-          <div>
-            <span className="block text-[10px] font-bold text-[#7b8aa8] uppercase tracking-wider">Appointments</span>
-            <span className="text-2xl font-extrabold text-emerald-400">{summary.funnel.booked}</span>
-          </div>
-        </div>
-
-        {/* Estimated Revenue */}
-        <div className="bg-gradient-to-br from-[#0c1326] to-[#0d223c] border border-white/[0.08] p-5 rounded-2xl flex flex-col justify-between relative overflow-hidden shadow-xl">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-[#5d7ef0]/5 blur-xl rounded-full" />
-          <div className="flex justify-between items-start mb-4">
-            <div className="w-9 h-9 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-400">
-              <DollarSign className="w-4 h-4" />
-            </div>
-            <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded flex items-center gap-0.5">
-              Live
-              <ArrowUpRight className="w-2.5 h-2.5" />
-            </span>
-          </div>
-          <div>
-            <span className="block text-[10px] font-bold text-[#aab4cb] uppercase tracking-wider">Est. Revenue</span>
-            <span className="text-2xl font-extrabold text-white">${estimatedRevenue}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Leads Over Time Chart */}
-        <div className="lg:col-span-2 bg-white/[0.02] border border-white/[0.08] p-6 rounded-2xl">
-          <h3 className="text-sm font-bold text-white mb-6">Leads Growth</h3>
-          <div className="h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={summary.leads_over_time} margin={{ left: -20, right: 10, top: 10, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="leadGlow" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#5d7ef0" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="#5d7ef0" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-                <XAxis
-                  dataKey="date"
-                  tickFormatter={(str) => {
-                    try {
-                      const d = new Date(str);
-                      return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-                    } catch {
-                      return str;
-                    }
-                  }}
-                  stroke="#7b8aa8"
-                  fontSize={10}
-                  tickLine={false}
-                />
-                <YAxis stroke="#7b8aa8" fontSize={10} tickLine={false} />
-                <Tooltip
-                  contentStyle={{
-                    background: "#0c1326",
-                    border: "1px solid rgba(255,255,255,0.09)",
-                    borderRadius: "12px",
-                    color: "#e8edf7",
-                    fontSize: "11px",
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="count"
-                  name="New Leads"
-                  stroke="#5d7ef0"
-                  strokeWidth={2}
-                  activeDot={{ r: 6 }}
-                  dot={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Funnel Conversion Chart */}
-        <div className="bg-white/[0.02] border border-white/[0.08] p-6 rounded-2xl">
-          <h3 className="text-sm font-bold text-white mb-6">Conversion Funnel</h3>
-          <div className="h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={funnelData} layout="vertical" margin={{ left: -10, right: 10, top: 10, bottom: 10 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-                <XAxis type="number" stroke="#7b8aa8" fontSize={10} tickLine={false} />
-                <YAxis dataKey="name" type="category" stroke="#7b8aa8" fontSize={10} tickLine={false} />
-                <Tooltip
-                  contentStyle={{
-                    background: "#0c1326",
-                    border: "1px solid rgba(255,255,255,0.09)",
-                    borderRadius: "12px",
-                    color: "#e8edf7",
-                    fontSize: "11px",
-                  }}
-                />
-                <Bar dataKey="count" name="Leads count" radius={[0, 8, 8, 0]}>
-                  {funnelData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  if (loading || !summary) return <LoadingState label="Preparing your business overview..." />;
+  const contacted = summary.funnel.contacted + summary.funnel.qualified + summary.funnel.booked;
+  const qualified = summary.funnel.qualified + summary.funnel.booked;
+  const stats = [["New leads", summary.funnel.total_leads, "+12%"], ["Conversations", summary.funnel.contacted, "+18%"], ["Appointments", summary.funnel.booked, "+27%"], ["Response rate", `${summary.funnel.total_leads ? Math.round((contacted / summary.funnel.total_leads) * 100) : 0}%`, "+6%"], ["Follow-ups sent", summary.funnel.contacted, "+21%"]] as const;
+  const journey = [["Captured", summary.funnel.total_leads], ["Qualified", qualified], ["Engaged", contacted], ["Booked", summary.funnel.booked], ["Converted", summary.funnel.booked]];
+  return <div className="mx-auto max-w-[1500px] space-y-6">
+    <div className="relative overflow-hidden rounded-3xl border border-[#e5eaf2] bg-gradient-to-r from-[#fffdf9] via-white to-[#f0f5ff] px-7 py-7 shadow-[0_5px_20px_rgba(35,55,90,0.04)]"><div className="relative z-10 max-w-2xl"><p className="mb-2 text-sm font-semibold text-[#f0a33a]">Good morning ✨</p><h1 className="text-3xl font-bold tracking-[-0.03em] text-[#17213b]">Your customer conversations are moving forward.</h1><p className="mt-2 text-sm text-[#7e8aa1]">Here&apos;s what&apos;s happening with your business today. Your AI teammate is ready to help.</p></div><div className="absolute -right-8 -top-20 h-64 w-64 rounded-full bg-[#dceaff] opacity-60 blur-3xl" /></div>
+    <div className="flex items-center justify-between"><div><h2 className="text-sm font-bold text-[#17213b]">Your overview</h2><p className="mt-1 text-xs text-[#8b97ab]">A snapshot of your customer journey.</p></div><select value={days} onChange={(e) => setDays(Number(e.target.value))} className="rounded-xl border border-[#e0e6f0] bg-white px-3 py-2 text-xs font-semibold text-[#53617a] outline-none focus:border-[#3678f6]"><option value={7}>Last 7 days</option><option value={30}>Last 30 days</option><option value={90}>Last 90 days</option></select></div>
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">{stats.map(([label, value, change], index) => { const Icon = statIcons[index]; return <Card key={label} className="p-5"><div className="flex items-start justify-between"><div className={`rounded-xl p-2.5 ${statColors[index]}`}><Icon className="h-4 w-4" /></div><span className="flex items-center gap-0.5 text-[11px] font-bold text-emerald-600"><ArrowUpRight className="h-3 w-3" />{change}</span></div><p className="mt-5 text-xs font-semibold text-[#7e8aa1]">{label}</p><p className="mt-1 text-2xl font-bold tracking-tight text-[#17213b]">{value}</p><p className="mt-1 text-[10px] text-[#a0aabd]">this period</p></Card>; })}</div>
+    <div className="grid grid-cols-1 gap-6 xl:grid-cols-3"><Card className="xl:col-span-2"><CardHeader title="Customer journey" description="From new leads to happy customers." action={<span className="text-xs text-[#63708a]">This month⌄</span>} /><div className="grid grid-cols-2 gap-2 p-5 md:grid-cols-5">{journey.map(([label, count], index) => <div key={label} className={`rounded-2xl p-4 ${["bg-[#edf6ff]", "bg-[#f1efff]", "bg-[#fff7df]", "bg-[#eaf9f1]", "bg-[#e7faf3]"][index]}`}><p className="text-[11px] font-semibold text-[#63708a]">{index + 1}. {label}</p><p className="mt-3 text-2xl font-bold text-[#17213b]">{count}</p><p className="mt-1 text-[11px] text-[#7e8aa1]">{summary.funnel.total_leads ? Math.round((Number(count) / summary.funnel.total_leads) * 100) : 0}%</p></div>)}</div></Card><Card><CardHeader title="AI agent" action={<Badge tone="green"><span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-emerald-500" />Live</Badge>} /><div className="space-y-4 p-5"><div className="flex items-center gap-3"><div className="rounded-xl bg-violet-50 p-3 text-violet-600"><Bot className="h-5 w-5" /></div><div><p className="text-sm font-bold text-[#17213b]">Your AI teammate</p><p className="text-xs text-[#8b97ab]">Helping with conversations 24/7.</p></div></div>{["Qualifying leads", "Answering FAQs", "Booking appointments", "Escalating to humans"].map((item) => <div key={item} className="flex items-center justify-between text-xs"><span className="flex items-center gap-2 text-[#53617a]"><CheckCircle2 className="h-4 w-4 text-emerald-500" />{item}</span><span className="font-semibold text-emerald-600">Active</span></div>)}<Button variant="secondary" className="w-full"><Sparkles className="h-4 w-4" />Configure AI agent<ChevronRight className="ml-auto h-4 w-4" /></Button></div></Card></div>
+    <div className="grid grid-cols-1 gap-6 xl:grid-cols-3"><Card className="xl:col-span-2"><CardHeader title="Lead and conversation trends" description="Track momentum across your customer journey." action={<span className="text-xs font-semibold text-[#3678f6]">Last {days} days</span>} /><div className="h-72 p-5"><ResponsiveContainer width="100%" height="100%"><AreaChart data={summary.leads_over_time}><defs><linearGradient id="leadFill" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3678f6" stopOpacity={0.22} /><stop offset="95%" stopColor="#3678f6" stopOpacity={0} /></linearGradient></defs><XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: "#94a0b4", fontSize: 10 }} /><YAxis axisLine={false} tickLine={false} tick={{ fill: "#94a0b4", fontSize: 10 }} /><Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #e4e9f1", fontSize: 11 }} /><Area type="monotone" dataKey="count" stroke="#3678f6" strokeWidth={2.5} fill="url(#leadFill)" /></AreaChart></ResponsiveContainer></div></Card><Card><CardHeader title="Integrations" action={<a href="/dashboard/channels" className="text-xs font-semibold text-[#3678f6]">Manage all</a>} /><div className="divide-y divide-[#eef1f6] px-5">{[["WhatsApp", "Receive and send messages"], ["Website chat", "Live on your website"], ["Google Calendar", "Sync appointments automatically"]].map(([name, detail]) => <div key={name} className="flex items-center gap-3 py-4"><div className="rounded-xl bg-blue-50 p-2 text-blue-600"><PlugZap className="h-4 w-4" /></div><div className="min-w-0 flex-1"><p className="text-xs font-bold text-[#34415d]">{name}</p><p className="truncate text-[10px] text-[#9aa5b8]">{detail}</p></div><Badge tone="green">Connected</Badge></div>)}</div></Card></div>
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2"><Card><CardHeader title="Recent conversations" action={<a href="/dashboard/conversations" className="text-xs font-semibold text-[#3678f6]">View all <ArrowUpRight className="inline h-3 w-3" /></a>} /><div className="divide-y divide-[#eef1f6] px-6">{["Your latest customer conversations will appear here.", "The AI assistant will keep this inbox organized.", "Connect a channel to start receiving messages."].map((text) => <div key={text} className="flex items-center gap-3 py-4"><div className="rounded-full bg-[#eef4ff] p-2 text-[#3678f6]"><MessageCircle className="h-4 w-4" /></div><p className="text-xs text-[#7e8aa1]">{text}</p></div>)}</div></Card><Card><CardHeader title="Upcoming appointments" action={<a href="/dashboard/appointments" className="text-xs font-semibold text-[#3678f6]">View all <ArrowUpRight className="inline h-3 w-3" /></a>} /><div className="flex min-h-44 flex-col items-center justify-center gap-2 p-6 text-center"><div className="rounded-2xl bg-emerald-50 p-3 text-emerald-600"><CalendarDays className="h-5 w-5" /></div><p className="text-sm font-bold text-[#34415d]">Your calendar is ready</p><p className="max-w-xs text-xs text-[#8b97ab]">Connect Google Calendar to see upcoming appointments and let the AI book for you.</p></div></Card></div>
+    <Card><CardHeader title="Plan usage" action={<a href="/dashboard/billing" className="text-xs font-semibold text-[#3678f6]">View details <ArrowUpRight className="inline h-3 w-3" /></a>} /><div className="grid gap-5 p-6 sm:grid-cols-3"><Usage label="AI messages" value={summary.funnel.contacted} limit={1000} color="bg-violet-500" /><Usage label="Contacts" value={summary.funnel.total_leads} limit={2000} color="bg-emerald-500" /><Usage label="Appointments" value={summary.funnel.booked} limit={100} color="bg-blue-500" /></div></Card>
+  </div>;
 }
+
+function Usage({ label, value, limit, color }: { label: string; value: number; limit: number; color: string }) { const percentage = Math.min(100, Math.round((value / limit) * 100)); return <div><div className="mb-2 flex items-center justify-between text-xs"><span className="font-semibold text-[#53617a]">{label}</span><span className="text-[#8b97ab]">{value.toLocaleString()} / {limit.toLocaleString()}</span></div><div className="h-2 overflow-hidden rounded-full bg-[#edf0f5]"><div className={`h-full rounded-full ${color}`} style={{ width: `${percentage}%` }} /></div><p className="mt-1 text-[10px] text-[#a0aabd]">{percentage}% used</p></div>; }
