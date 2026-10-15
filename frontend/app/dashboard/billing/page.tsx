@@ -1,49 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ArrowRight, Check, CreditCard, Crown, History, X } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { BillingStatus, ConfigurationAudit } from "@/types";
 import toast from "react-hot-toast";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Card, CardHeader } from "@/components/ui/Card";
+import { LoadingState } from "@/components/ui/States";
+
+const plans = [{ name: "Starter", price: "$29", features: ["5,000 AI messages", "5 team members", "3 channels"] }, { name: "Growth", price: "$79", features: ["25,000 AI messages", "20 team members", "5 channels"] }, { name: "Business", price: "$199", features: ["Unlimited conversations", "Advanced automation", "Priority support"] }];
 
 export default function BillingPage() {
-  const [billing, setBilling] = useState<BillingStatus | null>(null);
-  const [audits, setAudits] = useState<ConfigurationAudit[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    Promise.all([
-      apiFetch<BillingStatus>("/api/v1/billing/status"),
-      apiFetch<ConfigurationAudit[]>("/api/v1/business/configuration/audit"),
-    ]).then(([status, history]) => { setBilling(status); setAudits(history); })
-      .catch((error) => toast.error(error.message || "Unable to load usage details."))
-      .finally(() => setLoading(false));
-  }, []);
-
-  const startCheckout = async () => {
-    try {
-      const result = await apiFetch<{ checkout_url: string }>("/api/v1/billing/checkout", { method: "POST" });
-      window.location.href = result.checkout_url;
-    } catch (error: any) { toast.error(error.message || "Unable to start checkout."); }
-  };
-
-  const cancelSubscription = async () => {
-    if (!window.confirm("Cancel at the end of the current billing period?")) return;
-    try {
-      await apiFetch("/api/v1/billing/cancel", { method: "POST" });
-      setBilling((current) => current ? { ...current, status: "cancelling" } : current);
-      toast.success("Your subscription will cancel at the end of the billing period.");
-    } catch (error: any) { toast.error(error.message || "Unable to cancel subscription."); }
-  };
-
-  if (loading || !billing) return <div className="py-20 text-center text-[#7b8aa8]">Loading usage and billing...</div>;
-  const percent = (name: string) => billing.limits[name] ? Math.min(100, Math.round((billing.usage[name] || 0) / billing.limits[name] * 100)) : 0;
-
-  return <div className="space-y-8">
-    <div><h1 className="text-2xl font-extrabold text-white">Usage &amp; Billing</h1><p className="text-sm text-[#7b8aa8]">Monitor consumption, plan limits, and configuration history.</p></div>
-    <section className="bg-white/[0.02] border border-white/[0.08] rounded-2xl p-6">
-      <div className="flex justify-between items-start"><div><p className="text-xs uppercase text-[#7b8aa8]">Current plan</p><h2 className="text-2xl font-bold text-white mt-1">{billing.plan}</h2><p className="text-sm text-[#aab4cb] mt-1">Subscription: {billing.status}</p></div><div className="flex gap-2"><button onClick={startCheckout} className="rounded-xl bg-[#5d7ef0] px-4 py-2 text-sm font-semibold text-white">Upgrade plan</button>{billing.subscription_id && billing.status !== "cancelling" && <button onClick={cancelSubscription} className="rounded-xl border border-red-400/30 px-4 py-2 text-sm font-semibold text-red-300">Cancel</button>}</div></div>
-      <div className="grid gap-4 md:grid-cols-3 mt-6">{Object.keys(billing.limits).map((name) => <div key={name} className="rounded-xl bg-white/[0.04] p-4"><div className="flex justify-between text-xs text-[#aab4cb]"><span>{name.replace("_", " ")}</span><span>{billing.usage[name] || 0} / {billing.limits[name]}</span></div><div className="h-2 rounded-full bg-white/[0.08] mt-3"><div className="h-2 rounded-full bg-[#5d7ef0]" style={{ width: `${percent(name)}%` }} /></div></div>)}</div>
-    </section>
-    <section className="bg-white/[0.02] border border-white/[0.08] rounded-2xl p-6"><h2 className="text-sm font-bold text-white">Configuration audit history</h2><div className="mt-4 space-y-3">{audits.length === 0 ? <p className="text-sm text-[#7b8aa8]">No configuration changes recorded.</p> : audits.map((audit) => <div key={audit.id} className="flex justify-between border-b border-white/[0.06] pb-3 text-sm"><span className="text-[#aab4cb]">Configuration snapshot #{audit.id}</span><span className="text-[#7b8aa8]">{new Date(audit.created_at).toLocaleString()}</span></div>)}</div></section>
-  </div>;
+  const [billing, setBilling] = useState<BillingStatus | null>(null); const [audits, setAudits] = useState<ConfigurationAudit[]>([]); const [loading, setLoading] = useState(true);
+  useEffect(() => { Promise.all([apiFetch<BillingStatus>("/api/v1/billing/status"), apiFetch<ConfigurationAudit[]>("/api/v1/business/configuration/audit")]).then(([status, history]) => { setBilling(status); setAudits(history); }).catch((error) => toast.error(error.message || "Unable to load billing details.")).finally(() => setLoading(false)); }, []);
+  if (loading || !billing) return <LoadingState label="Loading plan and usage details..." />;
+  const percent = (name: string) => billing.limits[name] ? Math.min(100, Math.round(((billing.usage[name] || 0) / billing.limits[name]) * 100)) : 0;
+  const checkout = async () => { try { const result = await apiFetch<{ checkout_url: string }>("/api/v1/billing/checkout", { method: "POST" }); window.location.href = result.checkout_url; } catch (error) { toast.error(error instanceof Error ? error.message : "Unable to start checkout."); } };
+  const cancel = async () => { if (!window.confirm("Cancel at the end of the current billing period?")) return; try { await apiFetch("/api/v1/billing/cancel", { method: "POST" }); setBilling({ ...billing, status: "cancelling" }); toast.success("Your subscription will cancel at the end of the billing period."); } catch (error) { toast.error(error instanceof Error ? error.message : "Unable to cancel subscription."); } };
+  return <div className="mx-auto max-w-[1500px] space-y-6"><div><p className="mb-2 text-sm font-semibold text-[#3678f6]">Workspace finances</p><h1 className="text-2xl font-bold tracking-[-0.02em] text-[#17213b]">Billing &amp; Subscription</h1><p className="mt-1.5 text-sm text-[#7e8aa1]">Manage your plan, payment details, and usage limits.</p></div><Card className="overflow-hidden"><div className="flex flex-col justify-between gap-6 bg-gradient-to-r from-[#f0f5ff] to-[#f8f5ff] p-7 md:flex-row md:items-center"><div className="flex items-center gap-4"><div className="rounded-2xl bg-white p-3 text-violet-600 shadow-sm"><Crown className="h-6 w-6" /></div><div><p className="text-xs font-semibold uppercase tracking-wider text-[#7e8aa1]">Current plan</p><h2 className="mt-1 text-2xl font-bold text-[#17213b]">{billing.plan.replace("_", " ")}</h2><p className="mt-1 text-xs text-[#7e8aa1]">Subscription status: <span className="font-semibold text-emerald-600">{billing.status}</span></p></div></div><div className="flex gap-3"><Button onClick={checkout}>Upgrade plan <ArrowRight className="h-4 w-4" /></Button>{billing.subscription_id && billing.status !== "cancelling" && <Button variant="danger" onClick={cancel}>Cancel subscription</Button>}</div></div><div className="grid gap-4 p-6 md:grid-cols-3">{Object.keys(billing.limits).map((name) => <div key={name} className="rounded-2xl border border-[#eef1f6] bg-[#fbfcfe] p-4"><div className="flex justify-between text-xs"><span className="font-semibold capitalize text-[#53617a]">{name.replaceAll("_", " ")}</span><span className="text-[#8b97ab]">{billing.usage[name] || 0} / {billing.limits[name]}</span></div><div className="mt-3 h-2 overflow-hidden rounded-full bg-[#e8edf5]"><div className="h-full rounded-full bg-[#3678f6]" style={{ width: `${percent(name)}%` }} /></div><p className="mt-1 text-[10px] text-[#a0aabd]">{percent(name)}% used</p></div>)}</div></Card><Card><CardHeader title="Plan options" description="Choose the plan that fits your growing customer conversations." /><div className="grid gap-4 p-6 md:grid-cols-3">{plans.map((plan) => <div key={plan.name} className={`rounded-2xl border p-5 ${billing.plan.toLowerCase().includes(plan.name.toLowerCase()) ? "border-[#8eb3ff] bg-[#f1f6ff]" : "border-[#e7ecf4] bg-white"}`}><div className="flex items-center justify-between"><h3 className="font-bold text-[#34415d]">{plan.name}</h3>{billing.plan.toLowerCase().includes(plan.name.toLowerCase()) && <Badge tone="blue">Current</Badge>}</div><p className="mt-4 text-2xl font-bold text-[#17213b]">{plan.price}<span className="text-xs font-normal text-[#8b97ab"> / month</span></p><div className="mt-5 space-y-3">{plan.features.map((feature) => <p key={feature} className="flex items-center gap-2 text-xs text-[#71809a]"><Check className="h-4 w-4 text-emerald-500" />{feature}</p>)}</div><Button variant="secondary" className="mt-6 w-full" onClick={checkout}>{billing.plan.toLowerCase().includes(plan.name.toLowerCase()) ? "Current plan" : "Choose plan"}</Button></div>)}</div></Card><Card><CardHeader title="Configuration history" action={<History className="h-4 w-4 text-[#8b97ab]" />} /><div className="divide-y divide-[#eef1f6] px-6">{audits.length === 0 ? <p className="py-8 text-sm text-[#8b97ab]">No configuration changes recorded.</p> : audits.map((audit) => <div key={audit.id} className="flex justify-between gap-4 py-4 text-sm"><span className="flex items-center gap-2 text-[#53617a]"><CreditCard className="h-4 w-4 text-[#3678f6]" />Configuration snapshot #{audit.id}</span><span className="text-xs text-[#8b97ab]">{new Date(audit.created_at).toLocaleString()}</span></div>)}</div></Card></div>;
 }
