@@ -22,8 +22,6 @@ export default function OnboardingPage() {
   const [ownerName, setOwnerName] = useState(user?.name || "");
   const [calendarConnected, setCalendarConnected] = useState(false);
   const [whatsappConnected, setWhatsappConnected] = useState(false);
-  const [phoneNumberId, setPhoneNumberId] = useState("");
-  const [accessToken, setAccessToken] = useState("");
   const days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
   const [hours, setHours] = useState<Record<string, { open: boolean; start: string; end: string }>>(Object.fromEntries(days.map((day) => [day, { open: day !== "sunday", start: "09:00", end: "17:00" }])));
   const [duration, setDuration] = useState(60);
@@ -46,7 +44,7 @@ export default function OnboardingPage() {
     apiFetch<{ connected: boolean }>("/api/v1/calendar/status").then((data) => setCalendarConnected(data.connected)).catch(() => {});
     apiFetch<{ working_hours: typeof hours; appointment_duration_minutes: number }>("/api/v1/business/booking-settings").then((data) => { if (Object.keys(data.working_hours || {}).length) setHours(data.working_hours); setDuration(data.appointment_duration_minutes); }).catch(() => {});
     apiFetch<typeof escalation>("/api/v1/business/escalation-settings").then(setEscalation).catch(() => {});
-    apiFetch<{ connected: boolean; phone_number_id?: string }>("/api/v1/whatsapp/status").then((data) => { setWhatsappConnected(data.connected); setPhoneNumberId(data.phone_number_id || ""); }).catch(() => {});
+    apiFetch<{ connected: boolean }>("/api/v1/whatsapp/status").then((data) => { setWhatsappConnected(data.connected); }).catch(() => {});
   }, [user]);
 
   // KB inputs
@@ -324,12 +322,8 @@ export default function OnboardingPage() {
         {step === 5 && (
           <div className="space-y-6 py-6">
             <h2 className="text-xl font-bold">Connect WhatsApp Business</h2>
-            <p className="text-sm text-[#7e8aa1]">Enter the Meta Phone Number ID and access token for this business.</p>
-            {whatsappConnected ? <div className="text-sm font-semibold text-emerald-400">✓ WhatsApp connected</div> : <>
-              <input value={phoneNumberId} onChange={(e) => setPhoneNumberId(e.target.value)} placeholder="Meta Phone Number ID" className="w-full rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] p-3 text-sm text-[#17213b]" />
-              <input type="password" value={accessToken} onChange={(e) => setAccessToken(e.target.value)} placeholder="Meta access token" className="w-full rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] p-3 text-sm text-[#17213b]" />
-              <button onClick={async () => { if (!phoneNumberId || !accessToken) { toast.error("Enter both WhatsApp values."); return; } try { await apiFetch("/api/v1/whatsapp/credentials", { method: "PUT", body: JSON.stringify({ phone_number_id: phoneNumberId, access_token: accessToken }) }); setWhatsappConnected(true); setAccessToken(""); toast.success("WhatsApp connected."); } catch (err) { toast.error(err instanceof Error ? err.message : "Unable to connect WhatsApp."); } }} className="w-full py-3 rounded-xl bg-[#5d7ef0] text-white font-semibold text-sm">Connect WhatsApp</button>
-            </>}
+            <p className="text-sm text-[#7e8aa1]">Followly can connect your WhatsApp Business account for you. You can also finish this connection later from Channels.</p>
+            {whatsappConnected ? <div className="text-sm font-semibold text-emerald-600">✓ WhatsApp connected</div> : <div className="rounded-xl border border-blue-100 bg-blue-50 p-4 text-xs leading-5 text-blue-800">WhatsApp connection is optional during setup. Skip this step if your account has not been provisioned by Meta yet, and a workspace administrator can complete it later.</div>}
             <button onClick={() => setStep(6)} className="w-full rounded-xl border border-[#dfe6f1] bg-white py-3 text-sm font-semibold text-[#53617a] hover:bg-[#f7f9fc]">{whatsappConnected ? "Continue" : "Skip for now"} →</button>
           </div>
         )}
