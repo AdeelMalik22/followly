@@ -122,15 +122,15 @@ export default function FollowUpRulesPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-[1500px] space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-extrabold text-white">Follow-up Rules</h1>
-          <p className="text-sm text-[#7b8aa8]">Configure cadences and text message templates the AI agent uses to re-engage cold leads.</p>
+          <h1 className="text-2xl font-bold tracking-[-0.02em] text-[#17213b]">Follow-up Automation</h1>
+          <p className="text-sm text-[#7e8aa1]">Create automated follow-ups to nurture leads and never miss a conversation.</p>
         </div>
         <button
           onClick={openAddModal}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#5d7ef0] text-white font-semibold text-sm hover:bg-[#4169e1] transition-all"
+          className="flex items-center gap-2 rounded-xl bg-[#3678f6] px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-blue-200 hover:bg-[#2568e4]"
         >
           <Plus className="w-4 h-4" />
           Add Rule
@@ -142,15 +142,15 @@ export default function FollowUpRulesPage() {
           <div className="w-8 h-8 border-4 border-t-[#5d7ef0] border-white/[0.08] rounded-full animate-spin" />
         </div>
       ) : rules.length === 0 ? (
-        <div className="text-center py-20 bg-white/[0.01] border border-white/[0.08] rounded-2xl">
-          <RefreshCw className="w-12 h-12 text-[#7b8aa8] mx-auto mb-4 opacity-50" />
-          <h3 className="text-base font-bold text-white mb-1">No Follow-up Rules</h3>
-          <p className="text-xs text-[#7b8aa8] max-w-sm mx-auto mb-6">
+        <div className="rounded-2xl border border-[#e7ecf4] bg-white py-20 text-center shadow-[0_5px_20px_rgba(35,55,90,0.04)]">
+          <RefreshCw className="mx-auto mb-4 h-12 w-12 text-[#9aa5b8] opacity-50" />
+          <h3 className="mb-1 text-base font-bold text-[#17213b]">No follow-up rules</h3>
+          <p className="mx-auto mb-6 max-w-sm text-xs text-[#7e8aa1]">
             Add a follow-up cadence rule to automatically message new or cold clients after a specified delay.
           </p>
           <button
             onClick={openAddModal}
-            className="px-4 py-2 rounded-xl bg-white/[0.06] border border-white/[0.08] text-white text-xs font-semibold hover:bg-white/[0.1] transition-all"
+            className="rounded-xl border border-[#dfe6f1] bg-white px-4 py-2 text-xs font-semibold text-[#3678f6] hover:bg-[#f4f7fc]"
           >
             Create first rule
           </button>
@@ -160,18 +160,18 @@ export default function FollowUpRulesPage() {
           {rules.map((rule) => (
             <div
               key={rule.id}
-              className="bg-white/[0.02] border border-white/[0.08] p-6 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-all hover:bg-white/[0.03] hover:border-white/[0.12]"
+              className="flex flex-col items-start justify-between gap-4 rounded-2xl border border-[#e7ecf4] bg-white p-6 shadow-[0_5px_20px_rgba(35,55,90,0.04)] transition hover:border-[#b9c9e3] md:flex-row md:items-center"
             >
               <div className="space-y-2 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-[#5d7ef0] bg-[#5d7ef0]/10 border border-[#5d7ef0]/20 px-2 py-0.5 rounded uppercase tracking-wider">
+                  <span className="rounded border border-blue-100 bg-blue-50 px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-blue-700">
                     {rule.trigger_condition.replace("_", " ")}
                   </span>
-                  <span className="text-xs text-[#7b8aa8]">
-                    Send after <strong className="text-white">{rule.delay_hours} hours</strong>
+                  <span className="text-xs text-[#8b97ab]">
+                    Send after <strong className="text-[#53617a]">{rule.delay_hours} hours</strong>
                   </span>
                 </div>
-                <p className="text-xs text-[#e8edf7] italic leading-relaxed">
+                <p className="text-xs italic leading-relaxed text-[#53617a]">
                   &ldquo;{rule.message_template}&rdquo;
                 </p>
               </div>
@@ -184,8 +184,8 @@ export default function FollowUpRulesPage() {
                     onChange={() => handleToggleActive(rule)}
                     className="sr-only peer"
                   />
-                  <div className="w-9 h-5 bg-white/[0.1] rounded-full peer peer-focus:ring-0 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#5d7ef0]" />
-                  <span className="ml-2 text-xs font-bold text-[#7b8aa8] uppercase">
+                  <div className="h-5 w-9 rounded-full bg-[#dfe6f1] after:absolute after:left-[2px] after:top-0.5 after:h-4 after:w-4 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:bg-[#3678f6] peer-checked:after:translate-x-full" />
+                  <span className="ml-2 text-xs font-bold uppercase text-[#8b97ab]">
                     {rule.active === 1 ? "Active" : "Paused"}
                   </span>
                 </label>
@@ -193,13 +193,13 @@ export default function FollowUpRulesPage() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => openEditModal(rule)}
-                    className="p-1.5 rounded-lg bg-white/[0.05] border border-white/[0.08] text-[#aab4cb] hover:text-[#5d7ef0] hover:bg-white/[0.1] transition-all"
+                    className="rounded-lg border border-[#e7ecf4] bg-white p-1.5 text-[#8b97ab] hover:bg-[#f1f6ff] hover:text-[#3678f6]"
                   >
                     <Edit2 className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => handleDelete(rule.id)}
-                    className="p-1.5 rounded-lg bg-white/[0.05] border border-white/[0.08] text-[#aab4cb] hover:text-red-400 hover:bg-white/[0.1] transition-all"
+                    className="rounded-lg border border-[#e7ecf4] bg-white p-1.5 text-[#8b97ab] hover:bg-red-50 hover:text-red-500"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
