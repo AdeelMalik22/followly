@@ -48,3 +48,39 @@ def test_processing_event_is_not_applied_twice():
     db.add(StripeWebhookEvent(event_id=event["id"], event_type=event["type"], status="processing"))
     db.commit()
     assert process_stripe_event(event, db) is False
+
+
+def test_subscription_deleted_suspends_tenant_and_preserves_known_plan():
+    db = make_session()
+    business = Business(
+        name="Cancelled Business",
+        industry="Other",
+        plan_code="growth",
+        stripe_subscription_id="sub_cancelled",
+    )
+    db.add(business)
+    db.commit()
+    event = {
+        "id": "evt_deleted",
+        "type": "customer.subscription.deleted",
+        "data": {"object": {"id": "sub_cancelled", "status": "canceled"}},
+    }
+    process_stripe_event(event, db)
+    db.refresh(business)
+    assert business.subscription_status == "cancelled"
+    assert business.lifecycle_status == "suspended"
+    assert business.plan_code == "growth"
+
+
+def test_stripe_payment_action_required_marks_subscription_past_due():
+    db = make_session()
+    business = Business(name="Action Required", industry="Other", stripe_subscription_id="sub_action")
+    db.add(business)
+    db.commit()
+    event = {
+        "id": "evt_action_required",
+        "type": "invoice.payment_action_required",
+        "data": {"object": {"subscription": "sub_action"}},
+    }
+    process_stripe_event(event, db)
+    assert business.subscription_status == "past_due"

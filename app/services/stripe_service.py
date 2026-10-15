@@ -25,7 +25,7 @@ def _business_for_event(event_object, db: Session) -> Business | None:
     return query.filter(Business.stripe_subscription_id == subscription_id).first()
 
 
-def _plan_from_subscription(subscription) -> str:
+def _plan_from_subscription(subscription) -> str | None:
     metadata = _value(subscription, "metadata", {}) or {}
     if metadata.get("plan_code") in PLAN_LIMITS:
         return metadata["plan_code"]
@@ -34,8 +34,33 @@ def _plan_from_subscription(subscription) -> str:
     if data:
         price = _value(data[0], "price", {}) or {}
         price_metadata = _value(price, "metadata", {}) or {}
-        return price_metadata.get("plan_code", "starter")
-    return "starter"
+        return price_metadata.get("plan_code")
+    return None
+
+
+def _sync_subscription_period(business: Business, subscription) -> None:
+    period_start = _value(subscription, "current_period_start")
+    period_end = _value(subscription, "current_period_end")
+    if period_start and period_end:
+        business.usage_period_start = datetime.utcfromtimestamp(period_start)
+        business.usage_period_end = datetime.utcfromtimestamp(period_end)
+
+
+def _apply_subscription_state(business: Business, subscription, event_type: str) -> None:
+    status = _value(subscription, "status") or "active"
+    if event_type.endswith("deleted"):
+        status = "cancelled"
+    business.stripe_customer_id = _value(subscription, "customer") or business.stripe_customer_id
+    business.stripe_subscription_id = _value(subscription, "id") or business.stripe_subscription_id
+    plan = _plan_from_subscription(subscription)
+    if plan in PLAN_LIMITS:
+        business.plan_code = plan
+    business.subscription_status = status
+    if status in {"active", "trialing"}:
+        business.lifecycle_status = "active"
+    elif status in {"canceled", "cancelled", "unpaid", "incomplete_expired"}:
+        business.lifecycle_status = "suspended"
+    _sync_subscription_period(business, subscription)
 
 
 def _apply_stripe_event(event: dict, db: Session, record: StripeWebhookEvent) -> None:
@@ -50,17 +75,7 @@ def _apply_stripe_event(event: dict, db: Session, record: StripeWebhookEvent) ->
 
     if business:
         if event_type.startswith("customer.subscription."):
-            business.stripe_customer_id = _value(event_object, "customer") or business.stripe_customer_id
-            business.stripe_subscription_id = _value(event_object, "id") or business.stripe_subscription_id
-            business.plan_code = _plan_from_subscription(event_object)
-            status = _value(event_object, "status", "active")
-            business.subscription_status = "cancelled" if event_type.endswith("deleted") else status
-            business.lifecycle_status = "active" if status in {"active", "trialing"} else business.lifecycle_status
-            period_start = _value(event_object, "current_period_start")
-            period_end = _value(event_object, "current_period_end")
-            if period_start and period_end:
-                business.usage_period_start = datetime.utcfromtimestamp(period_start)
-                business.usage_period_end = datetime.utcfromtimestamp(period_end)
+            _apply_subscription_state(business, event_object, event_type)
         elif event_type == "checkout.session.completed":
             business.stripe_customer_id = _value(event_object, "customer") or business.stripe_customer_id
             business.stripe_subscription_id = _value(event_object, "subscription") or business.stripe_subscription_id
@@ -68,8 +83,11 @@ def _apply_stripe_event(event: dict, db: Session, record: StripeWebhookEvent) ->
             business.lifecycle_status = "active"
         elif event_type == "invoice.payment_failed":
             business.subscription_status = "past_due"
+        elif event_type in {"invoice.finalization_failed", "invoice.payment_action_required"}:
+            business.subscription_status = "past_due"
         elif event_type == "invoice.payment_succeeded":
-            business.subscription_status = "active"
+            if business.subscription_status not in {"cancelled", "canceled", "unpaid"}:
+                business.subscription_status = "active"
     db.commit()
 
 
