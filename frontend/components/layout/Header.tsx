@@ -10,11 +10,11 @@ export default function Header() {
   if (!user) return null;
 
   return (
-    <header className="sticky top-0 z-20 flex h-[72px] flex-shrink-0 items-center justify-between border-b border-[#e8edf5] bg-white px-4 sm:px-8">
+    <header className="sticky top-0 z-20 flex h-[72px] flex-shrink-0 items-center justify-between border-b border-[#dce4ef] bg-white px-4 shadow-[0_2px_12px_rgba(35,55,90,0.04)] sm:px-8">
       <div className="flex items-center gap-3 sm:gap-6">
         <button aria-label="Open navigation" onClick={() => window.dispatchEvent(new Event("followly:open-menu"))} className="rounded-xl p-2 text-[#66738d] hover:bg-[#f4f7fc] md:hidden"><Menu className="h-5 w-5" /></button>
-        <div className="hidden md:flex items-center gap-2 rounded-xl border border-[#e5eaf2] bg-[#fafbfe] px-3 py-2 w-80">
-          <Search className="w-4 h-4 text-[#97a3b8]" /><span className="text-xs text-[#9aa5b8]">Search leads, conversations, appointments...</span>
+        <div className="hidden md:flex items-center gap-2 rounded-xl border border-[#d5deeb] bg-[#f7f9fc] px-3 py-2 w-80">
+          <Search className="w-4 h-4 text-[#66738d]" /><span className="text-xs text-[#71809a]">Search leads, conversations, appointments...</span>
         </div>
         <span className="hidden lg:flex text-xs text-emerald-600 bg-emerald-50 border border-emerald-100 px-2.5 py-1.5 rounded-full items-center gap-1.5 font-semibold">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> AI assistant live
