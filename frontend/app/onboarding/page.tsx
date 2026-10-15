@@ -296,7 +296,7 @@ export default function OnboardingPage() {
           <div className="space-y-5 py-4">
             <h2 className="text-xl font-bold">Configure Business Hours</h2>
             <p className="text-sm text-[#7e8aa1]">The agent will only offer appointments during these hours.</p>
-            {days.map((day) => <div key={day} className="grid grid-cols-[100px_1fr_1fr] gap-2 items-center text-xs text-white"><label className="capitalize flex gap-2"><input type="checkbox" checked={hours[day].open} onChange={(e) => setHours({ ...hours, [day]: { ...hours[day], open: e.target.checked } })} />{day}</label><input type="time" value={hours[day].start} disabled={!hours[day].open} onChange={(e) => setHours({ ...hours, [day]: { ...hours[day], start: e.target.value } })} className="bg-white/[0.06] rounded-lg p-2 disabled:opacity-40" /><input type="time" value={hours[day].end} disabled={!hours[day].open} onChange={(e) => setHours({ ...hours, [day]: { ...hours[day], end: e.target.value } })} className="bg-white/[0.06] rounded-lg p-2 disabled:opacity-40" /></div>)}
+            {days.map((day) => <div key={day} className="grid grid-cols-[100px_1fr_1fr] items-center gap-2 text-xs text-[#53617a]"><label className="flex gap-2 capitalize"><input type="checkbox" checked={hours[day].open} onChange={(e) => setHours({ ...hours, [day]: { ...hours[day], open: e.target.checked } })} />{day}</label><input type="time" value={hours[day].start} disabled={!hours[day].open} onChange={(e) => setHours({ ...hours, [day]: { ...hours[day], start: e.target.value } })} className="rounded-lg border border-[#e7ecf4] bg-[#fbfcfe] p-2 text-[#17213b] disabled:opacity-40" /><input type="time" value={hours[day].end} disabled={!hours[day].open} onChange={(e) => setHours({ ...hours, [day]: { ...hours[day], end: e.target.value } })} className="rounded-lg border border-[#e7ecf4] bg-[#fbfcfe] p-2 text-[#17213b] disabled:opacity-40" /></div>)}
             <input type="number" min="15" max="480" value={duration} onChange={(e) => setDuration(Number(e.target.value))} placeholder="Appointment duration in minutes" className="w-full rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] p-3 text-sm text-[#17213b]" />
             <h3 className="pt-3 font-bold text-[#34415d]">Human escalation contact</h3>
             <input placeholder="Staff name" value={escalation.contact_name} onChange={(e) => setEscalation({ ...escalation, contact_name: e.target.value })} className="w-full rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] p-3 text-sm text-[#17213b]" />
@@ -313,7 +313,7 @@ export default function OnboardingPage() {
             <p className="text-sm text-[#7b8aa8]">The agent needs your calendar to check availability and book appointments.</p>
             <div className="text-sm font-semibold text-[#34415d]">{calendarConnected ? "✓ Calendar connected" : "Calendar not connected"}</div>
             {!calendarConnected && <button onClick={async () => { try { const data = await apiFetch<{ authorization_url: string }>("/api/v1/calendar/connect"); window.location.href = data.authorization_url; } catch (err: any) { toast.error(err.message || "Unable to connect calendar."); } }} className="w-full py-3 rounded-xl bg-[#5d7ef0] text-white font-semibold text-sm">Connect Google Calendar</button>}
-            <button onClick={() => setStep(5)} className="w-full py-3 rounded-xl border border-white/[0.1] text-white font-semibold text-sm">{calendarConnected ? "Continue" : "Skip for now"} →</button>
+            <button onClick={() => setStep(5)} className="w-full rounded-xl border border-[#dfe6f1] bg-white py-3 text-sm font-semibold text-[#53617a] hover:bg-[#f7f9fc]">{calendarConnected ? "Continue" : "Skip for now"} →</button>
           </div>
         )}
 
@@ -327,7 +327,7 @@ export default function OnboardingPage() {
               <input type="password" value={accessToken} onChange={(e) => setAccessToken(e.target.value)} placeholder="Meta access token" className="w-full rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] p-3 text-sm text-[#17213b]" />
               <button onClick={async () => { if (!phoneNumberId || !accessToken) { toast.error("Enter both WhatsApp values."); return; } try { await apiFetch("/api/v1/whatsapp/credentials", { method: "PUT", body: JSON.stringify({ phone_number_id: phoneNumberId, access_token: accessToken }) }); setWhatsappConnected(true); setAccessToken(""); toast.success("WhatsApp connected."); } catch (err: any) { toast.error(err.message || "Unable to connect WhatsApp."); } }} className="w-full py-3 rounded-xl bg-[#5d7ef0] text-white font-semibold text-sm">Connect WhatsApp</button>
             </>}
-            <button onClick={() => setStep(6)} className="w-full py-3 rounded-xl border border-white/[0.1] text-white font-semibold text-sm">{whatsappConnected ? "Continue" : "Skip for now"} →</button>
+            <button onClick={() => setStep(6)} className="w-full rounded-xl border border-[#dfe6f1] bg-white py-3 text-sm font-semibold text-[#53617a] hover:bg-[#f7f9fc]">{whatsappConnected ? "Continue" : "Skip for now"} →</button>
           </div>
         )}
 
