@@ -16,9 +16,6 @@ export default function Header() {
         <div className="hidden md:flex items-center gap-2 rounded-xl border border-[#d5deeb] bg-[#f7f9fc] px-3 py-2 w-80">
           <Search className="w-4 h-4 text-[#66738d]" /><span className="text-xs text-[#71809a]">Search leads, conversations, appointments...</span>
         </div>
-        <span className="hidden lg:flex text-xs text-emerald-600 bg-emerald-50 border border-emerald-100 px-2.5 py-1.5 rounded-full items-center gap-1.5 font-semibold">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> AI assistant live
-        </span>
       </div>
 
       <div className="flex items-center gap-4">
