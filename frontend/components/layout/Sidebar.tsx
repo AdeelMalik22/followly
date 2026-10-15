@@ -18,6 +18,7 @@ import {
   CreditCard,
   LogOut,
   Bot,
+  Activity,
 } from "lucide-react";
 
 const navItems = [
@@ -32,6 +33,7 @@ const navItems = [
   { name: "Team", href: "/dashboard/team", icon: UserPlus },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
   { name: "Usage & Billing", href: "/dashboard/billing", icon: CreditCard },
+  { name: "Usage", href: "/dashboard/usage", icon: Activity },
 ];
 
 export default function Sidebar() {
