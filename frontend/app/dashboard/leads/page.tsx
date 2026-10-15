@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
 import { Lead, LeadStatus } from "@/types";
 import toast from "react-hot-toast";
-import { Search, Plus, User, MessageSquare, Phone } from "lucide-react";
+import { Search, Plus, User, MessageSquare } from "lucide-react";
 import Link from "next/link";
 
 const statuses: LeadStatus[] = ["new", "contacted", "qualified", "booked", "cold", "recovered", "not_interested"];
@@ -23,7 +23,7 @@ export default function LeadsPage() {
   const [source, setSource] = useState("manual");
   const [createLoading, setCreateLoading] = useState(false);
 
-  const fetchLeads = async () => {
+  const fetchLeads = useCallback(async () => {
     setLoading(true);
     try {
       const data = await apiFetch<Lead[]>("/api/v1/leads", {
@@ -33,16 +33,17 @@ export default function LeadsPage() {
         },
       });
       setLeads(data);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to load leads.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to load leads.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchQuery, statusFilter]);
 
   useEffect(() => {
-    fetchLeads();
-  }, [statusFilter, searchQuery]);
+    const timer = window.setTimeout(() => { void fetchLeads(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchLeads]);
 
   const handleCreateLead = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,8 +65,8 @@ export default function LeadsPage() {
       setPhone("");
       setEmail("");
       setSource("manual");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to create lead.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to create lead.");
     } finally {
       setCreateLoading(false);
     }
@@ -79,8 +80,8 @@ export default function LeadsPage() {
       });
       setLeads(leads.map((l) => (l.id === leadId ? updated : l)));
       toast.success("Lead status updated.");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to update lead status.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update lead status.");
     }
   };
 
