@@ -200,7 +200,7 @@ export default function OnboardingPage() {
                   <span className="text-sm font-semibold text-[#53617a]">{user.email}</span>
                 </div>
               </div>
-              <hr className="border-white/[0.05]" />
+              <hr className="border-[#e7ecf4]" />
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <span className="block text-[11px] font-bold uppercase text-[#8b97ab]">Business Name</span>
@@ -215,8 +215,8 @@ export default function OnboardingPage() {
               </div>
             </div>
 
-            <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-              <p className="text-xs text-amber-300 leading-relaxed">
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+              <p className="text-xs leading-relaxed text-amber-700">
                 <strong>Important:</strong> To ensure your AI assistant answers accurately and does not generate incorrect pricing, you must seed your Knowledge Base with at least 3 initial business details before going live.
               </p>
             </div>
@@ -240,38 +240,38 @@ export default function OnboardingPage() {
 
             <div className="space-y-5 max-h-[400px] overflow-y-auto pr-1">
               {kbEntries.map((entry, index) => (
-                <div key={index} className="space-y-3 bg-white/[0.02] p-5 rounded-xl border border-white/[0.05]">
+                <div key={index} className="space-y-3 rounded-xl border border-[#e7ecf4] bg-white p-5">
                   <div className="flex justify-between items-center">
                     <span className="text-xs font-bold text-[#5d7ef0] uppercase tracking-wide">Entry #{index + 1}</span>
                     <button type="button" onClick={() => removeKBEntry(index)} className="text-xs text-red-400 hover:text-red-300">Remove</button>
                   </div>
 
-                  <select value={entry.category} onChange={(e) => handleKBChange(index, "category", e.target.value)} className="w-full bg-[#131929] border border-white/[0.08] rounded-lg py-2 px-3 text-xs text-white">
+                  <select value={entry.category} onChange={(e) => handleKBChange(index, "category", e.target.value)} className="w-full rounded-lg border border-[#e7ecf4] bg-[#fbfcfe] px-3 py-2 text-xs text-[#34415d]">
                     <option value="services">Services</option><option value="pricing">Pricing</option><option value="faqs">FAQs</option><option value="policies">Policies</option>
                   </select>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-[#7b8aa8] uppercase mb-1">
+                    <label className="mb-1 block text-[10px] font-bold uppercase text-[#7e8aa1]">
                       Common Question / FAQ
                     </label>
                     <input
                       type="text"
                       value={entry.question}
                       onChange={(e) => handleKBChange(index, "question", e.target.value)}
-                      className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg py-2 px-3 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#5d7ef0]"
+                      className="w-full rounded-lg border border-[#e7ecf4] bg-[#fbfcfe] px-3 py-2 text-xs text-[#17213b] placeholder-[#a0aabd] outline-none focus:border-[#8eb3ff] focus:ring-4 focus:ring-[#eaf2ff]"
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-[#7b8aa8] uppercase mb-1">
+                    <label className="mb-1 block text-[10px] font-bold uppercase text-[#7e8aa1]">
                       AI Response / Truth
                     </label>
                     <textarea
                       value={entry.answer}
                       onChange={(e) => handleKBChange(index, "answer", e.target.value)}
                       rows={2}
-                      className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg py-2 px-3 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#5d7ef0] resize-none"
+                      className="w-full resize-none rounded-lg border border-[#e7ecf4] bg-[#fbfcfe] px-3 py-2 text-xs text-[#17213b] placeholder-[#a0aabd] outline-none focus:border-[#8eb3ff] focus:ring-4 focus:ring-[#eaf2ff]"
                       required
                     />
                   </div>
@@ -279,7 +279,7 @@ export default function OnboardingPage() {
               ))}
             </div>
 
-            <button type="button" onClick={addKBEntry} className="w-full py-2.5 rounded-xl border border-dashed border-white/[0.15] text-xs font-semibold text-[#aab4cb] hover:text-white hover:border-[#5d7ef0]">+ Add another entry</button>
+            <button type="button" onClick={addKBEntry} className="w-full rounded-xl border border-dashed border-[#cbd7ea] py-2.5 text-xs font-semibold text-[#71809a] hover:border-[#3678f6] hover:text-[#3678f6]">+ Add another entry</button>
 
             <button
               onClick={handleFinishOnboarding}
@@ -295,13 +295,13 @@ export default function OnboardingPage() {
         {step === 3 && (
           <div className="space-y-5 py-4">
             <h2 className="text-xl font-bold">Configure Business Hours</h2>
-            <p className="text-sm text-[#7b8aa8]">The agent will only offer appointments during these hours.</p>
+            <p className="text-sm text-[#7e8aa1]">The agent will only offer appointments during these hours.</p>
             {days.map((day) => <div key={day} className="grid grid-cols-[100px_1fr_1fr] gap-2 items-center text-xs text-white"><label className="capitalize flex gap-2"><input type="checkbox" checked={hours[day].open} onChange={(e) => setHours({ ...hours, [day]: { ...hours[day], open: e.target.checked } })} />{day}</label><input type="time" value={hours[day].start} disabled={!hours[day].open} onChange={(e) => setHours({ ...hours, [day]: { ...hours[day], start: e.target.value } })} className="bg-white/[0.06] rounded-lg p-2 disabled:opacity-40" /><input type="time" value={hours[day].end} disabled={!hours[day].open} onChange={(e) => setHours({ ...hours, [day]: { ...hours[day], end: e.target.value } })} className="bg-white/[0.06] rounded-lg p-2 disabled:opacity-40" /></div>)}
-            <input type="number" min="15" max="480" value={duration} onChange={(e) => setDuration(Number(e.target.value))} placeholder="Appointment duration in minutes" className="w-full bg-white/[0.06] rounded-xl p-3 text-sm text-white" />
-            <h3 className="font-bold text-white pt-3">Human escalation contact</h3>
-            <input placeholder="Staff name" value={escalation.contact_name} onChange={(e) => setEscalation({ ...escalation, contact_name: e.target.value })} className="w-full bg-white/[0.06] rounded-xl p-3 text-sm text-white" />
-            <input placeholder="Staff phone or email" value={escalation.contact_phone} onChange={(e) => setEscalation({ ...escalation, contact_phone: e.target.value })} className="w-full bg-white/[0.06] rounded-xl p-3 text-sm text-white" />
-            <textarea placeholder="Instructions for human handoff" value={escalation.instructions} onChange={(e) => setEscalation({ ...escalation, instructions: e.target.value })} className="w-full bg-white/[0.06] rounded-xl p-3 text-sm text-white" rows={2} />
+            <input type="number" min="15" max="480" value={duration} onChange={(e) => setDuration(Number(e.target.value))} placeholder="Appointment duration in minutes" className="w-full rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] p-3 text-sm text-[#17213b]" />
+            <h3 className="pt-3 font-bold text-[#34415d]">Human escalation contact</h3>
+            <input placeholder="Staff name" value={escalation.contact_name} onChange={(e) => setEscalation({ ...escalation, contact_name: e.target.value })} className="w-full rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] p-3 text-sm text-[#17213b]" />
+            <input placeholder="Staff phone or email" value={escalation.contact_phone} onChange={(e) => setEscalation({ ...escalation, contact_phone: e.target.value })} className="w-full rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] p-3 text-sm text-[#17213b]" />
+            <textarea placeholder="Instructions for human handoff" value={escalation.instructions} onChange={(e) => setEscalation({ ...escalation, instructions: e.target.value })} className="w-full rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] p-3 text-sm text-[#17213b]" rows={2} />
             <button onClick={async () => { setLoading(true); try { await saveHoursAndEscalation(); } catch (err: any) { toast.error(err.message || "Unable to save settings."); } finally { setLoading(false); } }} disabled={loading} className="w-full py-3 rounded-xl bg-[#5d7ef0] text-white font-semibold text-sm">{loading ? "Saving..." : "Save & Continue →"}</button>
           </div>
         )}
@@ -311,7 +311,7 @@ export default function OnboardingPage() {
           <div className="space-y-6 text-center py-6">
             <h2 className="text-xl font-bold">Connect Google Calendar</h2>
             <p className="text-sm text-[#7b8aa8]">The agent needs your calendar to check availability and book appointments.</p>
-            <div className="text-sm font-semibold text-white">{calendarConnected ? "✓ Calendar connected" : "Calendar not connected"}</div>
+            <div className="text-sm font-semibold text-[#34415d]">{calendarConnected ? "✓ Calendar connected" : "Calendar not connected"}</div>
             {!calendarConnected && <button onClick={async () => { try { const data = await apiFetch<{ authorization_url: string }>("/api/v1/calendar/connect"); window.location.href = data.authorization_url; } catch (err: any) { toast.error(err.message || "Unable to connect calendar."); } }} className="w-full py-3 rounded-xl bg-[#5d7ef0] text-white font-semibold text-sm">Connect Google Calendar</button>}
             <button onClick={() => setStep(5)} className="w-full py-3 rounded-xl border border-white/[0.1] text-white font-semibold text-sm">{calendarConnected ? "Continue" : "Skip for now"} →</button>
           </div>
@@ -321,10 +321,10 @@ export default function OnboardingPage() {
         {step === 5 && (
           <div className="space-y-6 py-6">
             <h2 className="text-xl font-bold">Connect WhatsApp Business</h2>
-            <p className="text-sm text-[#7b8aa8]">Enter the Meta Phone Number ID and access token for this business.</p>
+            <p className="text-sm text-[#7e8aa1]">Enter the Meta Phone Number ID and access token for this business.</p>
             {whatsappConnected ? <div className="text-sm font-semibold text-emerald-400">✓ WhatsApp connected</div> : <>
-              <input value={phoneNumberId} onChange={(e) => setPhoneNumberId(e.target.value)} placeholder="Meta Phone Number ID" className="w-full bg-white/[0.06] border border-white/[0.08] rounded-xl p-3 text-sm text-white" />
-              <input type="password" value={accessToken} onChange={(e) => setAccessToken(e.target.value)} placeholder="Meta access token" className="w-full bg-white/[0.06] border border-white/[0.08] rounded-xl p-3 text-sm text-white" />
+              <input value={phoneNumberId} onChange={(e) => setPhoneNumberId(e.target.value)} placeholder="Meta Phone Number ID" className="w-full rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] p-3 text-sm text-[#17213b]" />
+              <input type="password" value={accessToken} onChange={(e) => setAccessToken(e.target.value)} placeholder="Meta access token" className="w-full rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] p-3 text-sm text-[#17213b]" />
               <button onClick={async () => { if (!phoneNumberId || !accessToken) { toast.error("Enter both WhatsApp values."); return; } try { await apiFetch("/api/v1/whatsapp/credentials", { method: "PUT", body: JSON.stringify({ phone_number_id: phoneNumberId, access_token: accessToken }) }); setWhatsappConnected(true); setAccessToken(""); toast.success("WhatsApp connected."); } catch (err: any) { toast.error(err.message || "Unable to connect WhatsApp."); } }} className="w-full py-3 rounded-xl bg-[#5d7ef0] text-white font-semibold text-sm">Connect WhatsApp</button>
             </>}
             <button onClick={() => setStep(6)} className="w-full py-3 rounded-xl border border-white/[0.1] text-white font-semibold text-sm">{whatsappConnected ? "Continue" : "Skip for now"} →</button>
@@ -336,7 +336,7 @@ export default function OnboardingPage() {
           <div className="space-y-6 text-center py-6">
             <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">✓</div>
             <h2 className="text-xl font-bold">Your Setup Is Ready</h2>
-            <p className="text-sm text-[#7b8aa8]">You can connect skipped integrations later from Channels.</p>
+            <p className="text-sm text-[#7e8aa1]">You can connect skipped integrations later from Channels.</p>
             <button onClick={handleGoToDashboard} disabled={loading} className="w-full py-3 rounded-xl bg-[#5d7ef0] text-white font-semibold text-sm">{loading ? "Activating..." : "Finish Setup & Go to Dashboard →"}</button>
           </div>
         )}
