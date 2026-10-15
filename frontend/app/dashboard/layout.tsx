@@ -14,9 +14,9 @@ export default function DashboardLayout({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#070b14] flex flex-col items-center justify-center">
-        <div className="w-10 h-10 border-4 border-t-[#5d7ef0] border-white/[0.08] rounded-full animate-spin mb-4" />
-        <span className="text-sm text-[#7b8aa8]">Loading your business dashboard...</span>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[#f7f9fc]">
+        <div className="mb-4 h-10 w-10 animate-spin rounded-full border-4 border-[#e7ecf4] border-t-[#3678f6]" />
+        <span className="text-sm text-[#7e8aa1]">Loading your business dashboard...</span>
       </div>
     );
   }
