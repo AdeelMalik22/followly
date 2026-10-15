@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
 import { FollowUpRule } from "@/types";
 import toast from "react-hot-toast";
@@ -19,21 +19,22 @@ export default function FollowUpRulesPage() {
   const [active, setActive] = useState(true);
   const [submitLoading, setSubmitLoading] = useState(false);
 
-  const fetchRules = async () => {
+  const fetchRules = useCallback(async () => {
     setLoading(true);
     try {
       const data = await apiFetch<FollowUpRule[]>("/api/v1/follow-up-rules");
       setRules(data);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to load follow-up rules.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to load follow-up rules.");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchRules();
-  }, []);
+    const timer = window.setTimeout(() => { void fetchRules(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchRules]);
 
   const openAddModal = () => {
     setEditingId(null);
@@ -62,8 +63,8 @@ export default function FollowUpRulesPage() {
       });
       setRules(rules.map((r) => (r.id === rule.id ? updated : r)));
       toast.success(nextActive === 1 ? "Rule activated." : "Rule paused.");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to toggle rule state.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to toggle rule state.");
     }
   };
 
@@ -102,8 +103,8 @@ export default function FollowUpRulesPage() {
         toast.success("Follow-up rule created!");
       }
       setIsModalOpen(false);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to save rule.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to save rule.");
     } finally {
       setSubmitLoading(false);
     }
@@ -116,8 +117,8 @@ export default function FollowUpRulesPage() {
       await apiFetch(`/api/v1/follow-up-rules/${id}`, { method: "DELETE" });
       setRules(rules.filter((r) => r.id !== id));
       toast.success("Rule deleted successfully.");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to delete rule.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete rule.");
     }
   };
 
