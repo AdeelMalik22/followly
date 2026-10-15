@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { getAuthToken } from "@/lib/auth";
 import { apiFetch } from "@/lib/api";
@@ -24,7 +24,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const fetchUser = async () => {
+  const fetchUser = useCallback(async () => {
     const token = getAuthToken();
     if (!token) {
       setUser(null);
@@ -56,11 +56,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [pathname, router]);
 
   useEffect(() => {
-    fetchUser();
-  }, [pathname]);
+    const timer = window.setTimeout(() => { void fetchUser(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchUser]);
 
   return (
     <AuthContext.Provider value={{ user, loading, refetchUser: fetchUser }}>
