@@ -212,30 +212,30 @@ export default function FollowUpRulesPage() {
 
       {/* Add / Edit Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-[#070b14]/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-[#0c1326] border border-white/[0.08] rounded-2xl p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
-            <h2 className="text-lg font-bold text-white mb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#17213b]/20 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-2xl border border-[#e7ecf4] bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+            <h2 className="mb-4 text-lg font-bold text-[#17213b]">
               {editingId !== null ? "Edit Follow-up Rule" : "Create Follow-up Rule"}
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-[#aab4cb] mb-2 uppercase tracking-wider">
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[#7e8aa1]">
                   Trigger Condition
                 </label>
                 <select
                   value={triggerCondition}
                   onChange={(e) => setTriggerCondition(e.target.value)}
-                  className="w-full bg-white/[0.06] border border-white/[0.08] rounded-xl py-2.5 px-3 text-sm text-white focus:outline-none focus:border-[#5d7ef0]"
+                  className="w-full rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] px-3 py-2.5 text-sm text-[#17213b] outline-none focus:border-[#8eb3ff] focus:ring-4 focus:ring-[#eaf2ff]"
                 >
-                  <option value="lead_created" className="bg-[#131929]">New lead created</option>
-                  <option value="lead_cold" className="bg-[#131929]">Lead becomes cold (inactive for 48h)</option>
-                  <option value="no_show" className="bg-[#131929]">Appointment no-show</option>
+                  <option value="lead_created">New lead created</option>
+                  <option value="lead_cold">Lead becomes cold (inactive for 48h)</option>
+                  <option value="no_show">Appointment no-show</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#aab4cb] mb-2 uppercase tracking-wider">
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[#7e8aa1]">
                   Delay (Hours)
                 </label>
                 <input
@@ -244,17 +244,17 @@ export default function FollowUpRulesPage() {
                   max={720}
                   value={delayHours}
                   onChange={(e) => setDelayHours(Number(e.target.value))}
-                  className="w-full bg-white/[0.06] border border-white/[0.08] rounded-xl py-2.5 px-3 text-sm text-white focus:outline-none focus:border-[#5d7ef0]"
+                  className="w-full rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] px-3 py-2.5 text-sm text-[#17213b] outline-none focus:border-[#8eb3ff] focus:ring-4 focus:ring-[#eaf2ff]"
                   required
                 />
               </div>
 
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <label className="block text-xs font-semibold text-[#aab4cb] uppercase tracking-wider">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#7e8aa1]">
                     Message Template
                   </label>
-                  <span className="text-[10px] text-[#7b8aa8] flex items-center gap-1">
+                  <span className="flex items-center gap-1 text-[10px] text-[#8b97ab]">
                     <AlertCircle className="w-3 h-3" />
                     Use {"{lead_name}"} or {"{business_name}"}
                   </span>
@@ -264,7 +264,7 @@ export default function FollowUpRulesPage() {
                   value={messageTemplate}
                   onChange={(e) => setMessageTemplate(e.target.value)}
                   rows={4}
-                  className="w-full bg-white/[0.06] border border-white/[0.08] rounded-xl py-2.5 px-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#5d7ef0] resize-none"
+                  className="w-full resize-none rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] px-3 py-2.5 text-sm text-[#17213b] placeholder-[#a0aabd] outline-none focus:border-[#8eb3ff] focus:ring-4 focus:ring-[#eaf2ff]"
                   required
                 />
               </div>
@@ -275,9 +275,9 @@ export default function FollowUpRulesPage() {
                   id="active"
                   checked={active}
                   onChange={(e) => setActive(e.target.checked)}
-                  className="rounded border-white/[0.08] bg-white/[0.06] text-[#5d7ef0] focus:ring-[#5d7ef0]/20 cursor-pointer"
+                  className="cursor-pointer rounded border-[#dfe6f1] text-[#3678f6] focus:ring-[#3678f6]/20"
                 />
-                <label htmlFor="active" className="text-xs text-[#7b8aa8] leading-normal cursor-pointer select-none">
+                <label htmlFor="active" className="cursor-pointer select-none text-xs leading-normal text-[#71809a]">
                   Enable rule immediately
                 </label>
               </div>
@@ -286,7 +286,7 @@ export default function FollowUpRulesPage() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-white/[0.08] text-xs font-semibold text-[#aab4cb] hover:bg-white/[0.03] transition-all"
+                  className="rounded-xl border border-[#e7ecf4] px-4 py-2 text-xs font-semibold text-[#71809a] transition-all hover:bg-[#f7f9fc]"
                 >
                   Cancel
                 </button>
