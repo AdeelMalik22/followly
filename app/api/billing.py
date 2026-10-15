@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_current_business, require_business_roles
@@ -7,8 +7,27 @@ from app.core.database import get_db
 from app.models.models import Business
 from app.schemas.dashboard import BillingStatus
 from app.services.usage_service import PLAN_LIMITS
+from app.services.stripe_service import process_stripe_event
 
 router = APIRouter(prefix="/api/v1/billing", tags=["billing"])
+
+
+@router.post("/webhook")
+async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
+    if not settings.STRIPE_WEBHOOK_SECRET:
+        raise HTTPException(status_code=503, detail="Stripe webhook is not configured")
+    payload = await request.body()
+    signature = request.headers.get("stripe-signature")
+    try:
+        import stripe
+        event = stripe.Webhook.construct_event(payload, signature, settings.STRIPE_WEBHOOK_SECRET)
+        process_stripe_event(event, db)
+        return {"received": True}
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Invalid Stripe payload") from exc
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Invalid Stripe webhook") from exc
 
 
 @router.get("/status", response_model=BillingStatus)

@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     BUSINESS_TIMEZONE: str = "Asia/Karachi"
     STRIPE_SECRET_KEY: str = ""
     STRIPE_PRICE_ID: str = ""
+    STRIPE_WEBHOOK_SECRET: str = ""
 
     GOOGLE_CLIENT_ID: str = ""
     GOOGLE_CLIENT_SECRET: str = ""

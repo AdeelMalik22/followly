@@ -95,6 +95,19 @@ class WebhookEvent(Base):
     event_metadata = Column("metadata", JSON, nullable=True)
 
 
+class StripeWebhookEvent(Base):
+    __tablename__ = "stripe_webhook_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    event_id = Column(String, unique=True, nullable=False, index=True)
+    event_type = Column(String, nullable=False, index=True)
+    business_id = Column(Integer, ForeignKey("businesses.id"), nullable=True, index=True)
+    status = Column(String, nullable=False, default="processed")
+    received_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    processed_at = Column(DateTime, nullable=True)
+    error = Column(Text, nullable=True)
+
+
 class UsageEvent(Base):
     __tablename__ = "usage_events"
 
