@@ -25,6 +25,22 @@ class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
 
+
+class PasswordRecoveryRequest(BaseModel):
+    email: EmailStr
+
+
+class PasswordResetRequest(BaseModel):
+    token: str = Field(min_length=20)
+    password: str = Field(min_length=8)
+    confirm_password: str = Field(min_length=8)
+
+    @model_validator(mode="after")
+    def passwords_match(self):
+        if self.password != self.confirm_password:
+            raise ValueError("Passwords do not match")
+        return self
+
 class UserResponse(BaseModel):
     id: int
     email: str

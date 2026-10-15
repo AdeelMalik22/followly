@@ -11,6 +11,7 @@ from app.core.database import get_db
 from app.core.security import create_access_token
 from app.main import app
 from app.models.models import Business, Customer, User
+from app.services import auth_service
 from app.models.models import Base
 
 
@@ -71,6 +72,25 @@ def test_team_invitation_acceptance_is_http_scoped(http_context):
     )
     assert accepted.status_code == 200
     assert db.query(User).filter(User.email == "new@example.com", User.business_id == first.id).one().role == "staff"
+
+
+def test_password_recovery_resets_password_and_revokes_sessions(http_context):
+    client, db, first, second, owner, admin, staff = http_context
+    old_version = owner.session_version
+    token = auth_service.create_password_reset_token(owner, db)
+    assert auth_service.reset_password(token, "new-password-123", db) is True
+    db.refresh(owner)
+    assert owner.session_version == old_version + 1
+    assert auth_service.verify_password("new-password-123", owner.hashed_password)
+    assert auth_service.reset_password(token, "another-password-123", db) is False
+
+
+def test_logout_all_revokes_current_business_user_session(http_context):
+    client, db, first, second, owner, admin, staff = http_context
+    response = client.post("/api/v1/auth/logout-all")
+    assert response.status_code == 200
+    db.refresh(owner)
+    assert owner.session_version == 1
 
 
 def test_team_role_change_removal_and_owner_transfer_are_http_scoped(http_context):

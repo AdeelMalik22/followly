@@ -1,8 +1,10 @@
 from sqlalchemy.orm import Session
-from app.models.models import User, Business
+from app.models.models import User, Business, PasswordResetToken
 from app.core.security import get_password_hash, verify_password, create_access_token
 from app.schemas.business_config import BusinessConfiguration
+import hashlib
 import secrets
+from datetime import datetime, timedelta
 
 def create_user_with_business(email: str, password: str, business_name: str, owner_name: str, industry: str, db: Session):
     """Create a new user and associated business"""
@@ -52,3 +54,33 @@ def authenticate_user(email: str, password: str, db: Session):
 def get_user_by_email(email: str, db: Session):
     """Get user by email"""
     return db.query(User).filter(User.email == email).first()
+
+
+def create_password_reset_token(user: User, db: Session, lifetime_minutes: int = 30) -> str:
+    raw_token = secrets.token_urlsafe(32)
+    db.add(PasswordResetToken(
+        user_id=user.id,
+        token_hash=hashlib.sha256(raw_token.encode()).hexdigest(),
+        expires_at=datetime.utcnow() + timedelta(minutes=lifetime_minutes),
+    ))
+    db.commit()
+    return raw_token
+
+
+def reset_password(raw_token: str, new_password: str, db: Session) -> bool:
+    token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+    reset = db.query(PasswordResetToken).filter(
+        PasswordResetToken.token_hash == token_hash,
+        PasswordResetToken.used_at.is_(None),
+        PasswordResetToken.expires_at > datetime.utcnow(),
+    ).first()
+    if not reset:
+        return False
+    user = db.query(User).filter(User.id == reset.user_id).first()
+    if not user:
+        return False
+    user.hashed_password = get_password_hash(new_password)
+    user.session_version += 1
+    reset.used_at = datetime.utcnow()
+    db.commit()
+    return True

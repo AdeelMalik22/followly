@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 10080
     CUSTOMER_TOKEN_EXPIRE_MINUTES: int = 43200
+    ACCOUNT_RECOVERY_DEBUG: bool = False
 
     LLM_PROVIDER: str = "openrouter"
     OPENROUTER_API_KEY: str = ""

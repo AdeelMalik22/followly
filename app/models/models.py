@@ -150,6 +150,17 @@ class User(Base):
     business = relationship("Business", back_populates="users", foreign_keys=[business_id])
 
 
+class PasswordResetToken(Base):
+    __tablename__ = "password_reset_tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    token_hash = Column(String, unique=True, nullable=False, index=True)
+    expires_at = Column(DateTime, nullable=False, index=True)
+    used_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
 class TeamInvitation(Base):
     __tablename__ = "team_invitations"
     __table_args__ = (UniqueConstraint("business_id", "email", "status", name="uq_team_invites_business_email_status"),)
