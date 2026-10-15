@@ -17,11 +17,13 @@ import {
   Settings,
   CreditCard,
   LogOut,
+  Bot,
 } from "lucide-react";
 
 const navItems = [
   { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
   { name: "Conversations", href: "/dashboard/conversations", icon: MessageSquare },
+  { name: "AI Agent", href: "/dashboard/agent", icon: Bot },
   { name: "Appointments", href: "/dashboard/appointments", icon: Calendar },
   { name: "Leads", href: "/dashboard/leads", icon: Users },
   { name: "Knowledge Base", href: "/dashboard/knowledge", icon: Database },
