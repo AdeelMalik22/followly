@@ -43,6 +43,9 @@ export async function apiFetch<T>(endpoint: string, options: RequestOptions = {}
   if (response.status === 401) {
     clearAuthToken();
     if (typeof window !== "undefined") {
+      // The API client has no router context; a hard redirect also guarantees
+      // stale authenticated UI is discarded after the token is cleared.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
       window.location.href = "/login";
     }
     throw new Error("Unauthorized");
