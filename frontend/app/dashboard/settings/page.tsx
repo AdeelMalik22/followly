@@ -106,22 +106,22 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="mx-auto max-w-[1500px] space-y-8">
       <div>
-        <h1 className="text-2xl font-extrabold text-white">Account Settings</h1>
-        <p className="text-sm text-[#7b8aa8]">Update your business preferences, security credentials, and AI operating configuration.</p>
+        <h1 className="text-2xl font-bold tracking-[-0.02em] text-[#17213b]">Settings &amp; Business Configuration</h1>
+        <p className="text-sm text-[#7e8aa1]">Update your business details, preferences, security, and AI operating configuration.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Forms */}
         <div className="lg:col-span-2 space-y-6">
           {/* Profile settings */}
-          <div className="bg-white/[0.02] border border-white/[0.08] p-6 rounded-2xl space-y-5 shadow-xl">
+            <div className="space-y-5 rounded-2xl border border-[#e7ecf4] bg-white p-6 shadow-[0_5px_20px_rgba(35,55,90,0.04)]">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#5d7ef0]/10 border border-[#5d7ef0]/20 flex items-center justify-center text-[#5d7ef0]">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-blue-100 bg-blue-50 text-[#3678f6]">
                 <Settings className="w-4.5 h-4.5" />
               </div>
-              <h3 className="text-sm font-bold text-white">Business Details</h3>
+              <h3 className="text-sm font-bold text-[#34415d]">Business Details</h3>
             </div>
 
             <form onSubmit={handleSaveProfile} className="space-y-4">
