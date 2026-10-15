@@ -127,48 +127,48 @@ export default function SettingsPage() {
             <form onSubmit={handleSaveProfile} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-[#aab4cb] mb-2 uppercase tracking-wider">
+                    <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[#7e8aa1]">
                     Business Name
                   </label>
                   <input
                     type="text"
                     value={businessName}
                     onChange={(e) => setBusinessName(e.target.value)}
-                    className="w-full bg-white/[0.06] border border-white/[0.08] rounded-xl py-2.5 px-3 text-sm text-white focus:outline-none focus:border-[#5d7ef0]"
+                    className="w-full rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] px-3 py-2.5 text-sm text-[#17213b] outline-none focus:border-[#8eb3ff] focus:ring-4 focus:ring-[#eaf2ff]"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-[#aab4cb] mb-2 uppercase tracking-wider">
+                    <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[#7e8aa1]">
                     Industry
                   </label>
                   <select
                     value={industry}
                     onChange={(e) => setIndustry(e.target.value)}
-                    className="w-full bg-white/[0.06] border border-white/[0.08] rounded-xl py-2.5 px-3 text-sm text-white focus:outline-none focus:border-[#5d7ef0]"
+                    className="w-full rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] px-3 py-2.5 text-sm text-[#17213b] outline-none focus:border-[#8eb3ff] focus:ring-4 focus:ring-[#eaf2ff]"
                   >
-                    <option value="Dental Clinic" className="bg-[#131929]">Dental Clinic</option>
-                    <option value="Medical Clinic" className="bg-[#131929]">Medical Clinic</option>
-                    <option value="Salon & Spa" className="bg-[#131929]">Salon &amp; Spa</option>
-                    <option value="Law Firm" className="bg-[#131929]">Law Firm</option>
-                    <option value="Real Estate" className="bg-[#131929]">Real Estate</option>
-                    <option value="Fitness & Gym" className="bg-[#131929]">Fitness &amp; Gym</option>
-                    <option value="Other" className="bg-[#131929]">Other</option>
+                    <option value="Dental Clinic">Dental Clinic</option>
+                    <option value="Medical Clinic">Medical Clinic</option>
+                    <option value="Salon & Spa">Salon &amp; Spa</option>
+                    <option value="Law Firm">Law Firm</option>
+                    <option value="Real Estate">Real Estate</option>
+                    <option value="Fitness & Gym">Fitness &amp; Gym</option>
+                    <option value="Other">Other</option>
                   </select>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-[#aab4cb] mb-2 uppercase tracking-wider">
+                    <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[#7e8aa1]">
                     Owner Full Name
                   </label>
                   <input
                     type="text"
                     value={ownerName}
                     onChange={(e) => setOwnerName(e.target.value)}
-                    className="w-full bg-white/[0.06] border border-white/[0.08] rounded-xl py-2.5 px-3 text-sm text-white focus:outline-none focus:border-[#5d7ef0]"
+                    className="w-full rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] px-3 py-2.5 text-sm text-[#17213b] outline-none focus:border-[#8eb3ff] focus:ring-4 focus:ring-[#eaf2ff]"
                     required
                   />
                 </div>
@@ -181,7 +181,7 @@ export default function SettingsPage() {
                     type="email"
                     value={email}
                     disabled
-                    className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl py-2.5 px-3 text-sm text-[#7b8aa8] cursor-not-allowed"
+                    className="w-full cursor-not-allowed rounded-xl border border-[#e7ecf4] bg-[#f4f6fa] px-3 py-2.5 text-sm text-[#8b97ab]"
                   />
                 </div>
               </div>
@@ -196,38 +196,38 @@ export default function SettingsPage() {
             </form>
           </div>
 
-          <div className="bg-white/[0.02] border border-white/[0.08] p-6 rounded-2xl space-y-5 shadow-xl">
-            <div><h3 className="text-sm font-bold text-white">Human Staff Escalation</h3><p className="text-xs text-[#7b8aa8] mt-1">Configure who should handle conversations the AI cannot answer.</p></div>
+          <div className="space-y-5 rounded-2xl border border-[#e7ecf4] bg-white p-6 shadow-[0_5px_20px_rgba(35,55,90,0.04)]">
+            <div><h3 className="text-sm font-bold text-[#34415d]">Human Staff Escalation</h3><p className="mt-1 text-xs text-[#7e8aa1]">Configure who should handle conversations the AI cannot answer.</p></div>
             <form onSubmit={handleSaveEscalation} className="space-y-3">
-              <input placeholder="Staff contact name" value={escalation.contact_name} onChange={(e) => setEscalation({ ...escalation, contact_name: e.target.value })} className="w-full bg-white/[0.06] border border-white/[0.08] rounded-xl p-2.5 text-xs text-white" />
-              <input placeholder="Staff phone number" value={escalation.contact_phone} onChange={(e) => setEscalation({ ...escalation, contact_phone: e.target.value })} className="w-full bg-white/[0.06] border border-white/[0.08] rounded-xl p-2.5 text-xs text-white" />
-              <input type="email" placeholder="Staff email address" value={escalation.contact_email} onChange={(e) => setEscalation({ ...escalation, contact_email: e.target.value })} className="w-full bg-white/[0.06] border border-white/[0.08] rounded-xl p-2.5 text-xs text-white" />
-              <textarea placeholder="Instructions for the assistant" value={escalation.instructions} onChange={(e) => setEscalation({ ...escalation, instructions: e.target.value })} rows={3} className="w-full bg-white/[0.06] border border-white/[0.08] rounded-xl p-2.5 text-xs text-white resize-none" />
+              <input placeholder="Staff contact name" value={escalation.contact_name} onChange={(e) => setEscalation({ ...escalation, contact_name: e.target.value })} className="w-full rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] p-2.5 text-xs text-[#17213b]" />
+              <input placeholder="Staff phone number" value={escalation.contact_phone} onChange={(e) => setEscalation({ ...escalation, contact_phone: e.target.value })} className="w-full rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] p-2.5 text-xs text-[#17213b]" />
+              <input type="email" placeholder="Staff email address" value={escalation.contact_email} onChange={(e) => setEscalation({ ...escalation, contact_email: e.target.value })} className="w-full rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] p-2.5 text-xs text-[#17213b]" />
+              <textarea placeholder="Instructions for the assistant" value={escalation.instructions} onChange={(e) => setEscalation({ ...escalation, instructions: e.target.value })} rows={3} className="w-full resize-none rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] p-2.5 text-xs text-[#17213b]" />
               <button disabled={escalationLoading} className="px-5 py-2.5 rounded-xl bg-[#5d7ef0] text-white font-semibold text-xs disabled:opacity-50">{escalationLoading ? "Saving..." : "Save Escalation Settings"}</button>
             </form>
           </div>
 
           {/* Security credentials */}
-          <div className="bg-white/[0.02] border border-white/[0.08] p-6 rounded-2xl space-y-5 shadow-xl">
-            <div><h3 className="text-sm font-bold text-white">Working Hours &amp; Booking</h3><p className="text-xs text-[#7b8aa8] mt-1">These hours are stored for this business and will guide appointment availability.</p></div>
+          <div className="space-y-5 rounded-2xl border border-[#e7ecf4] bg-white p-6 shadow-[0_5px_20px_rgba(35,55,90,0.04)]">
+            <div><h3 className="text-sm font-bold text-[#34415d]">Working Hours &amp; Booking</h3><p className="mt-1 text-xs text-[#7e8aa1]">These hours are stored for this business and will guide appointment availability.</p></div>
             <form onSubmit={handleSaveHours} className="space-y-3">
-              {days.map((day) => <div key={day} className="grid grid-cols-[100px_1fr_1fr] gap-2 items-center text-xs text-white">
+              {days.map((day) => <div key={day} className="grid grid-cols-[100px_1fr_1fr] items-center gap-2 text-xs text-[#53617a]">
                 <label className="capitalize flex gap-2"><input type="checkbox" checked={hours[day].open} onChange={(e) => setHours({ ...hours, [day]: { ...hours[day], open: e.target.checked } })} />{day}</label>
-                <input type="time" disabled={!hours[day].open} value={hours[day].start} onChange={(e) => setHours({ ...hours, [day]: { ...hours[day], start: e.target.value } })} className="bg-white/[0.06] border border-white/[0.08] rounded-lg p-2 disabled:opacity-40" />
-                <input type="time" disabled={!hours[day].open} value={hours[day].end} onChange={(e) => setHours({ ...hours, [day]: { ...hours[day], end: e.target.value } })} className="bg-white/[0.06] border border-white/[0.08] rounded-lg p-2 disabled:opacity-40" />
+                <input type="time" disabled={!hours[day].open} value={hours[day].start} onChange={(e) => setHours({ ...hours, [day]: { ...hours[day], start: e.target.value } })} className="rounded-lg border border-[#e7ecf4] bg-[#fbfcfe] p-2 text-[#17213b] disabled:opacity-40" />
+                <input type="time" disabled={!hours[day].open} value={hours[day].end} onChange={(e) => setHours({ ...hours, [day]: { ...hours[day], end: e.target.value } })} className="rounded-lg border border-[#e7ecf4] bg-[#fbfcfe] p-2 text-[#17213b] disabled:opacity-40" />
               </div>)}
-              <label className="block text-xs text-[#aab4cb] pt-2">Default appointment duration (minutes)<input type="number" min="15" max="480" value={duration} onChange={(e) => setDuration(Number(e.target.value))} className="mt-2 w-full bg-white/[0.06] border border-white/[0.08] rounded-xl p-2.5 text-white" /></label>
+              <label className="block pt-2 text-xs text-[#7e8aa1]">Default appointment duration (minutes)<input type="number" min="15" max="480" value={duration} onChange={(e) => setDuration(Number(e.target.value))} className="mt-2 w-full rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] p-2.5 text-[#17213b]" /></label>
               <button disabled={hoursLoading} className="px-5 py-2.5 rounded-xl bg-[#5d7ef0] text-white font-semibold text-xs disabled:opacity-50">{hoursLoading ? "Saving..." : "Save Working Hours"}</button>
             </form>
           </div>
 
           {/* Security credentials */}
-          <div className="bg-white/[0.02] border border-white/[0.08] p-6 rounded-2xl space-y-5 shadow-xl">
+          <div className="space-y-5 rounded-2xl border border-[#e7ecf4] bg-white p-6 shadow-[0_5px_20px_rgba(35,55,90,0.04)]">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-[#5d7ef0]/10 border border-[#5d7ef0]/20 flex items-center justify-center text-[#5d7ef0]">
                 <Shield className="w-4.5 h-4.5" />
               </div>
-              <h3 className="text-sm font-bold text-white">Security &amp; Password</h3>
+              <h3 className="text-sm font-bold text-[#34415d]">Security &amp; Password</h3>
             </div>
 
             <form onSubmit={handleUpdatePassword} className="space-y-4">
@@ -240,7 +240,7 @@ export default function SettingsPage() {
                   placeholder="••••••••"
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="w-full bg-white/[0.06] border border-white/[0.08] rounded-xl py-2.5 px-3 text-sm text-white focus:outline-none focus:border-[#5d7ef0]"
+                  className="w-full rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] px-3 py-2.5 text-sm text-[#17213b] outline-none focus:border-[#8eb3ff] focus:ring-4 focus:ring-[#eaf2ff]"
                   required
                 />
               </div>
@@ -255,7 +255,7 @@ export default function SettingsPage() {
                     placeholder="Min 8 characters"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full bg-white/[0.06] border border-white/[0.08] rounded-xl py-2.5 px-3 text-sm text-white focus:outline-none focus:border-[#5d7ef0]"
+                    className="w-full rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] px-3 py-2.5 text-sm text-[#17213b] outline-none focus:border-[#8eb3ff] focus:ring-4 focus:ring-[#eaf2ff]"
                     required
                   />
                 </div>
@@ -269,7 +269,7 @@ export default function SettingsPage() {
                     placeholder="Repeat new password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full bg-white/[0.06] border border-white/[0.08] rounded-xl py-2.5 px-3 text-sm text-white focus:outline-none focus:border-[#5d7ef0]"
+                    className="w-full rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] px-3 py-2.5 text-sm text-[#17213b] outline-none focus:border-[#8eb3ff] focus:ring-4 focus:ring-[#eaf2ff]"
                     required
                   />
                 </div>
@@ -288,24 +288,24 @@ export default function SettingsPage() {
 
         {/* Right Info Sidebar / Billing */}
         <div className="space-y-6">
-          <div className="bg-[#0c1326]/40 border border-white/[0.08] p-6 rounded-2xl space-y-4">
-            <h3 className="text-xs font-bold text-white uppercase tracking-wider">Subscription Plan</h3>
-            <div className="bg-white/[0.03] p-4 rounded-xl border border-white/[0.06]">
-              <span className="block text-xs font-bold text-white">{billingStatus.plan.replaceAll("_", " ")}</span>
-              <span className="block text-[10px] text-[#7b8aa8] mt-1">Status: {billingStatus.status}</span>
+          <div className="space-y-4 rounded-2xl border border-[#e7ecf4] bg-white p-6 shadow-[0_5px_20px_rgba(35,55,90,0.04)]">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[#53617a]">Subscription Plan</h3>
+            <div className="rounded-xl border border-[#eef1f6] bg-[#fbfcfe] p-4">
+              <span className="block text-xs font-bold capitalize text-[#17213b]">{billingStatus.plan.replaceAll("_", " ")}</span>
+              <span className="mt-1 block text-[10px] text-[#7e8aa1]">Status: {billingStatus.status}</span>
             </div>
             <button onClick={startCheckout} className="w-full px-4 py-2 rounded-xl bg-[#5d7ef0] text-white text-xs font-semibold">Upgrade subscription</button>
-            <div className="text-[11px] text-[#7b8aa8] leading-relaxed">
+            <div className="text-[11px] leading-relaxed text-[#7e8aa1]">
               Included: 1 connected channel, 25 monthly qualified bookings, standard email support.
             </div>
           </div>
 
           <div className="bg-red-500/5 border border-red-500/10 p-6 rounded-2xl space-y-4">
-            <h3 className="text-xs font-bold text-red-400 uppercase tracking-wider flex items-center gap-1.5">
+            <h3 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-red-500">
               <Trash2 className="w-4 h-4" />
               Danger Zone
             </h3>
-            <p className="text-[11px] text-[#7b8aa8] leading-relaxed">
+            <p className="text-[11px] leading-relaxed text-[#7e8aa1]">
               Permanently delete this account, business, all client lead lists, conversation history, and calendar synchronization details. This is non-reversible.
             </p>
             <button
