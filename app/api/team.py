@@ -19,6 +19,29 @@ def _hash_invitation_token(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
 
+@router.get("/members")
+def list_members(
+    business: Business = Depends(get_current_business),
+    _authorized_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    members = db.query(User).filter(User.business_id == business.id).order_by(User.id.asc()).all()
+    invitations = db.query(TeamInvitation).filter(
+        TeamInvitation.business_id == business.id,
+        TeamInvitation.status == "pending",
+    ).order_by(TeamInvitation.created_at.desc()).all()
+    return {
+        "members": [
+            {"id": member.id, "name": member.name, "email": member.email, "role": member.role, "status": "active"}
+            for member in members
+        ],
+        "invitations": [
+            {"id": invitation.id, "name": invitation.email, "email": invitation.email, "role": invitation.role, "status": "pending"}
+            for invitation in invitations
+        ],
+    }
+
+
 @router.post("/invitations", response_model=TeamInvitationResponse, status_code=201)
 def create_invitation(
     payload: TeamInvitationCreate,

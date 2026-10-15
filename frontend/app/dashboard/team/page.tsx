@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { UserPlus, User, Trash2, Mail } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
+import { apiFetch } from "@/lib/api";
 
 interface Member {
   id: number;
@@ -16,12 +17,8 @@ interface Member {
 export default function TeamPage() {
   const { user } = useAuth();
 
-  // Mock list of team members (since team model is simplified / backend doesn't store multi-user by default yet)
-  const [members, setMembers] = useState<Member[]>([
-    { id: 1, name: user?.name || "John Smith", email: user?.email || "john@brightsmiles.com", role: "Owner", status: "Active" },
-    { id: 2, name: "Sarah Connor", email: "sarah@brightsmiles.com", role: "Staff / Dentist", status: "Active" },
-    { id: 3, name: "David Miller", email: "david@brightsmiles.com", role: "Front Desk Administrator", status: "Pending Invite" },
-  ]);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
@@ -29,7 +26,18 @@ export default function TeamPage() {
   const [inviteRole, setInviteRole] = useState("Staff");
   const [inviteLoading, setInviteLoading] = useState(false);
 
-  const handleInvite = (e: React.FormEvent) => {
+  const loadMembers = async () => {
+    try {
+      const data = await apiFetch<{ members: Member[]; invitations: Member[] }>("/api/v1/team/members");
+      setMembers([...data.members, ...data.invitations]);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to load team members.");
+    } finally { setLoading(false); }
+  };
+
+  useEffect(() => { loadMembers(); }, []);
+
+  const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inviteEmail || !inviteName) {
       toast.error("Please fill in name and email.");
@@ -37,34 +45,28 @@ export default function TeamPage() {
     }
 
     setInviteLoading(true);
-    setTimeout(() => {
-      const newMember: Member = {
-        id: Date.now(),
-        name: inviteName,
-        email: inviteEmail,
-        role: inviteRole,
-        status: "Pending Invite",
-      };
-
-      setMembers([...members, newMember]);
+    try {
+      await apiFetch("/api/v1/team/invitations", { method: "POST", body: JSON.stringify({ email: inviteEmail, role: inviteRole.toLowerCase() }) });
       toast.success(`Invitation sent to ${inviteEmail}`);
-      setInviteLoading(false);
+      await loadMembers();
       setIsModalOpen(false);
       setInviteName("");
       setInviteEmail("");
       setInviteRole("Staff");
-    }, 800);
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Unable to send invitation."); }
+    finally { setInviteLoading(false); }
   };
 
   const handleRemove = (id: number) => {
-    if (id === 1) {
+    if (id === user?.id) {
       toast.error("You cannot remove the account owner.");
       return;
     }
     if (!confirm("Are you sure you want to remove this team member?")) return;
 
-    setMembers(members.filter((m) => m.id !== id));
-    toast.success("Team member removed.");
+    apiFetch(`/api/v1/team/members/${id}`, { method: "DELETE" })
+      .then(() => { setMembers(members.filter((m) => m.id !== id)); toast.success("Team member removed."); })
+      .catch((error) => toast.error(error instanceof Error ? error.message : "Unable to remove team member."));
   };
 
   return (
@@ -97,7 +99,7 @@ export default function TeamPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#eef1f6]">
-              {members.map((member) => (
+              {loading ? <tr><td colSpan={5} className="p-10 text-center text-sm text-[#8b97ab]">Loading team members...</td></tr> : members.length === 0 ? <tr><td colSpan={5} className="p-10 text-center text-sm text-[#8b97ab]">No team members found.</td></tr> : members.map((member) => (
                 <tr key={member.id} className="hover:bg-[#fbfcfe]">
                   <td className="p-4">
                     <div className="flex items-center gap-3">
@@ -116,7 +118,7 @@ export default function TeamPage() {
                   <td className="p-4">
                     <span
                       className={`text-[9px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider ${
-                        member.status === "Active"
+                        member.status === "active"
                           ? "border-emerald-100 bg-emerald-50 text-emerald-700"
                           : "border-amber-100 bg-amber-50 text-amber-700"
                       }`}
@@ -125,7 +127,7 @@ export default function TeamPage() {
                     </span>
                   </td>
                   <td className="p-4 text-right">
-                    {member.id !== 1 ? (
+                    {member.status === "pending" ? <span className="pr-2 text-[10px] font-semibold italic text-[#8b97ab]">Invitation pending</span> : member.id !== user?.id ? (
                       <button
                         onClick={() => handleRemove(member.id)}
                         className="rounded-lg border border-[#e7ecf4] bg-white p-1.5 text-[#8b97ab] hover:bg-red-50 hover:text-red-500"
@@ -145,13 +147,13 @@ export default function TeamPage() {
 
       {/* Invite Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-[#070b14]/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-[#0c1326] border border-white/[0.08] rounded-2xl p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
-            <h2 className="text-lg font-bold text-white mb-4">Invite Team Member</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#17213b]/20 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-[#e7ecf4] bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+            <h2 className="mb-4 text-lg font-bold text-[#17213b]">Invite Team Member</h2>
 
             <form onSubmit={handleInvite} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-[#aab4cb] mb-2 uppercase tracking-wider">
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[#7e8aa1]">
                   Full Name
                 </label>
                 <input
@@ -159,13 +161,13 @@ export default function TeamPage() {
                   placeholder="e.g. Sarah Connor"
                   value={inviteName}
                   onChange={(e) => setInviteName(e.target.value)}
-                  className="w-full bg-white/[0.06] border border-white/[0.08] rounded-xl py-2.5 px-3 text-sm text-white focus:outline-none focus:border-[#5d7ef0]"
+                  className="w-full rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] px-3 py-2.5 text-sm text-[#17213b] outline-none focus:border-[#8eb3ff] focus:ring-4 focus:ring-[#eaf2ff]"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#aab4cb] mb-2 uppercase tracking-wider">
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[#7e8aa1]">
                   Email Address
                 </label>
                 <div className="relative">
@@ -175,24 +177,24 @@ export default function TeamPage() {
                     placeholder="e.g. sarah@brightsmiles.com"
                     value={inviteEmail}
                     onChange={(e) => setInviteEmail(e.target.value)}
-                    className="w-full bg-white/[0.06] border border-white/[0.08] rounded-xl py-2.5 pl-10 pr-3 text-sm text-white focus:outline-none focus:border-[#5d7ef0]"
+                    className="w-full rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] py-2.5 pl-10 pr-3 text-sm text-[#17213b] outline-none focus:border-[#8eb3ff] focus:ring-4 focus:ring-[#eaf2ff]"
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#aab4cb] mb-2 uppercase tracking-wider">
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[#7e8aa1]">
                   Role
                 </label>
                 <select
                   value={inviteRole}
                   onChange={(e) => setInviteRole(e.target.value)}
-                  className="w-full bg-white/[0.06] border border-white/[0.08] rounded-xl py-2.5 px-3 text-sm text-white focus:outline-none focus:border-[#5d7ef0]"
+                  className="w-full rounded-xl border border-[#e7ecf4] bg-[#fbfcfe] px-3 py-2.5 text-sm text-[#17213b] outline-none focus:border-[#8eb3ff] focus:ring-4 focus:ring-[#eaf2ff]"
                 >
-                  <option value="Staff" className="bg-[#131929]">Staff / Assistant</option>
-                  <option value="Admin" className="bg-[#131929]">Administrator</option>
-                  <option value="Dentist" className="bg-[#131929]">Dentist / Specialist</option>
+                  <option value="Staff">Staff / Assistant</option>
+                  <option value="Admin">Administrator</option>
+                  <option value="Dentist">Specialist</option>
                 </select>
               </div>
 
@@ -200,7 +202,7 @@ export default function TeamPage() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-white/[0.08] text-xs font-semibold text-[#aab4cb] hover:bg-white/[0.03] transition-all"
+                  className="rounded-xl border border-[#e7ecf4] px-4 py-2 text-xs font-semibold text-[#71809a] transition-all hover:bg-[#f7f9fc]"
                 >
                   Cancel
                 </button>
