@@ -127,10 +127,10 @@ export default function ConversationsPage() {
   };
 
   return (
-    <div className="h-[calc(100vh-8.5rem)] flex bg-[#0c1326]/30 border border-white/[0.08] rounded-2xl overflow-hidden">
+    <div className="crm-light h-[calc(100vh-8.5rem)] flex rounded-2xl border border-[#e7ecf4] bg-white overflow-hidden shadow-[0_5px_20px_rgba(35,55,90,0.04)]">
       {/* 1. Left List panel */}
-      <div className="w-80 border-r border-white/[0.08] flex flex-col h-full bg-[#0a0f1d]/50">
-        <div className="p-4 border-b border-white/[0.08] space-y-3">
+      <div className="w-80 border-r border-[#e7ecf4] flex flex-col h-full bg-white">
+        <div className="space-y-3 border-b border-[#eef1f6] p-4">
           <div className="relative">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#7b8aa8]" />
             <input
@@ -138,7 +138,7 @@ export default function ConversationsPage() {
               placeholder="Search leads..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl py-2 pl-9 pr-4 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#5d7ef0]"
+              className="w-full rounded-xl border border-[#dfe6f1] bg-[#fbfcfe] py-2 pl-9 pr-4 text-xs text-[#17213b] placeholder-[#a5afbf] outline-none focus:border-[#3678f6]"
             />
           </div>
 
@@ -149,8 +149,8 @@ export default function ConversationsPage() {
                 onClick={() => setStatusFilter(tab.id)}
                 className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider whitespace-nowrap transition-all ${
                   statusFilter === tab.id
-                    ? "bg-[#5d7ef0] text-white"
-                    : "bg-white/[0.04] text-[#7b8aa8] hover:text-white hover:bg-white/[0.08]"
+                    ? "bg-[#eaf2ff] text-[#1764db]"
+                    : "bg-[#f7f9fc] text-[#7e8aa1] hover:text-[#17213b] hover:bg-[#eef4ff]"
                 }`}
               >
                 {tab.name}
@@ -159,7 +159,7 @@ export default function ConversationsPage() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto divide-y divide-white/[0.04]">
+        <div className="flex-1 overflow-y-auto divide-y divide-[#eef1f6]">
           {loadingList ? (
             <div className="py-20 flex justify-center">
               <div className="w-6 h-6 border-2 border-t-[#5d7ef0] border-white/[0.08] rounded-full animate-spin" />
@@ -177,17 +177,17 @@ export default function ConversationsPage() {
                   key={conv.id}
                   onClick={() => setSelectedId(conv.id)}
                   className={`w-full text-left p-4 transition-all hover:bg-white/[0.02] flex flex-col gap-2 ${
-                    isSelected ? "bg-white/[0.04]" : ""
+                    isSelected ? "bg-[#f1f6ff]" : "hover:bg-[#fbfcfe]"
                   }`}
                 >
                   <div className="flex justify-between items-start">
-                    <span className="font-bold text-xs text-white truncate">
+                    <span className="truncate text-xs font-bold text-[#34415d]">
                       {conv.lead?.name || conv.lead?.phone || "Unknown Lead"}
                     </span>
                     <span className="text-[9px] text-[#7b8aa8] whitespace-nowrap">{formattedTime}</span>
                   </div>
 
-                  <p className="text-[11px] text-[#7b8aa8] truncate line-clamp-1">
+                    <p className="line-clamp-1 truncate text-[11px] text-[#8b97ab]">
                     {conv.last_message?.content || "No messages yet"}
                   </p>
 
@@ -218,22 +218,22 @@ export default function ConversationsPage() {
       {selectedConv ? (
         <div className="flex-1 flex min-w-0">
           {/* Middle Conversation Thread */}
-          <div className="flex-1 flex flex-col h-full min-w-0 bg-[#070b14]/10">
+          <div className="flex-1 flex flex-col h-full min-w-0 bg-white">
             {/* Header info */}
-            <div className="h-14 border-b border-white/[0.08] px-6 flex items-center justify-between flex-shrink-0">
+            <div className="flex h-14 flex-shrink-0 items-center justify-between border-b border-[#eef1f6] px-6">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-xs text-white">
+                <span className="text-xs font-bold text-[#34415d]">
                   {selectedConv.lead?.name || selectedConv.lead?.phone || "Lead Details"}
                 </span>
                 <span className="h-3 w-px bg-white/[0.12]" />
-                <span className="text-[10px] text-[#7b8aa8] font-medium uppercase tracking-wider">{selectedConv.channel}</span>
+                <span className="text-[10px] font-medium uppercase tracking-wider text-[#8b97ab]">{selectedConv.channel}</span>
               </div>
 
               <div className="flex gap-2">
                 {selectedConv.status === "human_takeover" ? (
                   <button
                     onClick={() => handleTakeover("active")}
-                    className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 text-[10px] font-bold transition-all"
+                    className="flex items-center gap-1.5 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-1 text-[10px] font-bold text-emerald-700"
                   >
                     <Cpu className="w-3.5 h-3.5" />
                     Resume AI
@@ -241,7 +241,7 @@ export default function ConversationsPage() {
                 ) : (
                   <button
                     onClick={() => handleTakeover("human_takeover")}
-                    className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/20 text-[10px] font-bold transition-all"
+                    className="flex items-center gap-1.5 rounded-lg border border-amber-100 bg-amber-50 px-3 py-1 text-[10px] font-bold text-amber-700"
                   >
                     <User className="w-3.5 h-3.5" />
                     Pause AI &amp; Takeover
@@ -251,7 +251,7 @@ export default function ConversationsPage() {
             </div>
 
             {/* Message Thread */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            <div className="flex-1 space-y-4 overflow-y-auto bg-[#fbfcfe] p-6">
               {loadingMessages ? (
                 <div className="py-20 flex justify-center">
                   <div className="w-8 h-8 border-2 border-t-[#5d7ef0] border-white/[0.08] rounded-full animate-spin" />
