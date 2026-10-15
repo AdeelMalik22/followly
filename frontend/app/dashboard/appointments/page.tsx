@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
 import { Appointment } from "@/types";
 import toast from "react-hot-toast";
-import { Calendar, User, Clock, CheckCircle } from "lucide-react";
+import { Calendar, User, Clock } from "lucide-react";
 import { format } from "date-fns";
 
 const statusTabs = [
@@ -20,7 +20,7 @@ export default function AppointmentsPage() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const fetchAppointments = async () => {
+  const fetchAppointments = useCallback(async () => {
     setLoading(true);
     try {
       const data = await apiFetch<Appointment[]>("/api/v1/appointments", {
@@ -29,16 +29,17 @@ export default function AppointmentsPage() {
         },
       });
       setAppointments(data);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to load appointments.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to load appointments.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter]);
 
   useEffect(() => {
-    fetchAppointments();
-  }, [statusFilter]);
+    const timer = window.setTimeout(() => { void fetchAppointments(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchAppointments]);
 
   return (
     <div className="mx-auto max-w-[1500px] space-y-6">
