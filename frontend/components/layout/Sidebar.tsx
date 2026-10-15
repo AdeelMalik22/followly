@@ -19,6 +19,7 @@ import {
   LogOut,
   Bot,
   Activity,
+  Package,
 } from "lucide-react";
 
 const navItems = [
@@ -28,6 +29,7 @@ const navItems = [
   { name: "Appointments", href: "/dashboard/appointments", icon: Calendar },
   { name: "Leads", href: "/dashboard/leads", icon: Users },
   { name: "Knowledge Base", href: "/dashboard/knowledge", icon: Database },
+  { name: "Inventory", href: "/dashboard/inventory", icon: Package },
   { name: "Follow-up Rules", href: "/dashboard/follow-up", icon: RefreshCw },
   { name: "Channels", href: "/dashboard/channels", icon: Cpu },
   { name: "Team", href: "/dashboard/team", icon: UserPlus },
