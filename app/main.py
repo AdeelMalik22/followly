@@ -1,5 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import Request
+from starlette.middleware.base import BaseHTTPMiddleware
+from uuid import uuid4
+import logging
 from app.api.auth import router as auth_router
 from app.api.knowledge import router as knowledge_router
 from app.api.whatsapp import router as whatsapp_router
@@ -17,8 +21,34 @@ from app.api.customer_auth import router as customer_auth_router
 from app.api.team import router as team_router
 from app.api.knowledge_sources import router as knowledge_sources_router
 from app.core.config import settings
+from app.core.logging import configure_logging, correlation_id_var, tenant_id_var
+from app.core.security import decode_access_token
+
+configure_logging()
+logger = logging.getLogger("followly.request")
+
+
+class CorrelationMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        correlation_id = request.headers.get("x-correlation-id") or str(uuid4())
+        token = correlation_id_var.set(correlation_id)
+        tenant_token = tenant_id_var.set("-")
+        authorization = request.headers.get("authorization", "")
+        if authorization.lower().startswith("bearer "):
+            payload = decode_access_token(authorization[7:]) or {}
+            if payload.get("business_id") is not None:
+                tenant_token = tenant_id_var.set(str(payload["business_id"]))
+        try:
+            response = await call_next(request)
+            response.headers["X-Correlation-ID"] = correlation_id
+            logger.info("request_completed method=%s path=%s status=%s", request.method, request.url.path, response.status_code)
+            return response
+        finally:
+            correlation_id_var.reset(token)
+            tenant_id_var.reset(tenant_token)
 
 app = FastAPI(title="Followly API", version="1.0.0")
+app.add_middleware(CorrelationMiddleware)
 
 cors_origins = [
     origin.strip()
