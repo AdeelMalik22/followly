@@ -26,13 +26,22 @@ export default function BillingPage() {
     } catch (error: any) { toast.error(error.message || "Unable to start checkout."); }
   };
 
+  const cancelSubscription = async () => {
+    if (!window.confirm("Cancel at the end of the current billing period?")) return;
+    try {
+      await apiFetch("/api/v1/billing/cancel", { method: "POST" });
+      setBilling((current) => current ? { ...current, status: "cancelling" } : current);
+      toast.success("Your subscription will cancel at the end of the billing period.");
+    } catch (error: any) { toast.error(error.message || "Unable to cancel subscription."); }
+  };
+
   if (loading || !billing) return <div className="py-20 text-center text-[#7b8aa8]">Loading usage and billing...</div>;
   const percent = (name: string) => billing.limits[name] ? Math.min(100, Math.round((billing.usage[name] || 0) / billing.limits[name] * 100)) : 0;
 
   return <div className="space-y-8">
     <div><h1 className="text-2xl font-extrabold text-white">Usage &amp; Billing</h1><p className="text-sm text-[#7b8aa8]">Monitor consumption, plan limits, and configuration history.</p></div>
     <section className="bg-white/[0.02] border border-white/[0.08] rounded-2xl p-6">
-      <div className="flex justify-between items-start"><div><p className="text-xs uppercase text-[#7b8aa8]">Current plan</p><h2 className="text-2xl font-bold text-white mt-1">{billing.plan}</h2><p className="text-sm text-[#aab4cb] mt-1">Subscription: {billing.status}</p></div><button onClick={startCheckout} className="rounded-xl bg-[#5d7ef0] px-4 py-2 text-sm font-semibold text-white">Upgrade plan</button></div>
+      <div className="flex justify-between items-start"><div><p className="text-xs uppercase text-[#7b8aa8]">Current plan</p><h2 className="text-2xl font-bold text-white mt-1">{billing.plan}</h2><p className="text-sm text-[#aab4cb] mt-1">Subscription: {billing.status}</p></div><div className="flex gap-2"><button onClick={startCheckout} className="rounded-xl bg-[#5d7ef0] px-4 py-2 text-sm font-semibold text-white">Upgrade plan</button>{billing.subscription_id && billing.status !== "cancelling" && <button onClick={cancelSubscription} className="rounded-xl border border-red-400/30 px-4 py-2 text-sm font-semibold text-red-300">Cancel</button>}</div></div>
       <div className="grid gap-4 md:grid-cols-3 mt-6">{Object.keys(billing.limits).map((name) => <div key={name} className="rounded-xl bg-white/[0.04] p-4"><div className="flex justify-between text-xs text-[#aab4cb]"><span>{name.replace("_", " ")}</span><span>{billing.usage[name] || 0} / {billing.limits[name]}</span></div><div className="h-2 rounded-full bg-white/[0.08] mt-3"><div className="h-2 rounded-full bg-[#5d7ef0]" style={{ width: `${percent(name)}%` }} /></div></div>)}</div>
     </section>
     <section className="bg-white/[0.02] border border-white/[0.08] rounded-2xl p-6"><h2 className="text-sm font-bold text-white">Configuration audit history</h2><div className="mt-4 space-y-3">{audits.length === 0 ? <p className="text-sm text-[#7b8aa8]">No configuration changes recorded.</p> : audits.map((audit) => <div key={audit.id} className="flex justify-between border-b border-white/[0.06] pb-3 text-sm"><span className="text-[#aab4cb]">Configuration snapshot #{audit.id}</span><span className="text-[#7b8aa8]">{new Date(audit.created_at).toLocaleString()}</span></div>)}</div></section>

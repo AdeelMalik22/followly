@@ -50,3 +50,25 @@ def create_checkout_session(
         return {"checkout_url": session.url}
     except Exception as exc:
         raise HTTPException(status_code=502, detail="Unable to create billing checkout session") from exc
+
+
+@router.post("/cancel")
+def cancel_subscription(
+    business: Business = Depends(get_current_business),
+    db: Session = Depends(get_db),
+    _authorized_user=Depends(require_business_roles("owner", "admin")),
+):
+    if not business.stripe_subscription_id:
+        raise HTTPException(status_code=400, detail="No active subscription found")
+    if not settings.STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=503, detail="Stripe billing is not configured")
+    try:
+        import stripe
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+        stripe.Subscription.modify(business.stripe_subscription_id, cancel_at_period_end=True)
+        business.subscription_status = "cancelling"
+        db.commit()
+        return {"status": "cancelling", "cancel_at_period_end": True}
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(status_code=502, detail="Unable to cancel subscription") from exc
