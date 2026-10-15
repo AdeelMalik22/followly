@@ -193,12 +193,16 @@ class BusinessProfileResponse(BaseModel):
     industry: str
     owner_name: str
     owner_email: str
+    company_size: str = ""
+    inventory_management: bool | None = None
 
 
 class BusinessProfileUpdate(BaseModel):
     name: str
     industry: str
     owner_name: str
+    company_size: str = ""
+    inventory_management: bool | None = None
 
 
 class BookingSettings(BaseModel):

@@ -228,6 +228,8 @@ def get_profile(
         industry=business.industry,
         owner_name=user.name,
         owner_email=user.email,
+        company_size=get_business_configuration(business).business_details.company_size,
+        inventory_management=get_business_configuration(business).business_details.inventory_management,
     )
 
 
@@ -282,6 +284,10 @@ def update_profile(
     business.name = profile.name.strip()
     business.industry = profile.industry.strip()
     user.name = profile.owner_name.strip()
+    configuration = get_business_configuration(business)
+    configuration.business_details.company_size = profile.company_size.strip()
+    configuration.business_details.inventory_management = profile.inventory_management
+    save_business_configuration(business, configuration, db, updated_by=user.id)
     db.commit()
     db.refresh(business)
     db.refresh(user)
@@ -290,6 +296,8 @@ def update_profile(
         industry=business.industry,
         owner_name=user.name,
         owner_email=user.email,
+        company_size=configuration.business_details.company_size,
+        inventory_management=configuration.business_details.inventory_management,
     )
 
 

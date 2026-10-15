@@ -20,6 +20,8 @@ export default function OnboardingPage() {
   const [businessName, setBusinessName] = useState(user?.business_name || "");
   const [industry, setIndustry] = useState(user?.industry || "");
   const [ownerName, setOwnerName] = useState(user?.name || "");
+  const [companySize, setCompanySize] = useState("");
+  const [inventoryManagement, setInventoryManagement] = useState("");
   const [calendarConnected, setCalendarConnected] = useState(false);
   const [whatsappConnected, setWhatsappConnected] = useState(false);
   const days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
@@ -37,6 +39,15 @@ export default function OnboardingPage() {
       setOwnerName(user.name || "");
     }, 0);
     return () => window.clearTimeout(timer);
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    apiFetch<{ company_size?: string; inventory_management?: boolean | null }>("/api/v1/business/profile")
+      .then((profile) => {
+        setCompanySize(profile.company_size || "");
+        setInventoryManagement(profile.inventory_management == null ? "" : profile.inventory_management ? "yes" : "no");
+      }).catch(() => {});
   }, [user]);
 
   useEffect(() => {
@@ -89,7 +100,13 @@ export default function OnboardingPage() {
       try {
         await apiFetch("/api/v1/business/profile", {
           method: "PUT",
-          body: JSON.stringify({ name: businessName, industry, owner_name: ownerName }),
+          body: JSON.stringify({
+            name: businessName,
+            industry,
+            owner_name: ownerName,
+            company_size: companySize,
+            inventory_management: inventoryManagement === "" ? null : inventoryManagement === "yes",
+          }),
         });
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Unable to save your business profile.");
@@ -211,6 +228,21 @@ export default function OnboardingPage() {
                   <span className="block text-[11px] font-bold uppercase text-[#8b97ab]">Industry</span>
                   <select value={industry} onChange={(e) => setIndustry(e.target.value)} className="w-full rounded-lg border border-[#dfe6f1] bg-white px-3 py-2 text-sm text-[#34415d]">
                     <option>Dental Clinic</option><option>Medical Clinic</option><option>Salon &amp; Spa</option><option>Law Firm</option><option>Real Estate</option><option>Fitness &amp; Gym</option><option>Other</option>
+                  </select>
+                </div>
+              </div>
+              <hr className="border-[#e7ecf4]" />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="mb-1 block text-[11px] font-bold uppercase text-[#8b97ab]">How big is your company? <span className="font-normal normal-case text-[#9aa5b8]">(Optional)</span></label>
+                  <select value={companySize} onChange={(e) => setCompanySize(e.target.value)} className="w-full rounded-lg border border-[#dfe6f1] bg-white px-3 py-2 text-sm text-[#34415d]">
+                    <option value="">Prefer not to say</option><option value="solo">Just me</option><option value="2-10">2–10 employees</option><option value="11-50">11–50 employees</option><option value="51-200">51–200 employees</option><option value="200+">More than 200 employees</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-[11px] font-bold uppercase text-[#8b97ab]">Do you need inventory management? <span className="font-normal normal-case text-[#9aa5b8]">(Optional)</span></label>
+                  <select value={inventoryManagement} onChange={(e) => setInventoryManagement(e.target.value)} className="w-full rounded-lg border border-[#dfe6f1] bg-white px-3 py-2 text-sm text-[#34415d]">
+                    <option value="">Not sure yet</option><option value="yes">Yes</option><option value="no">No</option>
                   </select>
                 </div>
               </div>

@@ -70,7 +70,13 @@ class BookingConfiguration(BaseModel):
         return value
 
 
+class BusinessDetailsConfiguration(BaseModel):
+    company_size: str = ""
+    inventory_management: bool | None = None
+
+
 class BusinessConfiguration(BaseModel):
+    business_details: BusinessDetailsConfiguration = Field(default_factory=BusinessDetailsConfiguration)
     agent: AgentConfiguration = Field(default_factory=AgentConfiguration)
     branding: BrandingConfiguration = Field(default_factory=BrandingConfiguration)
     escalation: EscalationConfiguration = Field(default_factory=EscalationConfiguration)
