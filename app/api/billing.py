@@ -21,6 +21,11 @@ def billing_status(business: Business = Depends(get_current_business)):
         limits={**PLAN_LIMITS.get(business.plan_code or "starter_trial", {}), **(business.usage_limits or {})},
         usage_period_start=business.usage_period_start,
         usage_period_end=business.usage_period_end,
+        usage={
+            "messages": business.usage_messages or 0,
+            "llm_tokens": business.usage_llm_tokens or 0,
+            "tool_calls": business.usage_tool_calls or 0,
+        },
     )
 
 

@@ -122,3 +122,22 @@ export interface AnalyticsSummary {
   funnel: FunnelSummary;
   leads_over_time: DailyLeadCount[];
 }
+
+export interface BillingStatus {
+  plan: string;
+  status: string;
+  customer_id: string | null;
+  subscription_id: string | null;
+  limits: Record<string, number>;
+  usage: Record<string, number>;
+  usage_period_start: string | null;
+  usage_period_end: string | null;
+}
+
+export interface ConfigurationAudit {
+  id: number;
+  business_id: number;
+  changed_by: number | null;
+  configuration: Record<string, unknown>;
+  created_at: string;
+}

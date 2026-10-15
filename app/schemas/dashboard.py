@@ -234,3 +234,4 @@ class BillingStatus(BaseModel):
     limits: dict[str, int] = {}
     usage_period_start: datetime | None = None
     usage_period_end: datetime | None = None
+    usage: dict[str, int] = {}

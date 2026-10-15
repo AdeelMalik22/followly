@@ -15,6 +15,7 @@ import {
   Cpu,
   UserPlus,
   Settings,
+  CreditCard,
   LogOut,
 } from "lucide-react";
 
@@ -28,6 +29,7 @@ const navItems = [
   { name: "Channels", href: "/dashboard/channels", icon: Cpu },
   { name: "Team", href: "/dashboard/team", icon: UserPlus },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
+  { name: "Usage & Billing", href: "/dashboard/billing", icon: CreditCard },
 ];
 
 export default function Sidebar() {
