@@ -42,7 +42,11 @@ def authenticate_user(email: str, password: str, db: Session):
     if not user or not verify_password(password, user.hashed_password):
         return None
 
-    access_token = create_access_token(data={"sub": str(user.id), "business_id": user.business_id})
+    access_token = create_access_token(data={
+        "sub": str(user.id),
+        "business_id": user.business_id,
+        "session_version": user.session_version,
+    })
     return access_token
 
 def get_user_by_email(email: str, db: Session):

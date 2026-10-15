@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.schemas.auth import UserCreate, UserLogin, Token
@@ -7,6 +8,7 @@ from app.services import auth_service
 from app.api.dependencies import get_current_user
 from app.models.models import User, KnowledgeBaseEntry
 from app.services.business_config_service import get_business_configuration
+from app.core.security import decode_access_token
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
@@ -74,3 +76,15 @@ def get_me(current_user: User = Depends(get_current_user)):
         knowledge_base_count=kb_count,
         onboarding_completed=get_business_configuration(business).onboarding_completed if business else False,
     )
+
+
+@router.post("/logout")
+def logout(request: Request, db: Session = Depends(get_db)):
+    token = request.headers.get("authorization", "")
+    payload = decode_access_token(token[7:]) if token.lower().startswith("bearer ") else None
+    if payload and str(payload.get("sub", "")).isdigit():
+        user = db.query(User).filter(User.id == int(payload["sub"])).first()
+        if user:
+            user.session_version += 1
+            db.commit()
+    return {"status": "logged_out"}

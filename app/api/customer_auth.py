@@ -155,3 +155,27 @@ def customer_logout(request: Request, db: Session = Depends(get_db)):
     response.delete_cookie("followly_customer_token")
     response.delete_cookie("followly_visitor_id")
     return response
+
+
+@router.post("/recover")
+def customer_recover(business_key: str, request: Request, db: Session = Depends(get_db)):
+    """Revoke the current customer session and restart tenant-scoped Google sign-in."""
+    business = db.query(Business).filter(Business.widget_key == business_key).first()
+    if not business:
+        raise HTTPException(status_code=404, detail="Business not found")
+    token = request.cookies.get("followly_customer_token")
+    if token:
+        try:
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+            customer = db.query(Customer).filter(
+                Customer.id == int(payload["customer_id"]),
+                Customer.business_id == business.id,
+            ).first()
+            if customer:
+                customer.session_version += 1
+                db.commit()
+        except (ValueError, KeyError, JWTError):
+            db.rollback()
+    response = RedirectResponse(url=f"/api/v1/customer/auth/google?business_key={business_key}", status_code=303)
+    response.delete_cookie("followly_customer_token")
+    return response

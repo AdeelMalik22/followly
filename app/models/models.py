@@ -115,6 +115,7 @@ class User(Base):
     name = Column(String, nullable=False)
     hashed_password = Column(String, nullable=False)
     role = Column(String, default="owner")
+    session_version = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     business = relationship("Business", back_populates="users", foreign_keys=[business_id])

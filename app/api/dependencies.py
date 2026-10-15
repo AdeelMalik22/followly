@@ -32,6 +32,8 @@ def get_current_user(
         token_business_id = payload.get("business_id")
         if token_business_id is not None and str(token_business_id) != str(user.business_id):
             raise HTTPException(status_code=401, detail="Invalid tenant credentials")
+        if payload.get("session_version", 0) != user.session_version:
+            raise HTTPException(status_code=401, detail="Session has been revoked")
 
         return user
     except HTTPException:
