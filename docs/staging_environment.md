@@ -23,3 +23,14 @@ The second command removes staging data volumes. Provider checks are run by
 `scripts/staging_smoke_test.sh` after a business and test credentials exist.
 Use test Stripe keys and test provider accounts; the smoke test does not create
 a charge.
+
+```bash
+export STAGING_API_URL=http://localhost:8000
+export STAGING_AUTH_TOKEN='business-user-access-token'
+./scripts/staging_smoke_test.sh
+```
+
+The smoke test covers application readiness (PostgreSQL, Redis, queue, and LLM
+configuration), billing status, WhatsApp and Google Calendar health, and an
+optional real LLM request. Set `STAGING_RUN_LLM=1` only when the configured
+provider should be called.
