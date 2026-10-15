@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!token) {
       setUser(null);
       setLoading(false);
-      if (pathname !== "/login" && pathname !== "/signup") {
+      if (pathname !== "/" && pathname !== "/login" && pathname !== "/signup" && pathname !== "/recover") {
         router.replace("/login");
       }
       return;
@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       console.error("Error fetching user profile", err);
       setUser(null);
-      if (pathname !== "/login" && pathname !== "/signup") {
+      if (pathname !== "/" && pathname !== "/login" && pathname !== "/signup" && pathname !== "/recover") {
         router.replace("/login");
       }
     } finally {
