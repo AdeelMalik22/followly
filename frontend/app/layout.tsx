@@ -14,8 +14,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Followly Dashboard",
-  description: "AI-powered sales follow-up agent for small businesses",
+  title: {
+    default: "Followly — Your AI teammate for every conversation",
+    template: "%s | Followly",
+  },
+  description: "Followly helps growing businesses capture leads, answer customers, and book appointments with an AI teammate.",
+  applicationName: "Followly",
+  keywords: ["AI CRM", "customer conversations", "lead follow-up", "appointment booking"],
 };
 
 interface LayoutProps {
