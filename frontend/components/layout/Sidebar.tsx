@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/auth-provider";
@@ -37,6 +37,13 @@ const navItems = [
 export default function Sidebar() {
   const pathname = usePathname();
   const { user } = useAuth();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    const open = () => setMobileOpen(true);
+    window.addEventListener("followly:open-menu", open);
+    return () => window.removeEventListener("followly:open-menu", open);
+  }, []);
 
   const handleLogout = () => {
     clearAuthToken();
@@ -44,7 +51,9 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="w-64 bg-white border-r border-[#e8edf5] flex flex-col h-screen sticky top-0 flex-shrink-0 z-10">
+    <>
+      {mobileOpen && <button aria-label="Close navigation" onClick={() => setMobileOpen(false)} className="fixed inset-0 z-30 bg-[#17213b]/20 backdrop-blur-sm md:hidden" />}
+    <aside className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-shrink-0 flex-col border-r border-[#e8edf5] bg-white transition-transform md:sticky md:top-0 md:z-10 md:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
       {/* Brand logo */}
       <div className="p-6 border-b border-[#eef1f6] flex items-center gap-3">
         <div className="w-9 h-9 rounded-xl bg-[#3678f6] flex items-center justify-center font-extrabold text-sm text-white shadow-lg shadow-blue-200">
@@ -67,6 +76,7 @@ export default function Sidebar() {
                   ? "bg-[#eaf2ff] text-[#1764db] shadow-sm"
                   : "text-[#66738d] hover:text-[#17213b] hover:bg-[#f5f8fc]"
               }`}
+              onClick={() => setMobileOpen(false)}
             >
               <Icon className="w-4 h-4" />
               {item.name}
@@ -92,5 +102,6 @@ export default function Sidebar() {
         </button>
       </div>
     </aside>
+    </>
   );
 }
