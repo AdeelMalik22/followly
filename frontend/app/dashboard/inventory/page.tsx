@@ -43,10 +43,17 @@ export default function InventoryPage() {
     catch (error) { toast.error(error instanceof Error ? error.message : "Unable to update stock."); }
   };
 
-  return <div className="mx-auto max-w-[1500px] space-y-7">
-    <div className="flex flex-wrap items-start justify-between gap-4">
-      <div><p className="text-sm font-bold text-[#3678f6]">Operations</p><h1 className="mt-1 text-2xl font-bold tracking-[-0.02em] text-[#17213b]">Inventory</h1><p className="mt-1 text-sm text-[#66738d]">Track supplies, products, and stock levels across your business.</p></div>
+  return <div className="inventory-workspace mx-auto max-w-[1500px] space-y-7">
+    <div className="inventory-hero flex flex-wrap items-center justify-between gap-6 rounded-3xl p-7 sm:p-9">
+      <div><p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-200">Workspace / Operations</p><h1 className="mt-3 text-4xl font-semibold tracking-tight text-white">Every item. Under control.</h1><p className="mt-3 max-w-lg text-sm leading-6 text-blue-100">Your inventory, organized. Keep supplies moving and see what needs attention before you run out.</p></div>
       <button onClick={() => setShowForm(!showForm)} className="inline-flex items-center gap-2 rounded-xl bg-[#3678f6] px-4 py-3 text-sm font-bold text-white shadow-lg shadow-blue-200 hover:bg-[#2568e4]"><Plus className="h-4 w-4" /> Add item</button>
+    </div>
+    <div className="grid gap-4 sm:grid-cols-3">
+      {[
+        { label: "Items in view", value: items.length, detail: "Matching your current filters", icon: Package, color: "bg-blue-100 text-blue-700" },
+        { label: "Need attention", value: items.filter((item) => item.low_stock).length, detail: "At or below reorder level", icon: AlertTriangle, color: "bg-amber-100 text-amber-800" },
+        { label: "Suppliers in view", value: new Set(items.map((item) => item.supplier).filter(Boolean)).size, detail: "Across the items shown below", icon: ArrowDownToLine, color: "bg-teal-100 text-teal-800" },
+      ].map(({ label, value, detail, icon: Icon, color }) => <div key={label} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center justify-between"><p className="text-sm font-semibold text-slate-600">{label}</p><span className={`rounded-xl p-2.5 ${color}`}><Icon className="h-5 w-5" /></span></div><p className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">{loading ? "—" : value}</p><p className="mt-1 text-xs text-slate-600">{detail}</p></div>)}
     </div>
     {showForm && <form onSubmit={createItem} className="grid gap-3 rounded-2xl border border-[#d8e0ec] bg-white p-5 shadow-[0_8px_24px_rgba(35,55,90,0.07)] md:grid-cols-4">
       {([["name", "Item name"], ["sku", "SKU"], ["category", "Category"], ["unit", "Unit"], ["quantity", "Starting quantity"], ["reorder_level", "Low-stock level"], ["supplier", "Supplier"]] as const).map(([key, label]) => <label key={key} className="text-xs font-bold text-[#53617a]"><span className="mb-1 block">{label}</span><input required={key === "name" || key === "sku"} value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} className="w-full rounded-xl border border-[#cbd6e5] px-3 py-2.5 text-sm outline-none focus:border-[#3678f6]" /></label>)}

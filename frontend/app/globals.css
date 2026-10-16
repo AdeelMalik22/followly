@@ -30,3 +30,26 @@ button, a, input, select, textarea {
   background: #dbe8ff;
   color: #17213b;
 }
+
+.inventory-hero {
+  background: radial-gradient(ellipse at top right, #285ab0 0%, transparent 65%), #14233d;
+  box-shadow: 0 12px 32px rgb(20 35 61 / 12%);
+}
+
+.inventory-workspace button:focus-visible,
+.inventory-workspace input:focus-visible {
+  outline: 3px solid #3678f6;
+  outline-offset: 3px;
+}
+
+.inventory-workspace section {
+  overflow-x: auto;
+}
+
+.inventory-workspace section > div.grid {
+  min-width: 720px;
+}
+
+.inventory-workspace section > div.grid:not(:first-child):hover {
+  background-color: #f3f7ff;
+}
